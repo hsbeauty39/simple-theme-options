@@ -140,6 +140,44 @@
         });
     }
 
+    /**
+     * Iris positions `.iris-palette-container` absolutely at the bottom of the square (single-row presets).
+     * Advanced `palette_ui` uses a full-width grid below the square + strips — clear Iris inline height /
+     * paddingBottom and set each `.iris-strip` height to the square height so sliders match the SV panel.
+     */
+    function reflowPaletteUiIrisLayout($input) {
+        var $wrap = $input.closest('.sto-color-wrap');
+        if (!$wrap.attr('data-sto-palette-ui')) {
+            return;
+        }
+        var $container = $input.closest('.wp-picker-container');
+        var $picker = $container.find('.iris-picker').first();
+        if (!$picker.length) {
+            return;
+        }
+        var $square = $picker.find('.iris-square').first();
+        var h = $square.outerHeight();
+        if (!h) {
+            return;
+        }
+        $picker.find('.iris-strip').each(function() {
+            $(this).css('height', h);
+        });
+        $picker.css({ height: '', paddingBottom: '' });
+    }
+
+    function schedulePaletteUiReflow($input) {
+        window.setTimeout(function() {
+            reflowPaletteUiIrisLayout($input);
+        }, 0);
+        window.setTimeout(function() {
+            reflowPaletteUiIrisLayout($input);
+        }, 50);
+        window.setTimeout(function() {
+            reflowPaletteUiIrisLayout($input);
+        }, 200);
+    }
+
     function bindAdvancedPaletteUi($input) {
         var $wrap = $input.closest('.sto-color-wrap');
         if (!$wrap.attr('data-sto-palette-ui')) {
@@ -161,10 +199,14 @@
             window.setTimeout(sync, 0);
         });
         $container.on('click.stoPaletteUi', '.wp-color-result', function() {
+            schedulePaletteUiReflow($input);
             window.setTimeout(sync, 400);
         });
         $input.on('keyup.stoPaletteUi', sync);
-        window.setTimeout(sync, 200);
+        window.setTimeout(function() {
+            schedulePaletteUiReflow($input);
+            sync();
+        }, 200);
     }
 
     function bindResetOnce($wrap, $input) {
