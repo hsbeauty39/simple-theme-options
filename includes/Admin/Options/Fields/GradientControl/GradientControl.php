@@ -13,8 +13,7 @@ use SimpleThemeOptions\Traits\SingletonTrait;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * CSS linear / radial gradient editor: horizontal preview bar with stop pins, single-stop Color + Stop %,
- * Flip, type, angle (linear), 2–N stops, optional popover (`popup`) or inline UI.
+ * CSS linear / radial gradient editor: preview + stop rail, **floating color dock** at the active pin (WordPress color picker), Stop %, Flip, type, angle, 2–N stops (default **24**, cap **32** via `max_stops`), optional `palettes` swatches in the dock, optional popover (`popup`) or inline UI.
  *
  * Stored JSON (one string per option key, or per breakpoint when `responsive`):
  *   {
@@ -28,7 +27,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * `type`: `linear` | `radial`. `angle`: degrees string (linear only; ignored for radial in CSS output).
  *
- * `popup` (register key, not in JSON): when true, summary + **Edit gradient** opens a popover; when false, controls render inline. Stops: click the **gradient bar** to add (up to **`max_stops`**); drag **pins** to move; click a pin (without dragging) or the bar near a pin to open the shared **Color** picker for that stop.
+ * `popup` (register key, not in JSON): when true, summary + **Edit gradient** opens a popover; when false, controls render inline. Stops: click the **gradient bar** to add (up to **`max_stops`**, default **24**, max **32**); drag **pins**; color UI opens in a **dock** anchored to the active pin; optional **`palettes`** shows suggestion swatches under the picker.
  */
 final class GradientControl {
 	use SingletonTrait;
@@ -36,7 +35,7 @@ final class GradientControl {
 	use FieldSanitizePostedProxy;
 
 	private const MIN_STOPS = 2;
-	private const MAX_STOPS_CAP = 8;
+	private const MAX_STOPS_CAP = 32;
 
 	/**
 	 * @var array<string, array<int, array<string, mixed>>>
@@ -112,7 +111,7 @@ final class GradientControl {
 		$field['alpha']         = ! array_key_exists( 'alpha', $field ) || (bool) $field['alpha'];
 		$field['popup']         = ! empty( $field['popup'] );
 
-		$max_stops = isset( $field['max_stops'] ) ? (int) $field['max_stops'] : 5;
+		$max_stops = isset( $field['max_stops'] ) ? (int) $field['max_stops'] : 24;
 		if ( $max_stops < self::MIN_STOPS ) {
 			$max_stops = self::MIN_STOPS;
 		}
@@ -267,7 +266,7 @@ final class GradientControl {
 		}
 
 		$defaults = $this->parse_default_array( $field && isset( $field['default'] ) && is_array( $field['default'] ) ? $field['default'] : array() );
-		$max      = $field && isset( $field['max_stops'] ) ? (int) $field['max_stops'] : 5;
+		$max      = $field && isset( $field['max_stops'] ) ? (int) $field['max_stops'] : 24;
 		if ( $max < self::MIN_STOPS ) {
 			$max = self::MIN_STOPS;
 		}
@@ -603,7 +602,7 @@ final class GradientControl {
 					<div class="sto-gradient-preview" data-sto-gradient-preview style="background-image: <?php echo esc_attr( $preview_css ); ?>;"></div>
 					<button
 						type="button"
-						class="sto-gradient-edit button"
+						class="sto-gradient-edit button button-primary"
 						data-sto-gradient-edit-toggle
 						aria-expanded="false"
 						aria-haspopup="dialog"
@@ -650,6 +649,53 @@ final class GradientControl {
 				<div class="sto-gradient-viz__track">
 					<div class="sto-gradient-viz__preview" data-sto-gradient-preview></div>
 					<div class="sto-gradient-viz__rail" data-sto-gradient-rail>
+						<div
+							class="sto-gradient-color-dock sto-gradient-color-dock--idle"
+							data-sto-gradient-color-dock
+							role="dialog"
+							aria-label="<?php esc_attr_e( 'Stop color', 'simple-theme-options' ); ?>"
+							aria-hidden="true"
+						>
+							<div class="sto-gradient-color-dock__chrome">
+								<div
+									class="sto-color-wrap sto-gradient-active-color-wrap<?php echo $use_alpha ? ' sto-color--alpha' : ''; ?>"
+									<?php if ( $palettes_json ) : ?>
+										data-sto-palettes="<?php echo esc_attr( $palettes_json ); ?>"
+									<?php endif; ?>
+								>
+									<input
+										type="text"
+										id="<?php echo esc_attr( $acid ); ?>"
+										class="sto-color-input sto-gradient-active-color"
+										data-sto-gradient-active-color
+										data-default-color="<?php echo esc_attr( $fc ); ?>"
+										data-sto-default="<?php echo esc_attr( $fc ); ?>"
+										<?php if ( $use_alpha ) : ?>
+											data-alpha-enabled="true"
+											data-type="full"
+											data-alpha-custom-width="0"
+										<?php endif; ?>
+										value="<?php echo esc_attr( $fc ); ?>"
+										autocomplete="off"
+									/>
+									<button
+										type="button"
+										class="sto-color-reset"
+										aria-label="<?php esc_attr_e( 'Reset active stop color', 'simple-theme-options' ); ?>"
+										title="<?php esc_attr_e( 'Reset to default', 'simple-theme-options' ); ?>"
+									>
+										<i class="fa-light fa-arrow-rotate-left" aria-hidden="true"></i>
+									</button>
+								</div>
+								<?php if ( $palettes_json ) : ?>
+									<div
+										class="sto-gradient-dock-palette"
+										data-sto-gradient-dock-palette
+										data-sto-gradient-palette-label="<?php esc_attr_e( 'Suggested colors', 'simple-theme-options' ); ?>"
+									></div>
+								<?php endif; ?>
+							</div>
+						</div>
 						<div class="sto-gradient-viz__pins" data-sto-gradient-pins role="tablist" aria-label="<?php esc_attr_e( 'Color stops', 'simple-theme-options' ); ?>"></div>
 						<div class="sto-gradient-viz__barwrap">
 							<div class="sto-gradient-viz__bar" data-sto-gradient-bar style="background-image: <?php echo esc_attr( $rail_bar_css ); ?>;"></div>
@@ -665,52 +711,19 @@ final class GradientControl {
 				</div>
 			</div>
 
-			<button type="button" class="sto-gradient-flip button" data-sto-gradient-flip>
+			<button type="button" class="sto-gradient-flip button button-primary" data-sto-gradient-flip>
 				<i class="fa-light fa-arrows-left-right" aria-hidden="true"></i>
 				<span><?php esc_html_e( 'Flip', 'simple-theme-options' ); ?></span>
 			</button>
 
-			<div class="sto-gradient-editor-grid">
-				<div class="sto-gradient-editor-cell">
-					<div class="sto-gradient-field-label"><?php esc_html_e( 'Color', 'simple-theme-options' ); ?></div>
-					<div
-						class="sto-color-wrap sto-gradient-active-color-wrap<?php echo $use_alpha ? ' sto-color--alpha' : ''; ?>"
-						<?php if ( $palettes_json ) : ?>
-							data-sto-palettes="<?php echo esc_attr( $palettes_json ); ?>"
-						<?php endif; ?>
-					>
-						<input
-							type="text"
-							id="<?php echo esc_attr( $acid ); ?>"
-							class="sto-color-input sto-gradient-active-color"
-							data-sto-gradient-active-color
-							data-default-color="<?php echo esc_attr( $fc ); ?>"
-							data-sto-default="<?php echo esc_attr( $fc ); ?>"
-							<?php if ( $use_alpha ) : ?>
-								data-alpha-enabled="true"
-								data-type="full"
-								data-alpha-custom-width="0"
-							<?php endif; ?>
-							value="<?php echo esc_attr( $fc ); ?>"
-							autocomplete="off"
-						/>
-						<button
-							type="button"
-							class="sto-color-reset"
-							aria-label="<?php esc_attr_e( 'Reset active stop color', 'simple-theme-options' ); ?>"
-							title="<?php esc_attr_e( 'Reset to default', 'simple-theme-options' ); ?>"
-						>
-							<i class="fa-light fa-arrow-rotate-left" aria-hidden="true"></i>
-						</button>
-					</div>
-				</div>
-				<div class="sto-gradient-editor-cell">
+			<div class="sto-gradient-editor-grid sto-gradient-editor-grid--stop-only">
+				<div class="sto-gradient-editor-cell sto-gradient-editor-cell--full">
 					<div class="sto-gradient-field-label"><?php esc_html_e( 'Stop', 'simple-theme-options' ); ?></div>
 					<label class="sto-gradient-stop-percent">
 						<span class="screen-reader-text"><?php esc_html_e( 'Stop position percent', 'simple-theme-options' ); ?></span>
 						<input
 							type="number"
-							class="sto-gradient-active-position"
+							class="sto-gradient-active-position sto-gradient-input-soft"
 							data-sto-gradient-active-position
 							min="0"
 							max="100"
@@ -725,7 +738,7 @@ final class GradientControl {
 			<div class="sto-gradient-footer-grid">
 				<div class="sto-gradient-editor-cell">
 					<div class="sto-gradient-field-label"><?php esc_html_e( 'Type', 'simple-theme-options' ); ?></div>
-					<select class="sto-gradient-type-select sto-input-select" data-sto-gradient-input="type" aria-label="<?php esc_attr_e( 'Gradient type', 'simple-theme-options' ); ?>">
+					<select class="sto-gradient-type-select sto-input-select sto-gradient-input-soft" data-sto-gradient-input="type" aria-label="<?php esc_attr_e( 'Gradient type', 'simple-theme-options' ); ?>">
 						<option value="linear" <?php selected( $type, 'linear' ); ?>><?php esc_html_e( 'Linear', 'simple-theme-options' ); ?></option>
 						<option value="radial" <?php selected( $type, 'radial' ); ?>><?php esc_html_e( 'Radial', 'simple-theme-options' ); ?></option>
 					</select>
@@ -735,7 +748,7 @@ final class GradientControl {
 					<div class="sto-gradient-angle-wrap">
 						<input
 							type="number"
-							class="sto-gradient-angle-input"
+							class="sto-gradient-angle-input sto-gradient-input-soft"
 							data-sto-gradient-input="angle"
 							min="0"
 							max="359"

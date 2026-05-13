@@ -102,9 +102,9 @@ final class Appearance {
 				'section_slug' => 'appearance-gradient',
 				'id'           => 'appearance_hero_overlay_gradient',
 				'title'        => __( 'Hero overlay gradient (popover)', 'simple-theme-options' ),
-				'description'  => __( 'Linear or radial gradient with multiple color stops. **`popup` => true** shows a live preview strip and opens controls in a panel (like Border / Shadow).', 'simple-theme-options' ),
+				'description'  => __( 'Linear or radial gradient: floating color dock at the active pin, click the bar to add stops (up to **max_stops**). **`popup` => true** shows a preview strip and **Edit gradient**.', 'simple-theme-options' ),
 				'popup'        => true,
-				'max_stops'    => 5,
+				'max_stops'    => 24,
 				'alpha'        => true,
 				'default'      => array(
 					'type'   => 'linear',
@@ -114,7 +114,7 @@ final class Appearance {
 						array( 'color' => 'rgba(0, 0, 0, 0)', 'position' => '100' ),
 					),
 				),
-				'palettes'     => array( '#000000', '#2271b1', '#ffffff', '#7c3aed' ),
+				'palettes'     => array( '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#fbbf24', '#ffffff', '#0f172a' ),
 			)
 		);
 
@@ -123,9 +123,10 @@ final class Appearance {
 				'section_slug' => 'appearance-gradient',
 				'id'           => 'appearance_section_divider_gradient',
 				'title'        => __( 'Section divider gradient (inline)', 'simple-theme-options' ),
-				'description'  => __( '**`popup` => false** keeps type, angle, and stops visible in the row (still one JSON value in **`sto_options`**).', 'simple-theme-options' ),
+				'description'  => __( '**`popup` => false** keeps controls inline. Optional **`palettes`** adds suggestion swatches under the color dock.', 'simple-theme-options' ),
 				'popup'        => false,
-				'max_stops'    => 4,
+				'max_stops'    => 24,
+				'palettes'     => array( '#2271b1', '#72aee6', '#00d084', '#f6b93b', '#eb5a46', '#ffffff' ),
 				'default'      => array(
 					'type'  => 'linear',
 					'angle' => '90',

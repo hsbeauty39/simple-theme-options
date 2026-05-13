@@ -134,8 +134,8 @@
         if (isNaN(m) || m < 2) {
             m = 2;
         }
-        if (m > 8) {
-            m = 8;
+        if (m > 32) {
+            m = 32;
         }
         return m;
     }
@@ -274,6 +274,124 @@
         return Math.round(Math.max(0, Math.min(100, pct)) * 100) / 100;
     }
 
+    function showColorDock($wrap) {
+        var $dock = $wrap.find('[data-sto-gradient-color-dock]');
+        if (!$dock.length) {
+            return;
+        }
+        $dock.removeClass('sto-gradient-color-dock--idle').attr('aria-hidden', 'false');
+        positionColorDock($wrap);
+    }
+
+    function hideColorDock($wrap) {
+        var $dock = $wrap.find('[data-sto-gradient-color-dock]');
+        if (!$dock.length) {
+            return;
+        }
+        var $input = $wrap.find('[data-sto-gradient-active-color]');
+        var $c = $input.closest('.wp-picker-container');
+        if ($c.length && $c.hasClass('wp-picker-active')) {
+            $c.find('.wp-color-result').first().trigger('click');
+        }
+        $dock.addClass('sto-gradient-color-dock--idle').attr('aria-hidden', 'true');
+        $dock.css({ left: '', top: '', right: '' });
+    }
+
+    function positionColorDock($wrap) {
+        var $dock = $wrap.find('[data-sto-gradient-color-dock]');
+        if (!$dock.length || $dock.hasClass('sto-gradient-color-dock--idle')) {
+            return;
+        }
+        var $pin = $wrap.find('.sto-gradient-pin--active');
+        if (!$pin.length) {
+            return;
+        }
+        var pr = $pin[0].getBoundingClientRect();
+        var gap = 10;
+        var vh = window.innerHeight || document.documentElement.clientHeight || 800;
+        var est = 240;
+        var placeBelow = pr.top < est + 72;
+        var cx = pr.left + pr.width / 2;
+        var top = placeBelow ? pr.bottom + gap : pr.top - gap;
+        $dock.removeClass('sto-gradient-color-dock--below sto-gradient-color-dock--above');
+        if (placeBelow) {
+            $dock.addClass('sto-gradient-color-dock--below');
+        } else {
+            $dock.addClass('sto-gradient-color-dock--above');
+        }
+        $dock.css({ left: cx + 'px', top: top + 'px', right: 'auto' });
+    }
+
+    function refreshDockPalette($wrap) {
+        var $pal = $wrap.find('[data-sto-gradient-dock-palette]');
+        if (!$pal.length) {
+            return;
+        }
+        var $cw = $wrap.find('.sto-gradient-active-color-wrap');
+        var raw = $cw.attr('data-sto-palettes') || '';
+        var list = [];
+        if (raw) {
+            try {
+                list = JSON.parse(raw);
+            } catch (err) {
+                list = [];
+            }
+        }
+        if (!Array.isArray(list) || !list.length) {
+            $pal.empty().attr('hidden', 'hidden');
+            return;
+        }
+        $pal.removeAttr('hidden').empty();
+        var label = $pal.attr('data-sto-gradient-palette-label');
+        if (label) {
+            var $span = $('<span class="sto-gradient-dock-palette__label" />');
+            $span.text(label);
+            $pal.append($span);
+        }
+        for (var i = 0; i < list.length; i++) {
+            var hex = String(list[i] || '').trim();
+            if (!hex) {
+                continue;
+            }
+            var $b = $('<button type="button" class="sto-gradient-dock-swatch" data-sto-gradient-dock-swatch />');
+            $b.attr('data-sto-gradient-swatch-color', hex);
+            $b.attr('title', hex);
+            $b.attr('aria-label', hex);
+            $b.css('background-color', hex);
+            $pal.append($b);
+        }
+    }
+
+    function bindDockPalette($wrap) {
+        $wrap.off('click.stoGradPal', '[data-sto-gradient-dock-swatch]');
+        $wrap.on('click.stoGradPal', '[data-sto-gradient-dock-swatch]', function(e) {
+            e.preventDefault();
+            var $b = $(this);
+            var $w = $b.closest('[data-sto-gradient-control]');
+            var hex = String($b.attr('data-sto-gradient-swatch-color') || '').trim();
+            if (!hex) {
+                return;
+            }
+            var $input = $w.find('[data-sto-gradient-active-color]');
+            $input.val(hex).trigger('change');
+            if ($input.wpColorPicker && typeof $input.wpColorPicker === 'function' && $input.closest('.wp-picker-container').length) {
+                try {
+                    $input.wpColorPicker('color', hex);
+                } catch (err) {
+                    /* ignore */
+                }
+            }
+            syncFromInputs($w);
+        });
+    }
+
+    function bindDockDismissals($wrap) {
+        $wrap.off('click.stoGradDockDismiss', '.sto-gradient-flip, [data-sto-gradient-remove-stop], select[data-sto-gradient-input="type"]');
+        $wrap.on('click.stoGradDockDismiss', '.sto-gradient-flip, [data-sto-gradient-remove-stop], select[data-sto-gradient-input="type"]', function() {
+            hideColorDock($wrap);
+        });
+    }
+
     function ensureColorPicker($wrap) {
         if ($wrap.data('stoGradColorReady')) {
             return;
@@ -292,12 +410,17 @@
         } else {
             window.stoInitColorPickers($wrap);
         }
-        $wrap.data('stoGradColorReady', 1);
+        if ($wrap.find('[data-sto-gradient-active-color]').closest('.wp-picker-container').length) {
+            $wrap.data('stoGradColorReady', 1);
+        }
     }
 
     function openColorPicker($wrap) {
+        showColorDock($wrap);
         ensureColorPicker($wrap);
+        refreshDockPalette($wrap);
         window.setTimeout(function() {
+            positionColorDock($wrap);
             var $input = $wrap.find('[data-sto-gradient-active-color]');
             var $c = $input.closest('.wp-picker-container');
             var $btn = $c.find('.wp-color-result').first();
@@ -306,6 +429,9 @@
             } else {
                 $input.trigger('focus');
             }
+            window.setTimeout(function() {
+                positionColorDock($wrap);
+            }, 60);
         }, 10);
     }
 
@@ -346,6 +472,9 @@
         readFormIntoState($wrap);
         updatePreview($wrap);
         refreshPins($wrap);
+        if (!$wrap.find('[data-sto-gradient-color-dock]').hasClass('sto-gradient-color-dock--idle')) {
+            positionColorDock($wrap);
+        }
 
         var cur = parseHidden($wrap.find('> .sto-gradient-value'));
         var $angleCell = $wrap.find('[data-sto-gradient-section="angle"]');
@@ -495,6 +624,7 @@
         loadActiveIntoEditors(activeDrag.$wrap);
         updatePreview(activeDrag.$wrap);
         refreshPins(activeDrag.$wrap);
+        positionColorDock(activeDrag.$wrap);
         refreshToolbar(activeDrag.$wrap);
     }
 
@@ -541,6 +671,7 @@
             }
             $w.attr('data-sto-gradient-selected', String(idx));
             loadActiveIntoEditors($w);
+            showColorDock($w);
             refreshPins($w);
             activeDrag = {
                 $wrap: $w,
@@ -693,11 +824,14 @@
 
         if (!$wrap.data('stoGradColorReady') && typeof window.stoInitColorPickers === 'function') {
             window.stoInitColorPickers($pop);
-            $wrap.data('stoGradColorReady', 1);
+            if ($wrap.find('[data-sto-gradient-active-color]').closest('.wp-picker-container').length) {
+                $wrap.data('stoGradColorReady', 1);
+            }
         }
         window.setTimeout(function() {
             syncFromInputs($wrap);
             loadActiveIntoEditors($wrap);
+            refreshDockPalette($wrap);
         }, 50);
     }
 
@@ -708,6 +842,7 @@
             return;
         }
         syncFromInputs($wrap);
+        hideColorDock($wrap);
         $pop.attr('hidden', 'hidden');
         $btn.attr('aria-expanded', 'false');
         $wrap.removeAttr('data-sto-gradient-open');
@@ -753,6 +888,7 @@
         updatePreview($wrap);
         refreshPins($wrap);
         refreshToolbar($wrap);
+        hideColorDock($wrap);
 
         var cur = parseHidden($hidden);
         var $angleCell = $wrap.find('[data-sto-gradient-section="angle"]');
@@ -803,12 +939,16 @@
         bindActiveEditors($wrap);
         bindTypeAngle($wrap);
         bindRemoveStop($wrap);
+        bindDockPalette($wrap);
+        bindDockDismissals($wrap);
 
         if (isPopupMode($wrap)) {
             bindToggle($wrap);
         } else if (typeof window.stoInitColorPickers === 'function') {
             window.stoInitColorPickers($wrap.find('.sto-gradient-ui'));
-            $wrap.data('stoGradColorReady', 1);
+            if ($wrap.find('[data-sto-gradient-active-color]').closest('.wp-picker-container').length) {
+                $wrap.data('stoGradColorReady', 1);
+            }
         }
 
         syncFromInputs($wrap);
@@ -834,10 +974,16 @@
 
     $(document).on('click.stoGradOutside', function(e) {
         var $tgt = $(e.target);
-        if ($tgt.closest('[data-sto-gradient-control]').length) {
+        if ($tgt.closest('.wp-picker-container, .iris-picker, .wp-color-result').length) {
             return;
         }
-        if ($tgt.closest('.wp-picker-container, .iris-picker, .wp-color-result').length) {
+        $('[data-sto-gradient-control]').each(function() {
+            var $w = $(this);
+            if (!$tgt.closest($w).length) {
+                hideColorDock($w);
+            }
+        });
+        if ($tgt.closest('[data-sto-gradient-control]').length) {
             return;
         }
         $('[data-sto-gradient-control][data-sto-gradient-open="1"]').each(function() {
@@ -849,6 +995,9 @@
         if (e.key !== 'Escape' && e.keyCode !== 27) {
             return;
         }
+        $('[data-sto-gradient-control]').each(function() {
+            hideColorDock($(this));
+        });
         $('[data-sto-gradient-control][data-sto-gradient-open="1"]').each(function() {
             closePopover($(this));
         });
@@ -862,6 +1011,18 @@
 
     $(function() {
         initStoGradientControls();
+        var dockResizeTimer;
+        $(window).on('resize.stoGradDock scroll.stoGradDock', function() {
+            window.clearTimeout(dockResizeTimer);
+            dockResizeTimer = window.setTimeout(function() {
+                $('[data-sto-gradient-control]').each(function() {
+                    var $w = $(this);
+                    if (!$w.find('[data-sto-gradient-color-dock]').hasClass('sto-gradient-color-dock--idle')) {
+                        positionColorDock($w);
+                    }
+                });
+            }, 80);
+        });
     });
 
     window.stoInitGradientControls = initStoGradientControls;

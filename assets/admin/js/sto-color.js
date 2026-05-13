@@ -206,7 +206,7 @@
             if ($input.closest('.wp-picker-container').length) {
                 return;
             }
-            if (!$input.is(':visible')) {
+            if (!$input.is(':visible') && !$input.is('.sto-gradient-active-color')) {
                 return;
             }
 
