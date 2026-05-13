@@ -20,6 +20,7 @@ use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Switcher\Switcher;
+use SimpleThemeOptions\Admin\Options\Fields\CheckboxControl\CheckboxControl;
 use SimpleThemeOptions\Admin\Options\Fields\Typography\Typography;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
@@ -511,6 +512,11 @@ final class Tabs {
 
 			return Switcher::get_field( $section, $fid ) ? 'switcher' : '';
 		}
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'checkbox' ) {
+			CheckboxControl::register( $clone_reg );
+
+			return CheckboxControl::get_field( $section, $fid ) ? 'checkbox' : '';
+		}
 		if ( isset( $clone_reg['type'] ) && $clone_reg['type'] === 'image_select' && ! empty( $clone_reg['options'] ) && is_array( $clone_reg['options'] ) ) {
 			ImageSelect::register( $clone_reg );
 
@@ -929,6 +935,13 @@ final class Tabs {
 				if ( $f ) {
 					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
 					Switcher::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
+			case 'checkbox':
+				$f = CheckboxControl::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
+					CheckboxControl::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
 			case 'image_select':

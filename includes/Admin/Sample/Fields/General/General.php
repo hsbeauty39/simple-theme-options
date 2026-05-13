@@ -13,6 +13,7 @@ use SimpleThemeOptions\Admin\Options\Fields\ButtonGroup\ButtonGroup;
 use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
 use SimpleThemeOptions\Admin\Options\Fields\ImageSelect\ImageSelect;
 use SimpleThemeOptions\Admin\Options\Fields\Switcher\Switcher;
+use SimpleThemeOptions\Admin\Options\Fields\CheckboxControl\CheckboxControl;
 use SimpleThemeOptions\Admin\Options\Fields\Typography\Typography;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
@@ -32,6 +33,7 @@ final class General {
 		Range::instance();
 		Tabs::instance();
 		Switcher::instance();
+		CheckboxControl::instance();
 		Typography::instance();
 		BorderControl::instance();
 		ShadowControl::instance();
@@ -131,6 +133,49 @@ final class General {
 				'device'       => array( 'lg', 'md', 'mobile' ),
 				'required'     => array(
 					'layout_header' => 'default_header_layout',
+				),
+			)
+		);
+
+		CheckboxControl::register_many(
+			array(
+				array(
+					'section_slug'  => 'layout-type',
+					'id'            => 'layout_demo_checkbox_single',
+					'title'         => __( 'Custom checkbox (single)', 'simple-theme-options' ),
+					'description'   => __( 'Boolean stored as 1/0 with a tile control (hidden field + button), not a default browser checkbox row.', 'simple-theme-options' ),
+					'default'       => '0',
+					'labels'        => array(
+						'on'  => __( 'Feature enabled', 'simple-theme-options' ),
+						'off' => __( 'Feature disabled', 'simple-theme-options' ),
+					),
+					'responsive'    => true,
+					'device'        => array( 'lg', 'md', 'mobile' ),
+					'required'      => array(
+						'layout_header' => 'default_header_layout',
+					),
+				),
+				array(
+					'section_slug'  => 'layout-type',
+					'id'            => 'layout_demo_checkbox_multi',
+					'title'         => __( 'Multi-check tiles', 'simple-theme-options' ),
+					'description'   => __( 'Several option keys; native inputs stay for POST but are screen-reader only. Optional max selections and fixed column count.', 'simple-theme-options' ),
+					'multiple'      => true,
+					'max'           => 3,
+					'columns'       => 2,
+					'default'       => array( 'badge_sale', 'badge_new' ),
+					'options'       => array(
+						'badge_sale'   => __( 'Sale badge', 'simple-theme-options' ),
+						'badge_new'    => __( 'New badge', 'simple-theme-options' ),
+						'badge_hot'    => array(
+							'label'   => __( 'Hot badge', 'simple-theme-options' ),
+							'tooltip' => __( 'Optional tooltip on the tile.', 'simple-theme-options' ),
+						),
+						'badge_limited' => __( 'Limited stock', 'simple-theme-options' ),
+					),
+					'required'      => array(
+						'layout_header' => 'default_header_layout',
+					),
 				),
 			)
 		);

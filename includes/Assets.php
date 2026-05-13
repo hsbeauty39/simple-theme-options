@@ -125,9 +125,14 @@ final class Assets {
 				'deps'    => array( 'sto-style', 'sto-switcher' ),
 				'version' => STO_VERSION,
 			),
+			'sto-checkbox' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-checkbox.css',
+				'deps'    => array( 'sto-style', 'sto-switcher', 'sto-responsive' ),
+				'version' => STO_VERSION,
+			),
 			'sto-select2' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-select2.css',
-				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-range', 'sto-tabs', 'sto-accordion' ),
+				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-range', 'sto-tabs', 'sto-accordion' ),
 				'version' => STO_VERSION,
 			),
 			'sto-typography' => array(
@@ -299,9 +304,15 @@ final class Assets {
 				'version'   => '4.0.13',
 				'in_footer' => true,
 			),
+			'sto-checkbox' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-checkbox.js',
+				'deps'      => array( 'jquery' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
 			'display-section-on-menu' => array(
 				'src'       => STO_URL . 'assets/admin/js/main.js',
-				'deps'      => array( 'jquery', 'sto-select2-vendor' ),
+				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),

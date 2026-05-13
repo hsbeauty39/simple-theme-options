@@ -11,6 +11,7 @@ use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Switcher\Switcher;
+use SimpleThemeOptions\Admin\Options\Fields\CheckboxControl\CheckboxControl;
 use SimpleThemeOptions\Admin\Options\Fields\Typography\Typography;
 use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
@@ -139,6 +140,7 @@ final class Menu {
             ImageSelect::get_field_ids_for_section( $section_slug ),
             ButtonGroup::get_field_ids_for_section( $section_slug ),
             Select::get_field_ids_for_section( $section_slug ),
+            CheckboxControl::get_field_ids_for_section( $section_slug ),
             Switcher::get_field_ids_for_section( $section_slug ),
             Color::get_field_ids_for_section( $section_slug ),
             BackgroundControl::get_field_ids_for_section( $section_slug ),
@@ -262,6 +264,12 @@ final class Menu {
 				continue;
 			}
 
+			if ( CheckboxControl::is_registered_field_id( $option_key ) ) {
+				$raw_cb = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
+				$sanitized_options[ $option_key ] = CheckboxControl::sanitize_posted_value( $option_key, $raw_cb );
+				continue;
+			}
+
             if ( Select::is_registered_field_id( $option_key ) ) {
                 $raw_sel = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
                 $sanitized_options[ $option_key ] = Select::sanitize_posted_value( $option_key, $raw_sel );
@@ -312,6 +320,7 @@ final class Menu {
         }
 
         Select::instance()->merge_missing_multiple_select_fields( $posted_options, $sanitized_options, $section_key_map );
+        CheckboxControl::instance()->merge_missing_multiple_checkbox_fields( $posted_options, $sanitized_options, $section_key_map );
         DynamicObject::instance()->merge_missing_multiple_dynamic_fields( $posted_options, $sanitized_options, $section_key_map );
 
         $existing = get_option( 'sto_options', array() );
@@ -483,6 +492,7 @@ final class Menu {
             DynamicObject::get_all_fields_for_search(),
             ImageSelect::get_all_fields_for_search(),
             Switcher::get_all_fields_for_search(),
+            CheckboxControl::get_all_fields_for_search(),
             Color::get_all_fields_for_search(),
             Input::get_all_fields_for_search(),
             Range::get_all_fields_for_search(),

@@ -100,6 +100,20 @@
                     var rpv = $rchk.val();
                     return rpv === undefined || rpv === null ? '' : String(rpv);
                 }
+                if (t0 === 'checkbox' && $bpFields.length > 1) {
+                    return $bpFields
+                        .filter(':checked')
+                        .map(function() {
+                            var v = $(this).val();
+                            return v === undefined || v === null ? '' : String(v);
+                        })
+                        .get()
+                        .filter(Boolean)
+                        .join(',');
+                }
+                if (t0 === 'checkbox') {
+                    return $bpFields.first().prop('checked') ? String($bpFields.first().val() || '1') : '';
+                }
                 return readInputValue($bpFields.first());
             }
         }
@@ -217,6 +231,9 @@
                     }
                     if (typeof window.stoInitRangeControls === 'function') {
                         window.stoInitRangeControls($ap);
+                    }
+                    if (typeof window.stoInitCheckboxControls === 'function') {
+                        window.stoInitCheckboxControls($ap);
                     }
 					if (typeof window.stoInitTabsControls === 'function') {
                         window.stoInitTabsControls($ap);
@@ -667,6 +684,9 @@
             }
             if (typeof window.stoInitRangeControls === 'function') {
                 window.stoInitRangeControls($activePanel);
+            }
+            if (typeof window.stoInitCheckboxControls === 'function') {
+                window.stoInitCheckboxControls($activePanel);
             }
 			if (typeof window.stoInitTabsControls === 'function') {
                 window.stoInitTabsControls($activePanel);

@@ -13,6 +13,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Common\LayoutWidth;
 use SimpleThemeOptions\Admin\Options\Fields\ImageSelect\ImageSelect;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Switcher\Switcher;
+use SimpleThemeOptions\Admin\Options\Fields\CheckboxControl\CheckboxControl;
 use SimpleThemeOptions\Admin\Options\Fields\Typography\Typography;
 use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
@@ -54,6 +55,7 @@ final class Group {
 	 * - **Border:** `type` => **`border`**, **`id`**, **`title`**, optional **`description`**, optional **`default`** => array( **`radius`**, **`radius_unit`**, **`style`** (one of **`none`**, **`solid`**, **`dashed`**, **`dotted`**, **`double`**, **`groove`**, **`ridge`**, **`inset`**, **`outset`**), **`width`**, **`width_unit`**, **`color`** ), optional **`features`** => ordered subset of **`radius`**, **`style`**, **`width`**, **`color`** (default: all four; admin omits sections by passing fewer), optional **`min_radius`** / **`max_radius`** / **`min_width`** / **`max_width`** (integer clamps), optional **`radius_units`** => subset of **`px`**, **`%`**, **`em`**, **`rem`** (default **`array( 'px' )`** = locked chip), optional **`width_units`** => subset of **`px`**, **`em`**, **`rem`** (default **`array( 'px' )`**), **`alpha`** (bool, default **true**), **`palettes`**, **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as JSON in **`sto_options[id]`** (or **`sto_options[id][bp]`** when responsive).
 	 * - **Shadow:** `type` => **`shadow`**, **`id`**, **`title`**, optional **`description`**, optional **`default`** => array( **`selector`** (CSS target — **set in PHP only**, not shown in admin), **`color`**, **`horizontal`**, **`vertical`**, **`blur`**, **`spread`**, **`position`** (**`outline`** | **`inset`**) ) or top-level **`selector`** string merged into defaults, optional **`popup`** (bool — **UI only**; when **true**, detailed controls open in a popover; when **false**, controls stay inline), optional **`palettes`**, **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as JSON in **`sto_options[id]`** (same responsive map pattern as Border when enabled).
 	 * - Switcher: `type` => `switcher`, plus `id`, `title`, optional `description`, `default` (`1`|`0`), `labels`, `required`, `tooltip`, optional **`responsive`**, **`device`**.
+	 * - **Checkbox / multi-check:** `type` => **`checkbox`**, **`id`**, **`title`**, optional **`description`**, **`multiple`** (bool). Single: **`default`** `1`|`0`, optional **`labels`** (`on` / `off`). Multi: **`options`** (value => label or `label`+`tooltip`), **`default`** (array of keys), optional **`max`**, **`columns`** (1–6), optional **`responsive`**, **`device`**.
 	 * - Image select: `type` => `image_select`, plus `id`, `title`, `options` (value => `label` string or array with `label`, `preset`, optional `image`), `default`, `required`, `tooltip`, optional **`responsive`**, **`device`**.
 	 * - Dynamic object: `type` => `dynamic_object`, plus `id`, `title`, `post_type`, optional `multiple` (bool), `max` (max selections), `placeholder`, `limit` (max posts per AJAX page, default **10**), `search_min_length` (default **3**), `post_status`, `default` (string or array of ids), `required`, `tooltip`, optional **`responsive`**, **`device`**.
 	 * - Input: `type` => `text`|`number`|`textarea`|`editor`|`email`|`phone`|`search` (or `type` => `input` with `input_type` set to one of those), plus `id`, `title`, optional `description`, `default`, `placeholder` (all types; editor sets textarea placeholder), optional **`html_required`** (HTML5 `required`, separate from conditional `required`), `min`/`max`/`step` (number), `rows`/`cols` (textarea), `editor_height`/`media_buttons`/`teeny`/`drag_drop_upload` (editor), optional **`toolbar_end`** on **editor** => `array( 'label', 'tooltip', 'snippet' )` (TinyMCE row-1 after kitchen sink), conditional **`required`**, `tooltip`, optional **`responsive`**, **`device`** (not for **`editor`**).
@@ -297,6 +299,21 @@ final class Group {
 				continue;
 			}
 
+			if ( $this->is_checkbox_control_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				CheckboxControl::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && CheckboxControl::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'checkbox',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
 			if ( $this->is_image_select_item( $item ) ) {
 				$item['section_slug'] = $section_slug;
 				$item['group']        = $parent_group_id;
@@ -472,6 +489,20 @@ final class Group {
 		return is_array( $item ) && isset( $item['type'] ) && $item['type'] === 'switcher' && ! empty( $item['id'] );
 	}
 
+	private function is_checkbox_control_item( $item ) {
+		if ( ! is_array( $item ) || empty( $item['id'] ) ) {
+			return false;
+		}
+		if ( ! isset( $item['type'] ) || sanitize_key( (string) $item['type'] ) !== 'checkbox' ) {
+			return false;
+		}
+		if ( ! empty( $item['multiple'] ) ) {
+			return ! empty( $item['options'] ) && is_array( $item['options'] );
+		}
+
+		return true;
+	}
+
 	private function is_image_select_item( $item ) {
 		return is_array( $item ) && isset( $item['type'] ) && $item['type'] === 'image_select' && ! empty( $item['id'] ) && ! empty( $item['options'] ) && is_array( $item['options'] );
 	}
@@ -523,6 +554,10 @@ final class Group {
 		}
 
 		if ( isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'button_group' ) {
+			return false;
+		}
+
+		if ( isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'checkbox' ) {
 			return false;
 		}
 
@@ -776,6 +811,11 @@ final class Group {
 							$sfield = Switcher::get_field( $section_slug, (string) $node['id'] );
 							if ( $sfield ) {
 								Switcher::instance()->render_field_markup( $sfield, 'group_inner' );
+							}
+						} elseif ( $node['kind'] === 'checkbox' && ! empty( $node['id'] ) ) {
+							$cbfield = CheckboxControl::get_field( $section_slug, (string) $node['id'] );
+							if ( $cbfield ) {
+								CheckboxControl::instance()->render_field_markup( $cbfield, 'group_inner' );
 							}
 						} elseif ( $node['kind'] === 'image_select' && ! empty( $node['id'] ) ) {
 							$ifield = ImageSelect::get_field( $section_slug, (string) $node['id'] );
