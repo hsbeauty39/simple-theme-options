@@ -143,7 +143,7 @@ final class General {
 		CheckboxControl::register_many(
 			array(
 				array(
-					'section_slug'  => 'layout-type',
+					'section_slug'  => 'layout-nav',
 					'id'            => 'layout_demo_checkbox_single',
 					'title'         => __( 'Custom checkbox (single)', 'simple-theme-options' ),
 					'description'   => __( 'Boolean stored as 1/0 with a tile control (hidden field + button), not a default browser checkbox row.', 'simple-theme-options' ),
