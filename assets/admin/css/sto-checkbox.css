@@ -68,7 +68,7 @@
 
 .sto-field-row-checkbox .sto-checkbox-tile--checked {
     border-color: #2271b1;
-    background: linear-gradient(180deg, #f0f6fb 0%, #fff 55%);
+    background: #f0f6fb;
     color: #135e96;
 }
 
