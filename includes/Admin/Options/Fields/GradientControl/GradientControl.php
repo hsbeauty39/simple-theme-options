@@ -28,7 +28,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * `type`: `linear` | `radial`. `angle`: degrees string (linear only; ignored for radial in CSS output).
  *
- * `popup` (register key, not in JSON): when true, summary + **Edit gradient** opens a popover; when false, controls render inline.
+ * `popup` (register key, not in JSON): when true, summary + **Edit gradient** opens a popover; when false, controls render inline. Stops: click the **gradient bar** to add (up to **`max_stops`**); drag **pins** to move; click a pin (without dragging) or the bar near a pin to open the shared **Color** picker for that stop.
  */
 final class GradientControl {
 	use SingletonTrait;
@@ -391,6 +391,35 @@ final class GradientControl {
 	}
 
 	/**
+	 * Horizontal stop rail (thin bar under pins): same stops as the gradient, always left → right.
+	 * Avoids painting the full angled/radial gradient on a 14px-tall strip (looked like page-wide bars).
+	 *
+	 * @param array<string, string> $row Merged value row.
+	 * @return string Value suitable for `background-image:` (no property name).
+	 */
+	public function compile_css_stop_rail_value( array $row ) {
+		$defaults = $this->parse_default_array( array() );
+		$row      = $this->merge_decoded( $defaults, $row );
+		$parts    = array();
+		foreach ( $row['stops'] as $stop ) {
+			if ( ! is_array( $stop ) ) {
+				continue;
+			}
+			$c = isset( $stop['color'] ) ? (string) $stop['color'] : '';
+			$p = isset( $stop['position'] ) ? (string) $stop['position'] : '';
+			if ( $c === '' ) {
+				continue;
+			}
+			$parts[] = trim( $c . ' ' . $p . '%' );
+		}
+		if ( count( $parts ) < self::MIN_STOPS ) {
+			return 'linear-gradient(90deg, #2271b1 0%, #ffffff 100%)';
+		}
+
+		return 'linear-gradient(90deg, ' . implode( ', ', $parts ) . ')';
+	}
+
+	/**
 	 * Saved value at eval breakpoint → CSS `background-image` value only.
 	 */
 	public function value_to_css_background_image( $field_id ) {
@@ -607,6 +636,7 @@ final class GradientControl {
 	 * @param array<string, mixed> $cur
 	 */
 	private function render_gradient_controls_body( array $cur, $use_alpha, $palettes_json, $id_fragment, $max_stops ) {
+		$rail_bar_css = $this->compile_css_stop_rail_value( $cur );
 		$type  = (string) $cur['type'];
 		$angle = (string) $cur['angle'];
 		$stops = isset( $cur['stops'] ) && is_array( $cur['stops'] ) ? $cur['stops'] : array();
@@ -618,8 +648,20 @@ final class GradientControl {
 		<div class="sto-gradient-ui" data-sto-gradient-ui="1">
 			<div class="sto-gradient-viz" aria-label="<?php esc_attr_e( 'Gradient preview and stops', 'simple-theme-options' ); ?>">
 				<div class="sto-gradient-viz__track">
-					<div class="sto-gradient-viz__pins" data-sto-gradient-pins role="tablist" aria-label="<?php esc_attr_e( 'Color stops', 'simple-theme-options' ); ?>"></div>
-					<div class="sto-gradient-viz__bar" data-sto-gradient-preview></div>
+					<div class="sto-gradient-viz__preview" data-sto-gradient-preview></div>
+					<div class="sto-gradient-viz__rail" data-sto-gradient-rail>
+						<div class="sto-gradient-viz__pins" data-sto-gradient-pins role="tablist" aria-label="<?php esc_attr_e( 'Color stops', 'simple-theme-options' ); ?>"></div>
+						<div class="sto-gradient-viz__barwrap">
+							<div class="sto-gradient-viz__bar" data-sto-gradient-bar style="background-image: <?php echo esc_attr( $rail_bar_css ); ?>;"></div>
+							<button
+								type="button"
+								class="sto-gradient-viz__hit"
+								data-sto-gradient-hit
+								tabindex="0"
+								aria-label="<?php esc_attr_e( 'Add a stop on the gradient bar, or tap near an existing handle to select it', 'simple-theme-options' ); ?>"
+							></button>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -707,7 +749,6 @@ final class GradientControl {
 			</div>
 
 			<div class="sto-gradient-toolbar">
-				<button type="button" class="button button-small" data-sto-gradient-add-stop><?php esc_html_e( 'Add stop', 'simple-theme-options' ); ?></button>
 				<button type="button" class="button button-small sto-gradient-remove-stop" data-sto-gradient-remove-stop hidden><?php esc_html_e( 'Remove stop', 'simple-theme-options' ); ?></button>
 			</div>
 		</div>

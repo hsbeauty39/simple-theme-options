@@ -7,12 +7,12 @@
  * Open holder trims inline-block gap above Iris. Standalone rows are flush.
  */
 
-.sto-option-panel-wrapper .sto-field-row-color .sto-field-group-item-title + .sto-color-wrap,
-.sto-option-panel-wrapper .sto-field-row-color.sto-field-row--in-group .sto-field-group-item-title + .sto-color-wrap {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-field-group-item-title + .sto-color-wrap,
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient).sto-field-row--in-group .sto-field-group-item-title + .sto-color-wrap {
 	margin-top: 4px;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .sto-color-wrap {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-color-wrap {
 	display: flex;
 	flex-wrap: nowrap;
 	align-items: center;
@@ -23,7 +23,7 @@
 /*
  * Grid: row 1 = swatch + wrap; row 2 = Iris holder (display:none when closed — no ghost strip).
  */
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-container {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-container {
 	display: inline-grid;
 	grid-template-columns: auto max-content;
 	grid-template-rows: auto auto;
@@ -38,7 +38,7 @@
 	margin: 0;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-container .wp-color-result.button {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-container .wp-color-result.button {
 	grid-column: 1;
 	grid-row: 1;
 	height: 38px;
@@ -56,7 +56,7 @@
 }
 
 /* Alpha: one swatch — full-area color (incl. transparency) over vendor checkerboard (no split strip) */
-.sto-option-panel-wrapper .sto-field-row-color .sto-color-wrap.sto-color--alpha .wp-color-result.button .color-alpha {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-color-wrap.sto-color--alpha .wp-color-result.button .color-alpha {
 	left: 0 !important;
 	right: 0 !important;
 	top: 0 !important;
@@ -67,7 +67,7 @@
 	z-index: 1;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .wp-color-result-text {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-color-result-text {
 	display: none !important;
 }
 
@@ -75,7 +75,7 @@
  * Row 1: swatch + wrap (hex/rgba field + default + clear). Value field is visible
  * for manual entry; Iris / wp-color-picker-alpha keep it in sync with the picker.
  */
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-input-wrap {
 	grid-column: 2;
 	grid-row: 1;
 	position: relative;
@@ -92,7 +92,7 @@
 	justify-self: start;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap.hidden {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-input-wrap.hidden {
 	display: inline-flex !important;
 }
 
@@ -100,7 +100,7 @@
  * Core wraps the field in <label> then places Default after it — flex children
  * of .wp-picker-input-wrap are [label, button], not [input, button].
  */
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap > label {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-input-wrap > label {
 	position: relative !important;
 	display: inline-flex !important;
 	align-items: center;
@@ -116,7 +116,7 @@
 	order: 0;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap > label .screen-reader-text {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-input-wrap > label .screen-reader-text {
 	position: absolute !important;
 	width: 1px !important;
 	height: 1px !important;
@@ -128,7 +128,7 @@
 	border: 0 !important;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap input[type="text"].wp-color-picker {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-input-wrap input[type="text"].wp-color-picker {
 	float: none !important;
 	position: relative !important;
 	left: auto !important;
@@ -159,14 +159,14 @@
 	transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap input[type="text"].wp-color-picker:focus {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-input-wrap input[type="text"].wp-color-picker:focus {
 	border-color: #2271b1 !important;
 	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12)) !important;
 	outline: none !important;
 }
 
 /* “Default” is a text control — do not force 38px square (clips label). Clear stays compact. */
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap .button.wp-picker-default {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-input-wrap .button.wp-picker-default {
 	order: 2;
 	display: inline-flex;
 	align-items: center;
@@ -182,7 +182,7 @@
 	white-space: nowrap;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap .button.wp-picker-clear {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-input-wrap .button.wp-picker-clear {
 	order: 2;
 	display: inline-flex;
 	align-items: center;
@@ -198,12 +198,12 @@
 }
 
 /* Closed: Iris target is still in the tree — hide the holder so border/padding don’t read as a second “input” */
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-container:not(.wp-picker-active) .wp-picker-holder {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-container:not(.wp-picker-active) .wp-picker-holder {
 	display: none !important;
 }
 
 /* Open: popover shell + Iris (trim inline-block gap above square) */
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-container.wp-picker-active .wp-picker-holder {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-container.wp-picker-active .wp-picker-holder {
 	display: block;
 	grid-column: 1 / -1;
 	grid-row: 2;
@@ -220,34 +220,34 @@
 	line-height: 0;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .wp-picker-container.wp-picker-active .wp-picker-holder .iris-picker {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .wp-picker-container.wp-picker-active .wp-picker-holder .iris-picker {
 	vertical-align: top;
 	line-height: normal;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .iris-picker {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .iris-picker {
 	border: 0 !important;
 	margin: 0 !important;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .iris-border {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .iris-border {
 	margin: 0 !important;
 	border-radius: 4px;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .iris-picker-inner {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .iris-picker-inner {
 	vertical-align: top;
 }
 
 /* Alpha strip: checkerboard + gradient (script sets background) */
-.sto-option-panel-wrapper .sto-field-row-color .iris-strip.iris-strip-alpha {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .iris-strip.iris-strip-alpha {
 	border-radius: 3px;
 	overflow: hidden;
 	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
 /* External reset */
-.sto-option-panel-wrapper .sto-field-row-color .sto-color-reset {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-color-reset {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -265,13 +265,13 @@
 	align-self: center;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .sto-color-reset:hover {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-color-reset:hover {
 	border-color: #2271b1;
 	color: #2271b1;
 	background: #f6f7f7;
 }
 
-.sto-option-panel-wrapper .sto-field-row-color .sto-color-reset i {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-color-reset i {
 	font-size: 15px;
 	line-height: 1;
 }
@@ -281,7 +281,7 @@
 }
 
 /* Tighter copy under the control row */
-.sto-option-panel-wrapper .sto-field-row-color .sto-field-description {
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-field-description {
 	margin-top: 6px;
 }
 

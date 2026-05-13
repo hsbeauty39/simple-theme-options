@@ -1,5 +1,5 @@
 /**
- * Gradient field — bar + pins, flip, single-stop editor, type/angle, optional popover.
+ * Gradient field — preview strip, popover / inline, draggable pins, click bar to add stop, Flip, type/angle.
  *
  * @see window.stoInitGradientControls
  */
@@ -14,6 +14,8 @@
             { color: '#ffffff', position: '100' }
         ]
     };
+
+    var activeDrag = null;
 
     function parseHidden($hidden) {
         var raw = String($hidden.val() || '').trim();
@@ -88,12 +90,38 @@
         return 'linear-gradient(' + ang + 'deg, ' + blob + ')';
     }
 
+    /** Thin stop rail: always left → right so a 14px bar never paints a steep linear or radial as a “page stripe”. */
+    function compileStopRailCss(data) {
+        var d = $.extend(true, {}, DEFAULT_SHAPE, data || {});
+        var parts = [];
+        for (var i = 0; i < d.stops.length; i++) {
+            var st = d.stops[i];
+            if (!st) {
+                continue;
+            }
+            var c = String(st.color || '').trim();
+            var p = String(st.position != null ? st.position : '0').trim();
+            if (!c) {
+                continue;
+            }
+            parts.push(c + ' ' + p + '%');
+        }
+        if (parts.length < 2) {
+            return 'linear-gradient(90deg, #2271b1 0%, #ffffff 100%)';
+        }
+        return 'linear-gradient(90deg, ' + parts.join(', ') + ')';
+    }
+
     function updatePreview($wrap) {
         var $hidden = $wrap.find('> .sto-gradient-value');
         var cur = parseHidden($hidden);
         var css = compilePreviewCss(cur);
+        var railCss = compileStopRailCss(cur);
         $wrap.find('[data-sto-gradient-preview]').each(function() {
             this.style.backgroundImage = css;
+        });
+        $wrap.find('[data-sto-gradient-bar]').each(function() {
+            this.style.backgroundImage = railCss;
         });
     }
 
@@ -131,6 +159,154 @@
             idx = max;
         }
         $wrap.attr('data-sto-gradient-selected', String(idx));
+    }
+
+    function hexToRgb(hex) {
+        var h = String(hex || '').replace(/^#/, '').trim();
+        if (h.length === 3) {
+            h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        }
+        if (h.length !== 6) {
+            return { r: 136, g: 136, b: 136 };
+        }
+        var n = parseInt(h, 16);
+        if (isNaN(n)) {
+            return { r: 136, g: 136, b: 136 };
+        }
+        return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+
+    function rgbToHex(r, g, b) {
+        function c(x) {
+            var s = Math.round(Math.max(0, Math.min(255, x))).toString(16);
+            return s.length === 1 ? '0' + s : s;
+        }
+        return '#' + c(r) + c(g) + c(b);
+    }
+
+    function interpolateColor(stops, t) {
+        var arr = [];
+        for (var i = 0; i < stops.length; i++) {
+            var s = stops[i];
+            arr.push({
+                p: parseFloat(String(s.position != null ? s.position : '0'), 10) || 0,
+                c: String(s.color || '#888888')
+            });
+        }
+        arr.sort(function(a, b) {
+            return a.p - b.p;
+        });
+        if (arr.length === 0) {
+            return '#888888';
+        }
+        if (t <= arr[0].p) {
+            return arr[0].c;
+        }
+        if (t >= arr[arr.length - 1].p) {
+            return arr[arr.length - 1].c;
+        }
+        for (var j = 0; j < arr.length - 1; j++) {
+            if (t >= arr[j].p && t <= arr[j + 1].p) {
+                var a = arr[j];
+                var b = arr[j + 1];
+                if (Math.abs(b.p - a.p) < 0.0001) {
+                    return a.c;
+                }
+                var r = (t - a.p) / (b.p - a.p);
+                var A = hexToRgb(a.c);
+                var B = hexToRgb(b.c);
+                return rgbToHex(A.r + (B.r - A.r) * r, A.g + (B.g - A.g) * r, A.b + (B.b - A.b) * r);
+            }
+        }
+        return arr[arr.length - 1].c;
+    }
+
+    function sortStopsReselect(stops, originalIndex) {
+        var tagged = stops.map(function(s, i) {
+            return {
+                color: String(s.color || ''),
+                position: String(s.position != null ? s.position : '0'),
+                _i: i
+            };
+        });
+        tagged.sort(function(a, b) {
+            var pa = parseFloat(a.position);
+            var pb = parseFloat(b.position);
+            if (isNaN(pa)) {
+                pa = 0;
+            }
+            if (isNaN(pb)) {
+                pb = 0;
+            }
+            if (pa !== pb) {
+                return pa - pb;
+            }
+            return a._i - b._i;
+        });
+        var newSel = 0;
+        for (var k = 0; k < tagged.length; k++) {
+            if (tagged[k]._i === originalIndex) {
+                newSel = k;
+                break;
+            }
+        }
+        var out = tagged.map(function(t) {
+            return { color: t.color, position: t.position };
+        });
+        return { stops: out, newIndex: newSel };
+    }
+
+    function getBarwrapEl($wrap) {
+        var el = $wrap.find('[data-sto-gradient-rail] .sto-gradient-viz__barwrap').get(0);
+        return el || null;
+    }
+
+    function percentFromClientX($wrap, clientX) {
+        var el = getBarwrapEl($wrap);
+        if (!el) {
+            return 0;
+        }
+        var rect = el.getBoundingClientRect();
+        if (rect.width <= 0) {
+            return 0;
+        }
+        var pct = ((clientX - rect.left) / rect.width) * 100;
+        return Math.round(Math.max(0, Math.min(100, pct)) * 100) / 100;
+    }
+
+    function ensureColorPicker($wrap) {
+        if ($wrap.data('stoGradColorReady')) {
+            return;
+        }
+        if (typeof window.stoInitColorPickers !== 'function') {
+            return;
+        }
+        var $scope;
+        if (isPopupMode($wrap)) {
+            $scope = $wrap.find('> .sto-gradient-popover');
+        } else {
+            $scope = $wrap.find('.sto-gradient-ui');
+        }
+        if ($scope.length) {
+            window.stoInitColorPickers($scope);
+        } else {
+            window.stoInitColorPickers($wrap);
+        }
+        $wrap.data('stoGradColorReady', 1);
+    }
+
+    function openColorPicker($wrap) {
+        ensureColorPicker($wrap);
+        window.setTimeout(function() {
+            var $input = $wrap.find('[data-sto-gradient-active-color]');
+            var $c = $input.closest('.wp-picker-container');
+            var $btn = $c.find('.wp-color-result').first();
+            if ($btn.length) {
+                $btn.trigger('click');
+            } else {
+                $input.trigger('focus');
+            }
+        }, 10);
     }
 
     function readFormIntoState($wrap) {
@@ -185,14 +361,7 @@
     function refreshToolbar($wrap) {
         var cur = parseHidden($wrap.find('> .sto-gradient-value'));
         var n = cur.stops.length;
-        var mx = maxStops($wrap);
-        var $add = $wrap.find('[data-sto-gradient-add-stop]');
         var $rm = $wrap.find('[data-sto-gradient-remove-stop]');
-        if (n >= mx) {
-            $add.attr('hidden', 'hidden');
-        } else {
-            $add.removeAttr('hidden');
-        }
         if (n > 2) {
             $rm.removeAttr('hidden');
         } else {
@@ -223,7 +392,7 @@
                 $btn.attr('data-sto-gradient-pin', String(idx));
                 $btn.attr('role', 'tab');
                 $btn.attr('aria-selected', idx === sel ? 'true' : 'false');
-                $btn.attr('aria-label', 'Stop ' + (idx + 1) + ', ' + Math.round(p) + '%');
+                $btn.attr('aria-label', 'Stop ' + (idx + 1) + ', ' + Math.round(p) + '% — drag to move, click to pick color');
                 $btn.css('left', p + '%');
                 if (idx === sel) {
                     $btn.addClass('sto-gradient-pin--active');
@@ -282,17 +451,159 @@
         return out;
     }
 
-    function bindPinClicks($wrap) {
-        $wrap.off('click.stoGradPin').on('click.stoGradPin', '[data-sto-gradient-pin]', function(e) {
-            e.preventDefault();
+    function getEventClientXY(e) {
+        var o = e.originalEvent;
+        if (o && o.touches && o.touches.length) {
+            return { x: o.touches[0].clientX, y: o.touches[0].clientY };
+        }
+        if (o && o.changedTouches && o.changedTouches.length) {
+            return { x: o.changedTouches[0].clientX, y: o.changedTouches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    }
+
+    function onPinPointerMove(e) {
+        if (!activeDrag) {
+            return;
+        }
+        var xy = getEventClientXY(e);
+        var dx = Math.abs(xy.x - activeDrag.startClientX);
+        var dy = Math.abs(xy.y - activeDrag.startClientY);
+        if (dx + dy > 4) {
+            activeDrag.moved = true;
+            activeDrag.$wrap.addClass('sto-gradient-control--is-dragging');
+            if (e.type === 'touchmove') {
+                e.preventDefault();
+            }
+        }
+        if (!activeDrag.moved) {
+            return;
+        }
+        var pct = percentFromClientX(activeDrag.$wrap, xy.x);
+        var $hidden = activeDrag.$wrap.find('> .sto-gradient-value');
+        var cur = parseHidden($hidden);
+        var idx = activeDrag.idx;
+        if (!cur.stops[idx]) {
+            return;
+        }
+        cur.stops[idx].position = String(pct);
+        var sorted = sortStopsReselect(cur.stops, idx);
+        cur.stops = sorted.stops;
+        activeDrag.idx = sorted.newIndex;
+        $hidden.val(JSON.stringify(cur)).trigger('change');
+        activeDrag.$wrap.attr('data-sto-gradient-selected', String(sorted.newIndex));
+        loadActiveIntoEditors(activeDrag.$wrap);
+        updatePreview(activeDrag.$wrap);
+        refreshPins(activeDrag.$wrap);
+        refreshToolbar(activeDrag.$wrap);
+    }
+
+    function onPinPointerUp() {
+        if (!activeDrag) {
+            return;
+        }
+        var $wrap = activeDrag.$wrap;
+        var moved = activeDrag.moved;
+        $(document).off('mousemove.stoGradDrag touchmove.stoGradDrag mouseup.stoGradDrag touchend.stoGradDrag pointercancel.stoGradDrag');
+        $wrap.removeClass('sto-gradient-control--is-dragging');
+        if (moved) {
             syncFromInputs($wrap);
-            var idx = parseInt(String($(this).attr('data-sto-gradient-pin')), 10);
+            if (typeof window.stoApplyDependentFieldVisibility === 'function') {
+                window.stoApplyDependentFieldVisibility();
+            }
+        } else {
+            window.setTimeout(function() {
+                openColorPicker($wrap);
+            }, 0);
+        }
+        activeDrag = null;
+    }
+
+    function bindPinsAndRail($wrap) {
+        $wrap.off('mousedown.stoGradPin pointerdown.stoGradPin', '[data-sto-gradient-pin]');
+        $wrap.on('mousedown.stoGradPin pointerdown.stoGradPin', '[data-sto-gradient-pin]', function(e) {
+            if (e.type === 'pointerdown' && e.pointerType && e.pointerType !== 'mouse' && e.pointerType !== 'pen') {
+                return;
+            }
+            if (e.button !== 0 && e.button !== undefined) {
+                return;
+            }
+            e.preventDefault();
+            if (activeDrag) {
+                return;
+            }
+            var $pin = $(this);
+            var $w = $pin.closest('[data-sto-gradient-control]');
+            syncFromInputs($w);
+            var idx = parseInt(String($pin.attr('data-sto-gradient-pin')), 10);
             if (isNaN(idx)) {
                 return;
             }
-            $wrap.attr('data-sto-gradient-selected', String(idx));
-            loadActiveIntoEditors($wrap);
-            refreshPins($wrap);
+            $w.attr('data-sto-gradient-selected', String(idx));
+            loadActiveIntoEditors($w);
+            refreshPins($w);
+            activeDrag = {
+                $wrap: $w,
+                idx: idx,
+                startClientX: getEventClientXY(e).x,
+                startClientY: getEventClientXY(e).y,
+                moved: false
+            };
+            $(document).on('mousemove.stoGradDrag touchmove.stoGradDrag', onPinPointerMove);
+            $(document).on('mouseup.stoGradDrag touchend.stoGradDrag pointercancel.stoGradDrag', onPinPointerUp);
+        });
+
+        $wrap.off('click.stoGradHit', '[data-sto-gradient-hit]');
+        $wrap.on('click.stoGradHit', '[data-sto-gradient-hit]', function(e) {
+            e.preventDefault();
+            var $w = $(this).closest('[data-sto-gradient-control]');
+            if (activeDrag && activeDrag.moved) {
+                return;
+            }
+            var $rail = $(this).closest('[data-sto-gradient-rail]');
+            var $bw = $rail.find('.sto-gradient-viz__barwrap');
+            if (!$bw.length) {
+                return;
+            }
+            var rect = $bw[0].getBoundingClientRect();
+            var pct = Math.round(Math.max(0, Math.min(100, ((e.clientX - rect.left) / Math.max(rect.width, 1)) * 100)) * 100) / 100;
+            syncFromInputs($w);
+            var $hidden = $w.find('> .sto-gradient-value');
+            var cur = parseHidden($hidden);
+            var mx = maxStops($w);
+            var minD = 100;
+            var closeIdx = -1;
+            for (var i = 0; i < cur.stops.length; i++) {
+                var dp = Math.abs(parseFloat(String(cur.stops[i].position != null ? cur.stops[i].position : '0'), 10) - pct);
+                if (dp < minD) {
+                    minD = dp;
+                    closeIdx = i;
+                }
+            }
+            if (minD <= 5 && closeIdx >= 0) {
+                $w.attr('data-sto-gradient-selected', String(closeIdx));
+                loadActiveIntoEditors($w);
+                refreshPins($w);
+                openColorPicker($w);
+                return;
+            }
+            if (cur.stops.length >= mx) {
+                return;
+            }
+            var col = interpolateColor(cur.stops, pct);
+            cur.stops.push({ color: col, position: String(pct) });
+            var sorted = sortStopsReselect(cur.stops, cur.stops.length - 1);
+            cur.stops = sorted.stops;
+            writeHidden($hidden, cur);
+            $w.attr('data-sto-gradient-selected', String(sorted.newIndex));
+            loadActiveIntoEditors($w);
+            updatePreview($w);
+            refreshPins($w);
+            refreshToolbar($w);
+            openColorPicker($w);
+            if (typeof window.stoApplyDependentFieldVisibility === 'function') {
+                window.stoApplyDependentFieldVisibility();
+            }
         });
     }
 
@@ -323,6 +634,7 @@
             .on('input.stoGradAct change.stoGradAct', '[data-sto-gradient-active-color], [data-sto-gradient-active-position]', function() {
                 syncFromInputs($wrap);
             });
+        $wrap.off('click.stoGradActReset', '.sto-gradient-active-color-wrap .sto-color-reset');
         $wrap.on('click.stoGradActReset', '.sto-gradient-active-color-wrap .sto-color-reset', function() {
             window.setTimeout(function() {
                 syncFromInputs($wrap);
@@ -331,52 +643,19 @@
     }
 
     function bindTypeAngle($wrap) {
-        $wrap.find('select[data-sto-gradient-input="type"]').on('change.stoGradTA', function() {
+        $wrap.off('change.stoGradTA', 'select[data-sto-gradient-input="type"]');
+        $wrap.on('change.stoGradTA', 'select[data-sto-gradient-input="type"]', function() {
             syncFromInputs($wrap);
         });
-        $wrap.find('input[type="number"][data-sto-gradient-input="angle"]').on('input.stoGradTA change.stoGradTA', function() {
+        $wrap.off('input.stoGradTA change.stoGradTA', 'input[type="number"][data-sto-gradient-input="angle"]');
+        $wrap.on('input.stoGradTA change.stoGradTA', 'input[type="number"][data-sto-gradient-input="angle"]', function() {
             syncFromInputs($wrap);
         });
     }
 
-    function bindAddRemove($wrap) {
-        $wrap.off('click.stoGradAddRm');
-        $wrap.on('click.stoGradAddRm', '[data-sto-gradient-add-stop]', function(e) {
-            e.preventDefault();
-            var $hidden = $wrap.find('> .sto-gradient-value');
-            var cur = parseHidden($hidden);
-            if (cur.stops.length >= maxStops($wrap)) {
-                return;
-            }
-            syncFromInputs($wrap);
-            cur = parseHidden($hidden);
-            var last = cur.stops[cur.stops.length - 1];
-            var prev = cur.stops[cur.stops.length - 2];
-            var p1 = parseFloat(String(prev.position != null ? prev.position : '0'), 10);
-            var p2 = parseFloat(String(last.position != null ? last.position : '100'), 10);
-            if (isNaN(p1)) {
-                p1 = 0;
-            }
-            if (isNaN(p2)) {
-                p2 = 100;
-            }
-            var mid = Math.round((p1 + p2) / 2);
-            cur.stops.splice(cur.stops.length - 1, 0, {
-                color: String(last.color || '#ffffff'),
-                position: String(mid)
-            });
-            writeHidden($hidden, cur);
-            $wrap.attr('data-sto-gradient-selected', String(cur.stops.length - 2));
-            loadActiveIntoEditors($wrap);
-            updatePreview($wrap);
-            refreshPins($wrap);
-            refreshToolbar($wrap);
-            if (typeof window.stoApplyDependentFieldVisibility === 'function') {
-                window.stoApplyDependentFieldVisibility();
-            }
-        });
-
-        $wrap.on('click.stoGradAddRm', '[data-sto-gradient-remove-stop]', function(e) {
+    function bindRemoveStop($wrap) {
+        $wrap.off('click.stoGradRm', '[data-sto-gradient-remove-stop]');
+        $wrap.on('click.stoGradRm', '[data-sto-gradient-remove-stop]', function(e) {
             e.preventDefault();
             var $hidden = $wrap.find('> .sto-gradient-value');
             var cur = parseHidden($hidden);
@@ -452,7 +731,7 @@
     }
 
     function bindToggle($wrap) {
-        $wrap.find('[data-sto-gradient-edit-toggle]').on('click.stoGrad', function(e) {
+        $wrap.find('[data-sto-gradient-edit-toggle]').off('click.stoGrad').on('click.stoGrad', function(e) {
             e.preventDefault();
             togglePopover($wrap);
         });
@@ -499,9 +778,9 @@
                 defaults = $.extend(true, {}, DEFAULT_SHAPE);
             }
             $row.find('[data-sto-gradient-control]').each(function() {
-                var $wrap = $(this);
-                applyValuesToInputs($wrap, defaults);
-                syncFromInputs($wrap);
+                var $w = $(this);
+                applyValuesToInputs($w, defaults);
+                syncFromInputs($w);
             });
             if (typeof window.stoApplyDependentFieldVisibility === 'function') {
                 window.stoApplyDependentFieldVisibility();
@@ -519,11 +798,11 @@
         $wrap.data('stoGradInit', 1);
         $wrap.attr('data-sto-gradient-selected', $wrap.attr('data-sto-gradient-selected') || '0');
 
-        bindPinClicks($wrap);
+        bindPinsAndRail($wrap);
         bindFlip($wrap);
         bindActiveEditors($wrap);
         bindTypeAngle($wrap);
-        bindAddRemove($wrap);
+        bindRemoveStop($wrap);
 
         if (isPopupMode($wrap)) {
             bindToggle($wrap);
