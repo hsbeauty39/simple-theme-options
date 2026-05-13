@@ -222,7 +222,11 @@
 	outline: none;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-control--is-dragging .sto-gradient-pin {
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-control--hold-ready .sto-gradient-pin--active {
+	cursor: grab;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-control--hold-ready.sto-gradient-control--is-dragging .sto-gradient-pin--active {
 	cursor: grabbing;
 }
 

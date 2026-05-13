@@ -16,6 +16,12 @@
     };
 
     var activeDrag = null;
+    /** Press-and-hold on a pin before drag arms; quick click = select + color only. */
+    var pinPending = null;
+
+    var PIN_HOLD_MS = 220;
+    var PIN_PRE_HOLD_CANCEL_PX = 10;
+    var PIN_DRAG_ARM_PX = 4;
 
     function parseHidden($hidden) {
         var raw = String($hidden.val() || '').trim();
@@ -521,7 +527,7 @@
                 $btn.attr('data-sto-gradient-pin', String(idx));
                 $btn.attr('role', 'tab');
                 $btn.attr('aria-selected', idx === sel ? 'true' : 'false');
-                $btn.attr('aria-label', 'Stop ' + (idx + 1) + ', ' + Math.round(p) + '% — drag to move, click to pick color');
+                $btn.attr('aria-label', 'Stop ' + (idx + 1) + ', ' + Math.round(p) + '% — click to pick color; hold, then drag to move');
                 $btn.css('left', p + '%');
                 if (idx === sel) {
                     $btn.addClass('sto-gradient-pin--active');
@@ -580,6 +586,87 @@
         return out;
     }
 
+    function clearPinDocumentListeners() {
+        $(document).off(
+            'mousemove.stoGradPin touchmove.stoGradPin mouseup.stoGradPin touchend.stoGradPin pointercancel.stoGradPin'
+        );
+    }
+
+    function clearPinPending() {
+        if (!pinPending) {
+            return;
+        }
+        window.clearTimeout(pinPending.holdTimer);
+        pinPending.$wrap.removeClass('sto-gradient-control--hold-ready');
+        pinPending = null;
+        clearPinDocumentListeners();
+    }
+
+    function pinDocumentMoveUnified(e) {
+        if (activeDrag) {
+            onPinPointerMove(e);
+            return;
+        }
+        if (!pinPending) {
+            return;
+        }
+        var xy = getEventClientXY(e);
+        var dist = Math.abs(xy.x - pinPending.startX) + Math.abs(xy.y - pinPending.startY);
+        if (!pinPending.holdArmed) {
+            if (dist > PIN_PRE_HOLD_CANCEL_PX) {
+                clearPinPending();
+            }
+            return;
+        }
+        if (dist > PIN_DRAG_ARM_PX) {
+            beginDragFromPending(xy);
+        }
+    }
+
+    function beginDragFromPending(xy) {
+        if (!pinPending) {
+            return;
+        }
+        var p = pinPending;
+        var $w = p.$wrap;
+        var idx = p.idx;
+        window.clearTimeout(p.holdTimer);
+        $w.removeClass('sto-gradient-control--hold-ready');
+        pinPending = null;
+        activeDrag = {
+            $wrap: $w,
+            idx: idx,
+            startClientX: p.startX,
+            startClientY: p.startY,
+            moved: true
+        };
+        $w.addClass('sto-gradient-control--is-dragging');
+        onPinPointerMove({ clientX: xy.x, clientY: xy.y, type: 'mousemove' });
+    }
+
+    function pinDocumentUpUnified(e) {
+        if (activeDrag) {
+            onPinPointerUp();
+            return;
+        }
+        if (!pinPending) {
+            return;
+        }
+        var $w = pinPending.$wrap;
+        window.clearTimeout(pinPending.holdTimer);
+        $w.removeClass('sto-gradient-control--hold-ready');
+        var xy = getEventClientXY(e || { clientX: pinPending.startX, clientY: pinPending.startY });
+        var dist = Math.abs(xy.x - pinPending.startX) + Math.abs(xy.y - pinPending.startY);
+        var wasArmed = pinPending.holdArmed;
+        pinPending = null;
+        clearPinDocumentListeners();
+        if (dist <= PIN_PRE_HOLD_CANCEL_PX + 2 || wasArmed) {
+            window.setTimeout(function() {
+                openColorPicker($w);
+            }, 0);
+        }
+    }
+
     function getEventClientXY(e) {
         var o = e.originalEvent;
         if (o && o.touches && o.touches.length) {
@@ -634,17 +721,15 @@
         }
         var $wrap = activeDrag.$wrap;
         var moved = activeDrag.moved;
-        $(document).off('mousemove.stoGradDrag touchmove.stoGradDrag mouseup.stoGradDrag touchend.stoGradDrag pointercancel.stoGradDrag');
+        $(document).off(
+            'mousemove.stoGradPin touchmove.stoGradPin mouseup.stoGradPin touchend.stoGradPin pointercancel.stoGradPin'
+        );
         $wrap.removeClass('sto-gradient-control--is-dragging');
         if (moved) {
             syncFromInputs($wrap);
             if (typeof window.stoApplyDependentFieldVisibility === 'function') {
                 window.stoApplyDependentFieldVisibility();
             }
-        } else {
-            window.setTimeout(function() {
-                openColorPicker($wrap);
-            }, 0);
         }
         activeDrag = null;
     }
@@ -662,6 +747,9 @@
             if (activeDrag) {
                 return;
             }
+            if (pinPending) {
+                clearPinPending();
+            }
             var $pin = $(this);
             var $w = $pin.closest('[data-sto-gradient-control]');
             syncFromInputs($w);
@@ -673,21 +761,31 @@
             loadActiveIntoEditors($w);
             showColorDock($w);
             refreshPins($w);
-            activeDrag = {
+            pinPending = {
                 $wrap: $w,
                 idx: idx,
-                startClientX: getEventClientXY(e).x,
-                startClientY: getEventClientXY(e).y,
-                moved: false
+                startX: getEventClientXY(e).x,
+                startY: getEventClientXY(e).y,
+                holdArmed: false,
+                holdTimer: window.setTimeout(function() {
+                    if (!pinPending) {
+                        return;
+                    }
+                    pinPending.holdArmed = true;
+                    pinPending.$wrap.addClass('sto-gradient-control--hold-ready');
+                }, PIN_HOLD_MS)
             };
-            $(document).on('mousemove.stoGradDrag touchmove.stoGradDrag', onPinPointerMove);
-            $(document).on('mouseup.stoGradDrag touchend.stoGradDrag pointercancel.stoGradDrag', onPinPointerUp);
+            $(document).on('mousemove.stoGradPin touchmove.stoGradPin', pinDocumentMoveUnified);
+            $(document).on('mouseup.stoGradPin touchend.stoGradPin pointercancel.stoGradPin', pinDocumentUpUnified);
         });
 
         $wrap.off('click.stoGradHit', '[data-sto-gradient-hit]');
         $wrap.on('click.stoGradHit', '[data-sto-gradient-hit]', function(e) {
             e.preventDefault();
             var $w = $(this).closest('[data-sto-gradient-control]');
+            if (pinPending) {
+                clearPinPending();
+            }
             if (activeDrag && activeDrag.moved) {
                 return;
             }

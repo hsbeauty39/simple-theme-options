@@ -122,7 +122,7 @@
         }
         var want = normalizeCompareColor($input.val());
         var $container = $input.closest('.wp-picker-container');
-        var $links = $container.find('.iris-palette a');
+        var $links = $container.find('.iris-palette-container a.iris-palette');
         if (!$links.length) {
             return;
         }
@@ -157,7 +157,7 @@
             });
         }
 
-        $container.on('click.stoPaletteUi', '.iris-palette a', function() {
+        $container.on('click.stoPaletteUi', '.iris-palette-container a.iris-palette', function() {
             window.setTimeout(sync, 0);
         });
         $container.on('click.stoPaletteUi', '.wp-color-result', function() {
