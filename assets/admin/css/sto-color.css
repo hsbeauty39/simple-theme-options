@@ -340,9 +340,15 @@
 
 /*
  * Kill Iris default % widths + floats on anchors — layout is grid-only here.
+ * IMPORTANT: `display: grid` without explicit columns becomes a single implicit column; with
+ * `width: 100%` on each `<a>`, every swatch becomes one full-width row (thick horizontal “ladder”).
+ * Always set `grid-template-columns` on the base `--palette-ui` rule; variants only tune track size.
  */
 .sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette {
 	display: grid !important;
+	grid-template-columns: repeat(auto-fill, 32px);
+	gap: 10px;
+	justify-content: start;
 	width: 100% !important;
 	max-width: 100% !important;
 	float: none !important;
@@ -355,6 +361,7 @@
 	box-sizing: border-box;
 	align-items: start;
 	justify-items: center;
+	min-width: 0;
 }
 
 .sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a {
@@ -364,9 +371,11 @@
 	margin: 0 !important;
 	box-sizing: border-box !important;
 	cursor: pointer;
-	/* Iris inline / embedded % widths — force pixel box */
+	/* Fill the fixed grid cell (track width comes from `grid-template-columns` above). */
 	width: 100% !important;
 	height: 100% !important;
+	min-width: 0 !important;
+	min-height: 28px !important;
 	max-width: none !important;
 }
 
