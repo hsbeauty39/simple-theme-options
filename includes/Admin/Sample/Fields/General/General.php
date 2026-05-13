@@ -33,6 +33,9 @@ final class General {
 		Range::instance();
 		Tabs::instance();
 		Switcher::instance();
+		// Priority 18: boot Select + DynamicObject before CheckboxControl so **layout-nav** rows render in nav order (selects → search pickers → tiles), not tiles first.
+		Select::instance();
+		DynamicObject::instance();
 		CheckboxControl::instance();
 		Typography::instance();
 		BorderControl::instance();
@@ -156,7 +159,7 @@ final class General {
 					),
 				),
 				array(
-					'section_slug'  => 'layout-type',
+					'section_slug'  => 'layout-nav',
 					'id'            => 'layout_demo_checkbox_multi',
 					'title'         => __( 'Multi-check tiles', 'simple-theme-options' ),
 					'description'   => __( 'Several option keys; native inputs stay for POST but are screen-reader only. Optional max selections and fixed column count.', 'simple-theme-options' ),
