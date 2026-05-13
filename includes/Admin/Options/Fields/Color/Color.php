@@ -86,6 +86,9 @@ final class Color {
 		$field['required']     = isset( $field['required'] ) && is_array( $field['required'] ) ? $field['required'] : array();
 		$field['group']        = isset( $field['group'] ) ? sanitize_key( (string) $field['group'] ) : '';
 		$field['palettes']     = isset( $field['palettes'] ) && is_array( $field['palettes'] ) ? $field['palettes'] : array();
+		$palette_ui_raw       = isset( $field['palette_ui'] ) ? sanitize_key( (string) $field['palette_ui'] ) : 'classic';
+		$palette_ui_allowed   = array( 'classic', 'advanced', 'advanced-circles', 'advanced-dense' );
+		$field['palette_ui']  = in_array( $palette_ui_raw, $palette_ui_allowed, true ) ? $palette_ui_raw : 'classic';
 		if ( ! array_key_exists( 'alpha', $field ) ) {
 			$field['alpha'] = true;
 		} else {
@@ -309,6 +312,10 @@ final class Color {
 				$palettes_clean[] = $ph;
 			}
 		}
+		$palette_ui = isset( $field['palette_ui'] ) ? sanitize_key( (string) $field['palette_ui'] ) : 'classic';
+		if ( 'classic' !== $palette_ui && empty( $palettes_clean ) ) {
+			$palettes_clean = self::built_in_advanced_palettes();
+		}
 		$palettes_json = ! empty( $palettes_clean ) ? wp_json_encode( $palettes_clean ) : '';
 
 		$breakpoints   = isset( $field['responsive_breakpoints'] ) && is_array( $field['responsive_breakpoints'] ) ? $field['responsive_breakpoints'] : null;
@@ -365,7 +372,7 @@ final class Color {
 				}
 				$input_name = 'sto_options[' . $field_id . '][' . $tabs_pane_bp . ']';
 				$input_id   = $field_id . '_' . $tabs_pane_bp;
-				$this->render_color_control( $input_id, $input_name, $cur, $default_color, $use_alpha, $input_class, $palettes_json );
+				$this->render_color_control( $input_id, $input_name, $cur, $default_color, $use_alpha, $input_class, $palettes_json, $palette_ui );
 				?>
 			<?php elseif ( ! empty( $bps_storage ) ) : ?>
 				<div class="sto-responsive">
@@ -382,7 +389,7 @@ final class Color {
 						$input_name = 'sto_options[' . $field_id . '][' . $bp . ']';
 						$input_id   = $field_id . '_' . $bp;
 						ResponsiveControl::render_pane_start( $bp, $visible );
-						$this->render_color_control( $input_id, $input_name, $cur, $default_color, $use_alpha, $input_class, $palettes_json );
+						$this->render_color_control( $input_id, $input_name, $cur, $default_color, $use_alpha, $input_class, $palettes_json, $palette_ui );
 						ResponsiveControl::render_pane_end();
 					endforeach;
 					ResponsiveControl::render_panes_close();
@@ -395,7 +402,7 @@ final class Color {
 					$current = $default_color;
 				}
 				$input_name = 'sto_options[' . $field_id . ']';
-				$this->render_color_control( $field_id, $input_name, $current, $default_color, $use_alpha, $input_class, $palettes_json );
+				$this->render_color_control( $field_id, $input_name, $current, $default_color, $use_alpha, $input_class, $palettes_json, $palette_ui );
 				?>
 			<?php endif; ?>
 
@@ -414,11 +421,33 @@ final class Color {
 	 * @param bool   $use_alpha
 	 * @param string $input_class
 	 * @param string $palettes_json JSON or empty.
+	 * @param string $palette_ui    classic|advanced|advanced-circles|advanced-dense
 	 */
-	private function render_color_control( $input_id, $input_name, $current, $default_color, $use_alpha, $input_class, $palettes_json ) {
+	private function render_color_control( $input_id, $input_name, $current, $default_color, $use_alpha, $input_class, $palettes_json, $palette_ui = 'classic' ) {
+		$palette_ui = sanitize_key( (string) $palette_ui );
+		if ( ! in_array( $palette_ui, array( 'classic', 'advanced', 'advanced-circles', 'advanced-dense' ), true ) ) {
+			$palette_ui = 'classic';
+		}
+		$wrap_classes = array( 'sto-color-wrap' );
+		if ( $use_alpha ) {
+			$wrap_classes[] = 'sto-color--alpha';
+		}
+		if ( 'classic' !== $palette_ui ) {
+			$wrap_classes[] = 'sto-color-wrap--palette-ui';
+			if ( 'advanced-circles' === $palette_ui ) {
+				$wrap_classes[] = 'sto-color-wrap--palette-circles';
+			} elseif ( 'advanced-dense' === $palette_ui ) {
+				$wrap_classes[] = 'sto-color-wrap--palette-dense';
+			} else {
+				$wrap_classes[] = 'sto-color-wrap--palette-advanced';
+			}
+		}
 		?>
 			<div
-				class="sto-color-wrap<?php echo $use_alpha ? ' sto-color--alpha' : ''; ?>"
+				class="<?php echo esc_attr( implode( ' ', $wrap_classes ) ); ?>"
+				<?php if ( 'classic' !== $palette_ui ) : ?>
+					data-sto-palette-ui="<?php echo esc_attr( $palette_ui ); ?>"
+				<?php endif; ?>
 				<?php if ( $palettes_json ) : ?>
 					data-sto-palettes="<?php echo esc_attr( $palettes_json ); ?>"
 				<?php endif; ?>
@@ -496,5 +525,27 @@ final class Color {
 		}
 
 		return $default_color;
+	}
+
+	/**
+	 * Curated hex list for advanced palette UIs when `palette_ui` is non-classic and `palettes` is empty.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function built_in_advanced_palettes(): array {
+		$p = array(
+			'#000000', '#141414', '#2b2b2b', '#404040', '#5a5a5a', '#787878', '#9e9e9e', '#bdbdbd', '#e0e0e0', '#f5f5f5', '#ffffff',
+			'#e53935', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5', '#039be5', '#00acc1', '#00897b', '#43a047',
+			'#7cb342', '#c0ca33', '#fdd835', '#ffb300', '#fb8c00', '#f4511e', '#5d4037', '#78909c',
+			'#ffebee', '#fce4ec', '#f3e5f5', '#ede7f6', '#e8eaf6', '#e3f2fd', '#e0f7fa', '#e0f2f1', '#e8f5e9', '#fff8e1', '#fbe9e7',
+			'#880e4f', '#4a148c', '#1a237e', '#0d47a1', '#01579b', '#004d40', '#1b5e20', '#bf360c', '#3e2723',
+		);
+
+		/**
+		 * Filters the built-in preset list used when `palette_ui` is `advanced*` and no custom `palettes` were passed.
+		 *
+		 * @param array<int, string> $p Hex or rgb colors (sanitized on save).
+		 */
+		return apply_filters( 'sto_color_built_in_advanced_palettes', $p );
 	}
 }

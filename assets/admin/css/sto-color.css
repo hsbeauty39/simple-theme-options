@@ -284,3 +284,140 @@
 .sto-option-panel-wrapper .sto-field-row-color .sto-field-description {
 	margin-top: 6px;
 }
+
+/*
+ * Advanced preset palette UI (`palette_ui` => advanced | advanced-circles | advanced-dense).
+ * Wraps Iris swatches in a flex grid, larger hit targets, soft elevation, and a clear “selected” ring.
+ * Inspired by modern palette pickers; stays on STO tokens (--sto-field-soft-*, WP blue accent).
+ */
+.sto-option-panel-wrapper .sto-color-wrap--palette-ui .wp-picker-container.wp-picker-active .wp-picker-holder {
+	border-radius: 12px;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	box-shadow:
+		0 10px 28px rgba(15, 23, 42, 0.1),
+		0 2px 8px rgba(15, 23, 42, 0.06);
+	padding: 10px 12px 12px;
+	background: linear-gradient(180deg, #fafbfc 0%, #fff 40%);
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 8px;
+	max-width: min(100%, 360px);
+	margin-top: 8px !important;
+	padding-top: 8px;
+	border-top: 1px solid rgba(0, 0, 0, 0.06);
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-advanced .iris-picker .iris-palette a {
+	width: 28px !important;
+	height: 28px !important;
+	min-width: 28px !important;
+	min-height: 28px !important;
+	margin: 0 !important;
+	position: relative;
+	border-radius: 9px !important;
+	border: 1px solid rgba(0, 0, 0, 0.12) !important;
+	box-shadow:
+		0 1px 2px rgba(15, 23, 42, 0.06),
+		inset 0 1px 0 rgba(255, 255, 255, 0.35);
+	transition:
+		transform 0.15s ease,
+		box-shadow 0.15s ease,
+		border-color 0.15s ease;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-advanced .iris-picker .iris-palette a:hover {
+	transform: scale(1.08);
+	border-color: rgba(34, 113, 177, 0.45) !important;
+	box-shadow:
+		0 4px 10px rgba(34, 113, 177, 0.18),
+		inset 0 1px 0 rgba(255, 255, 255, 0.45);
+	z-index: 1;
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-circles .iris-picker .iris-palette {
+	gap: 10px 12px;
+	max-width: min(100%, 380px);
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-circles .iris-picker .iris-palette a {
+	width: 34px !important;
+	height: 34px !important;
+	min-width: 34px !important;
+	min-height: 34px !important;
+	position: relative;
+	border-radius: 50% !important;
+	border: 1px solid rgba(0, 0, 0, 0.1) !important;
+	box-shadow:
+		0 2px 6px rgba(15, 23, 42, 0.08),
+		inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	transition:
+		transform 0.18s ease,
+		box-shadow 0.18s ease;
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-circles .iris-picker .iris-palette a:hover {
+	transform: scale(1.12);
+	box-shadow:
+		0 6px 16px rgba(34, 113, 177, 0.2),
+		inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-dense .iris-picker .iris-palette {
+	gap: 4px 5px;
+	max-width: min(100%, 340px);
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-dense .iris-picker .iris-palette a {
+	width: 18px !important;
+	height: 18px !important;
+	min-width: 18px !important;
+	min-height: 18px !important;
+	position: relative;
+	border-radius: 4px !important;
+	margin: 0 !important;
+	border: 1px solid rgba(0, 0, 0, 0.1) !important;
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+	transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-dense .iris-picker .iris-palette a:hover {
+	transform: scale(1.15);
+	z-index: 1;
+	box-shadow: 0 2px 6px rgba(34, 113, 177, 0.25);
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a.sto-palette-swatch--active {
+	transform: scale(1.14);
+	border-color: #2271b1 !important;
+	box-shadow:
+		0 0 0 2px rgba(255, 255, 255, 0.95),
+		0 0 0 4px rgba(34, 113, 177, 0.55),
+		0 6px 14px rgba(34, 113, 177, 0.22) !important;
+	z-index: 2;
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-dense .iris-picker .iris-palette a.sto-palette-swatch--active {
+	transform: scale(1.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a,
+	.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a:hover,
+	.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a.sto-palette-swatch--active {
+		transition: none;
+		transform: none;
+	}
+
+	.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a.sto-palette-swatch--active {
+		outline: 2px solid #2271b1;
+		outline-offset: 2px;
+	}
+}

@@ -4,6 +4,7 @@ namespace SimpleThemeOptions\Admin\Options\Fields\Group;
 use SimpleThemeOptions\Admin\Options\Fields\BackgroundControl\BackgroundControl;
 use SimpleThemeOptions\Admin\Options\Fields\BorderControl\BorderControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
+use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
@@ -50,10 +51,11 @@ final class Group {
 	 * Register a grouped block of fields. `fields` may contain:
 	 * - Select configs (same as Select::register minus section_slug) — must include `options`; optional **`responsive`**, **`device`** (merged with default breakpoint trio; see **`ResponsiveConfig::breakpoints_for_field()`**).
 	 * - Typography: `type` => `typography`, plus `id`, `title`, optional `description`, `default`, `required`, optional **`responsive`**, **`device`**.
-	 * - Color: `type` => `color`, plus `id`, `title`, optional `description`, `default` (hex), `palettes`, `required`, optional **`responsive`**, **`device`**.
+	 * - Color: `type` => `color`, plus `id`, `title`, optional `description`, `default` (hex), `palettes`, optional **`palette_ui`** (`classic` default, or **`advanced`**, **`advanced-circles`**, **`advanced-dense`** for upgraded Iris preset chrome — when non-`classic` and `palettes` is empty, a built-in extended list is used; filter **`sto_color_built_in_advanced_palettes`**), `required`, optional **`responsive`**, **`device`**.
 	 * - Background control: `type` => `background_control`, plus `id`, `title`, optional `description`, `default` => array( `color`, `image_id` ), `palettes`, `alpha`, `required`, `tooltip`, optional **`responsive`**, **`device`**.
 	 * - **Border:** `type` => **`border`**, **`id`**, **`title`**, optional **`description`**, optional **`default`** => array( **`radius`**, **`radius_unit`**, **`style`** (one of **`none`**, **`solid`**, **`dashed`**, **`dotted`**, **`double`**, **`groove`**, **`ridge`**, **`inset`**, **`outset`**), **`width`**, **`width_unit`**, **`color`** ), optional **`features`** => ordered subset of **`radius`**, **`style`**, **`width`**, **`color`** (default: all four; admin omits sections by passing fewer), optional **`min_radius`** / **`max_radius`** / **`min_width`** / **`max_width`** (integer clamps), optional **`radius_units`** => subset of **`px`**, **`%`**, **`em`**, **`rem`** (default **`array( 'px' )`** = locked chip), optional **`width_units`** => subset of **`px`**, **`em`**, **`rem`** (default **`array( 'px' )`**), **`alpha`** (bool, default **true**), **`palettes`**, **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as JSON in **`sto_options[id]`** (or **`sto_options[id][bp]`** when responsive).
 	 * - **Shadow:** `type` => **`shadow`**, **`id`**, **`title`**, optional **`description`**, optional **`default`** => array( **`selector`** (CSS target — **set in PHP only**, not shown in admin), **`color`**, **`horizontal`**, **`vertical`**, **`blur`**, **`spread`**, **`position`** (**`outline`** | **`inset`**) ) or top-level **`selector`** string merged into defaults, optional **`popup`** (bool — **UI only**; when **true**, detailed controls open in a popover; when **false**, controls stay inline), optional **`palettes`**, **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as JSON in **`sto_options[id]`** (same responsive map pattern as Border when enabled).
+	 * - **Gradient:** `type` => **`gradient`**, **`id`**, **`title`**, optional **`description`**, optional **`default`** => array( **`type`** (**`linear`** | **`radial`**), **`angle`** (degrees string, linear), **`stops`** => list of **`array( 'color' => …, 'position' => '0'..'100' )`** ), optional **`popup`** (bool), optional **`max_stops`** (int **2–8**, default **5**), **`alpha`**, **`palettes`**, **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as JSON in **`sto_options[id]`**. Theme: **`sto_get_gradient_background_image( 'id' )`**.
 	 * - Switcher: `type` => `switcher`, plus `id`, `title`, optional `description`, `default` (`1`|`0`), `labels`, `required`, `tooltip`, optional **`responsive`**, **`device`**.
 	 * - **Checkbox / multi-check:** `type` => **`checkbox`**, **`id`**, **`title`**, optional **`description`**, **`multiple`** (bool). Single: **`default`** `1`|`0`, optional **`labels`** (`on` / `off`). Multi: **`options`** (value => label or `label`+`tooltip`), **`default`** (array of keys), optional **`max`**, **`columns`** (1–6), optional **`responsive`**, **`device`**.
 	 * - Image select: `type` => `image_select`, plus `id`, `title`, `options` (value => `label` string or array with `label`, `preset`, optional `image`), `default`, `required`, `tooltip`, optional **`responsive`**, **`device`**.
@@ -247,6 +249,21 @@ final class Group {
 				if ( $fid && ShadowControl::get_field( $section_slug, $fid ) ) {
 					$nodes[] = array(
 						'kind' => 'shadow',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
+			if ( $this->is_gradient_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				GradientControl::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && GradientControl::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'gradient',
 						'id'   => $fid,
 						'span' => $span,
 					);
@@ -470,6 +487,10 @@ final class Group {
 
 	private function is_shadow_item( $item ) {
 		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'shadow' && ! empty( $item['id'] );
+	}
+
+	private function is_gradient_item( $item ) {
+		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'gradient' && ! empty( $item['id'] );
 	}
 
 	private function is_code_editor_item( $item ) {
@@ -796,6 +817,11 @@ final class Group {
 							$shfield = ShadowControl::get_field( $section_slug, (string) $node['id'] );
 							if ( $shfield ) {
 								ShadowControl::instance()->render_field_markup( $shfield, 'group_inner' );
+							}
+						} elseif ( $node['kind'] === 'gradient' && ! empty( $node['id'] ) ) {
+							$gfield = GradientControl::get_field( $section_slug, (string) $node['id'] );
+							if ( $gfield ) {
+								GradientControl::instance()->render_field_markup( $gfield, 'group_inner' );
 							}
 						} elseif ( $node['kind'] === 'code_editor' && ! empty( $node['id'] ) ) {
 							$cefield = CodeEditor::get_field( $section_slug, (string) $node['id'] );
