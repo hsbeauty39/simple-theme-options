@@ -287,9 +287,15 @@
 
 /*
  * Advanced preset palette UI (`palette_ui` => advanced | advanced-circles | advanced-dense).
- * Wraps Iris swatches in a flex grid, larger hit targets, soft elevation, and a clear “selected” ring.
- * Inspired by modern palette pickers; stays on STO tokens (--sto-field-soft-*, WP blue accent).
+ * Iris ships embedded rules (percentage widths + floats on `.iris-palette a`) tuned for ~8 swatches;
+ * with many presets + a narrow holder that collapses to a “barcode”. We override with a real grid,
+ * min popover width, larger square handle, and hover / focus-within comfort (see README changelog).
  */
+.sto-option-panel-wrapper .sto-color-wrap--palette-ui .wp-picker-container.wp-picker-active {
+	min-width: min(100%, 300px);
+	z-index: 4;
+}
+
 .sto-option-panel-wrapper .sto-color-wrap--palette-ui .wp-picker-container.wp-picker-active .wp-picker-holder {
 	border-radius: 12px;
 	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
@@ -297,30 +303,86 @@
 		0 10px 28px rgba(15, 23, 42, 0.1),
 		0 2px 8px rgba(15, 23, 42, 0.06);
 	padding: 10px 12px 12px;
+	min-width: min(100%, 280px);
+	max-width: min(calc(100vw - 48px), 440px);
+	width: 100%;
+	box-sizing: border-box;
 	background: linear-gradient(180deg, #fafbfc 0%, #fff 40%);
+	transition:
+		padding 0.18s ease,
+		box-shadow 0.18s ease,
+		min-width 0.18s ease;
 }
 
-.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: flex-start;
-	gap: 8px;
-	max-width: min(100%, 360px);
-	margin-top: 8px !important;
-	padding-top: 8px;
-	border-top: 1px solid rgba(0, 0, 0, 0.06);
+/* Hover / keyboard: give Iris room so sliders + palette stay legible */
+.sto-option-panel-wrapper .sto-color-wrap--palette-ui:hover .wp-picker-container.wp-picker-active .wp-picker-holder,
+.sto-option-panel-wrapper .sto-color-wrap--palette-ui:focus-within .wp-picker-container.wp-picker-active .wp-picker-holder {
+	padding: 12px 14px 14px;
+	min-width: min(100%, 320px);
+	max-width: min(calc(100vw - 40px), 460px);
+	box-shadow:
+		0 14px 36px rgba(15, 23, 42, 0.12),
+		0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-ui .wp-picker-container.wp-picker-active .iris-picker {
+	width: 100% !important;
+	max-width: 100% !important;
 	box-sizing: border-box;
 }
 
-.sto-option-panel-wrapper .sto-color-wrap--palette-advanced .iris-picker .iris-palette a {
-	width: 28px !important;
-	height: 28px !important;
-	min-width: 28px !important;
-	min-height: 28px !important;
-	margin: 0 !important;
+.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette-container {
+	width: 100% !important;
+	max-width: 100% !important;
+	float: none !important;
+	box-sizing: border-box;
+}
+
+/*
+ * Kill Iris default % widths + floats on anchors — layout is grid-only here.
+ */
+.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette {
+	display: grid !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	float: none !important;
+	clear: both !important;
+	margin-top: 10px !important;
+	margin-right: 0 !important;
+	margin-left: 0 !important;
+	padding-top: 10px;
+	border-top: 1px solid rgba(0, 0, 0, 0.06);
+	box-sizing: border-box;
+	align-items: start;
+	justify-items: center;
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a {
+	float: none !important;
+	display: block !important;
 	position: relative;
-	border-radius: 9px !important;
+	margin: 0 !important;
+	box-sizing: border-box !important;
+	cursor: pointer;
+	/* Iris inline / embedded % widths — force pixel box */
+	width: 100% !important;
+	height: 100% !important;
+	max-width: none !important;
+}
+
+/* advanced — rounded tiles */
+.sto-option-panel-wrapper .sto-color-wrap--palette-advanced .iris-picker .iris-palette {
+	grid-template-columns: repeat(auto-fill, 32px);
+	gap: 10px;
+	justify-content: start;
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-advanced .iris-picker .iris-palette a {
+	width: 32px !important;
+	height: 32px !important;
+	min-width: 32px !important;
+	min-height: 32px !important;
+	border-radius: 10px !important;
 	border: 1px solid rgba(0, 0, 0, 0.12) !important;
 	box-shadow:
 		0 1px 2px rgba(15, 23, 42, 0.06),
@@ -329,8 +391,6 @@
 		transform 0.15s ease,
 		box-shadow 0.15s ease,
 		border-color 0.15s ease;
-	cursor: pointer;
-	box-sizing: border-box;
 }
 
 .sto-option-panel-wrapper .sto-color-wrap--palette-advanced .iris-picker .iris-palette a:hover {
@@ -342,17 +402,18 @@
 	z-index: 1;
 }
 
+/* advanced-circles — larger circular chips */
 .sto-option-panel-wrapper .sto-color-wrap--palette-circles .iris-picker .iris-palette {
-	gap: 10px 12px;
-	max-width: min(100%, 380px);
+	grid-template-columns: repeat(auto-fill, 44px);
+	gap: 12px 14px;
+	justify-content: start;
 }
 
 .sto-option-panel-wrapper .sto-color-wrap--palette-circles .iris-picker .iris-palette a {
-	width: 34px !important;
-	height: 34px !important;
-	min-width: 34px !important;
-	min-height: 34px !important;
-	position: relative;
+	width: 40px !important;
+	height: 40px !important;
+	min-width: 40px !important;
+	min-height: 40px !important;
 	border-radius: 50% !important;
 	border: 1px solid rgba(0, 0, 0, 0.1) !important;
 	box-shadow:
@@ -364,38 +425,37 @@
 }
 
 .sto-option-panel-wrapper .sto-color-wrap--palette-circles .iris-picker .iris-palette a:hover {
-	transform: scale(1.12);
+	transform: scale(1.1);
 	box-shadow:
 		0 6px 16px rgba(34, 113, 177, 0.2),
 		inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
+/* advanced-dense — still compact but readable (was 18px → too thin with many colors) */
 .sto-option-panel-wrapper .sto-color-wrap--palette-dense .iris-picker .iris-palette {
-	gap: 4px 5px;
-	max-width: min(100%, 340px);
+	grid-template-columns: repeat(auto-fill, 26px);
+	gap: 6px 7px;
+	justify-content: start;
 }
 
 .sto-option-panel-wrapper .sto-color-wrap--palette-dense .iris-picker .iris-palette a {
-	width: 18px !important;
-	height: 18px !important;
-	min-width: 18px !important;
-	min-height: 18px !important;
-	position: relative;
-	border-radius: 4px !important;
-	margin: 0 !important;
+	width: 24px !important;
+	height: 24px !important;
+	min-width: 24px !important;
+	min-height: 24px !important;
+	border-radius: 6px !important;
 	border: 1px solid rgba(0, 0, 0, 0.1) !important;
 	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
 	transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .sto-option-panel-wrapper .sto-color-wrap--palette-dense .iris-picker .iris-palette a:hover {
-	transform: scale(1.15);
+	transform: scale(1.12);
 	z-index: 1;
 	box-shadow: 0 2px 6px rgba(34, 113, 177, 0.25);
 }
 
 .sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a.sto-palette-swatch--active {
-	transform: scale(1.14);
 	border-color: #2271b1 !important;
 	box-shadow:
 		0 0 0 2px rgba(255, 255, 255, 0.95),
@@ -404,11 +464,86 @@
 	z-index: 2;
 }
 
+.sto-option-panel-wrapper .sto-color-wrap--palette-advanced .iris-picker .iris-palette a.sto-palette-swatch--active {
+	transform: scale(1.1);
+}
+
+.sto-option-panel-wrapper .sto-color-wrap--palette-circles .iris-picker .iris-palette a.sto-palette-swatch--active {
+	transform: scale(1.08);
+}
+
 .sto-option-panel-wrapper .sto-color-wrap--palette-dense .iris-picker .iris-palette a.sto-palette-swatch--active {
-	transform: scale(1.22);
+	transform: scale(1.14);
+}
+
+/* Larger Iris saturation / brightness handle (small ring was hard to see) */
+.sto-option-panel-wrapper .iris-square .iris-square-handle,
+.sto-option-panel-wrapper .iris-square-inner .iris-square-handle {
+	width: 16px !important;
+	height: 16px !important;
+	border-width: 2px !important;
+	border-radius: 50% !important;
+	box-shadow:
+		0 0 0 1px rgba(0, 0, 0, 0.35),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.75) !important;
+}
+
+/* Hue / alpha strip sliders — slightly taller hit area */
+.sto-option-panel-wrapper .iris-strip .ui-slider-handle {
+	min-height: 12px !important;
+	border-width: 2px !important;
+}
+
+@media (max-width: 600px) {
+	.sto-option-panel-wrapper .sto-color-wrap--palette-ui .wp-picker-container.wp-picker-active .wp-picker-holder {
+		min-width: min(100%, 260px);
+		max-width: calc(100vw - 24px);
+	}
+
+	.sto-option-panel-wrapper .sto-color-wrap--palette-advanced .iris-picker .iris-palette {
+		grid-template-columns: repeat(auto-fill, 30px);
+		gap: 8px;
+	}
+
+	.sto-option-panel-wrapper .sto-color-wrap--palette-advanced .iris-picker .iris-palette a {
+		width: 30px !important;
+		height: 30px !important;
+		min-width: 30px !important;
+		min-height: 30px !important;
+	}
+
+	.sto-option-panel-wrapper .sto-color-wrap--palette-circles .iris-picker .iris-palette {
+		grid-template-columns: repeat(auto-fill, 38px);
+		gap: 10px;
+	}
+
+	.sto-option-panel-wrapper .sto-color-wrap--palette-circles .iris-picker .iris-palette a {
+		width: 36px !important;
+		height: 36px !important;
+		min-width: 36px !important;
+		min-height: 36px !important;
+	}
+
+	.sto-option-panel-wrapper .sto-color-wrap--palette-dense .iris-picker .iris-palette {
+		grid-template-columns: repeat(auto-fill, 24px);
+		gap: 5px;
+	}
+
+	.sto-option-panel-wrapper .sto-color-wrap--palette-dense .iris-picker .iris-palette a {
+		width: 22px !important;
+		height: 22px !important;
+		min-width: 22px !important;
+		min-height: 22px !important;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
+	.sto-option-panel-wrapper .sto-color-wrap--palette-ui .wp-picker-container.wp-picker-active .wp-picker-holder,
+	.sto-option-panel-wrapper .sto-color-wrap--palette-ui:hover .wp-picker-container.wp-picker-active .wp-picker-holder,
+	.sto-option-panel-wrapper .sto-color-wrap--palette-ui:focus-within .wp-picker-container.wp-picker-active .wp-picker-holder {
+		transition: none;
+	}
+
 	.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a,
 	.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a:hover,
 	.sto-option-panel-wrapper .sto-color-wrap--palette-ui .iris-picker .iris-palette a.sto-palette-swatch--active {
