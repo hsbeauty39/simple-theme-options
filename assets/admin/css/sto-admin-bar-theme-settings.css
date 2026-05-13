@@ -1,0 +1,161 @@
+/**
+ * Theme Settings admin bar: vertical list + nested flyout.
+ * - Icons: core Dashicons on `<span class="ab-icon dashicons dashicons-…">` (same pattern as wp-includes/admin-bar.php).
+ * - Disable core `#wpadminbar .ab-item:before` for these links so it does not fight inner icons / create blank tofu.
+ * - Tighter row spacing than default submenu `height:26px` / `.ab-label{height:32px}`.
+ * Scoped under #wp-admin-bar-sto-theme-settings.
+ */
+
+/* Remove core empty/floated ::before on our links so Dashicons render only from .ab-icon. */
+#wpadminbar #wp-admin-bar-sto-theme-settings a.ab-item:before {
+	content: none !important;
+	display: none !important;
+	float: none !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	width: 0 !important;
+	height: 0 !important;
+	font: inherit !important;
+}
+
+#wpadminbar #wp-admin-bar-sto-theme-settings.menupop > .ab-sub-wrapper {
+	max-width: min(520px, 96vw);
+}
+
+/* Primary dropdown: one section per row. */
+#wpadminbar #wp-admin-bar-sto-theme-settings-default.ab-submenu {
+	display: block !important;
+	width: auto;
+	min-width: 200px;
+	max-width: 260px;
+	padding: 2px 0;
+	margin: 0;
+}
+
+#wpadminbar #wp-admin-bar-sto-theme-settings-default.ab-submenu > li {
+	float: none !important;
+	clear: both;
+	display: block !important;
+	width: 100% !important;
+	margin: 0;
+	position: relative;
+}
+
+/* Rows: flex + override core fixed heights on submenu links. */
+#wpadminbar #wp-admin-bar-sto-theme-settings a.ab-item {
+	display: flex !important;
+	align-items: center;
+	gap: 6px;
+	height: auto !important;
+	min-height: 28px;
+	line-height: 1.25 !important;
+	padding: 2px 10px !important;
+	white-space: nowrap;
+}
+
+#wpadminbar #wp-admin-bar-sto-theme-settings .ab-label {
+	display: inline !important;
+	height: auto !important;
+	line-height: inherit;
+	vertical-align: middle;
+}
+
+/*
+ * Core admin-bar.css (~225–228, ~288+) uses descendant selectors:
+ *   #wp-toolbar li:hover span.ab-label
+ *   #wp-toolbar li.hover span.ab-label
+ *   li:hover .ab-icon:before
+ * so labels/icons under a hovered parent row (e.g. General + its flyout) all turn #72aee6.
+ * Fix: muted defaults on the whole Theme Settings tree, then only
+ *   li:hover > a.ab-item > span.ab-label (direct child) → white (same for .dashicons:before).
+ */
+#wpadminbar li#wp-admin-bar-sto-theme-settings.menupop .ab-sub-wrapper span.ab-label,
+#wpadminbar li#wp-admin-bar-sto-theme-settings.menupop .ab-sub-wrapper a.ab-item,
+#wpadminbar li#wp-admin-bar-sto-theme-settings.menupop .ab-sub-wrapper a.ab-item strong {
+	color: rgba(240, 246, 252, 0.72) !important;
+}
+
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li:hover > a.ab-item > span.ab-label,
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li.hover > a.ab-item > span.ab-label,
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li > a.ab-item:focus > span.ab-label {
+	color: #ffffff !important;
+}
+
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li:hover > a.ab-item,
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li.hover > a.ab-item,
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li > a.ab-item:focus {
+	color: #ffffff !important;
+}
+
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li:hover > a.ab-item strong,
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li.hover > a.ab-item strong,
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li > a.ab-item:focus strong {
+	color: #ffffff !important;
+}
+
+/* Icon cell: undo core .ab-icon float when inside our flex row. */
+#wpadminbar #wp-admin-bar-sto-theme-settings .ab-icon.dashicons {
+	float: none !important;
+	position: static !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	width: 20px;
+	height: 20px;
+	font-size: 18px;
+	line-height: 1;
+	display: inline-flex !important;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 20px;
+	color: #b7bcc0 !important;
+}
+
+#wpadminbar li#wp-admin-bar-sto-theme-settings.menupop .ab-sub-wrapper .ab-icon.dashicons:before {
+	color: rgba(240, 246, 252, 0.55) !important;
+}
+
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li:hover > a.ab-item > .ab-icon.dashicons:before,
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li.hover > a.ab-item > .ab-icon.dashicons:before,
+#wpadminbar li#wp-admin-bar-sto-theme-settings .ab-sub-wrapper li > a.ab-item:focus > .ab-icon.dashicons:before {
+	color: #ffffff !important;
+}
+
+/* Nested flyout: core uses margin-top:-32px for toolbar row height — reset for our taller flex rows. */
+#wpadminbar #wp-admin-bar-sto-theme-settings-default > li.menupop:hover > .ab-sub-wrapper,
+#wpadminbar #wp-admin-bar-sto-theme-settings-default > li.menupop.hover > .ab-sub-wrapper {
+	margin-top: 0 !important;
+	margin-left: 100% !important;
+	top: 0 !important;
+}
+
+/* Closed section flyout must not stay visible (ghost row under the primary list). */
+#wpadminbar #wp-admin-bar-sto-theme-settings-default > li.sto-ab-megapop:not(:hover):not(.hover) > .ab-sub-wrapper {
+	display: none !important;
+}
+
+#wpadminbar #wp-admin-bar-sto-theme-settings-default > li.sto-ab-megapop > .ab-sub-wrapper {
+	z-index: 100000;
+}
+
+#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-megapop.menupop {
+	position: relative;
+}
+
+#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-megapop > .ab-item {
+	font-weight: 600;
+}
+
+#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-megapop .ab-submenu {
+	display: block !important;
+	min-width: 188px;
+	padding: 2px 0;
+}
+
+#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-megapop .ab-submenu .ab-item {
+	padding: 2px 10px !important;
+	font-weight: 400;
+}
+
+#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-leaf-link > .ab-item {
+	font-weight: 500;
+}

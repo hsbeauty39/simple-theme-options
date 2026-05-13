@@ -1,0 +1,201 @@
+/**
+ * Input / textarea / wp_editor field rows (Simple Theme Options).
+ * Default/focus chrome uses custom properties from `.sto-option-panel-wrapper` in `style.css`
+ * (`--sto-field-soft-border`, `--sto-field-soft-shadow`, `--sto-field-soft-radius`, `--sto-field-soft-shadow-focus`).
+ */
+
+.sto-field-row-input .sto-input-wrap {
+    max-width: 100%;
+}
+
+.sto-field-row-input .sto-input-control {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: min(640px, 100%);
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #2c3338;
+    background: #fff;
+    border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+    border-radius: var(--sto-field-soft-radius, 5px);
+    box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+    transition: border-color 0.12s ease-in-out, box-shadow 0.12s ease-in-out;
+}
+
+.sto-field-row-input .sto-input-control:focus {
+    border-color: #2271b1;
+    box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+    outline: 2px solid transparent;
+}
+
+.sto-field-row-input--textarea .sto-input-control--textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* -------------------------------------------------------------------------
+ * Classic editor (wp_editor): Add Media + Visual/Code on the SAME row as
+ * the first TinyMCE toolbar. Core prints .wp-editor-tools above the
+ * container; we overlay that strip on the toolbar and pad the toolbar so
+ * controls do not slide underneath.
+ * ------------------------------------------------------------------------- */
+.sto-field-row-input--editor .wp-editor-wrap {
+    position: relative;
+    max-width: 100%;
+}
+
+.sto-field-row-input--editor .wp-editor-tools {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    left: auto;
+    z-index: 20;
+    float: none;
+    clear: none;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    width: auto;
+    max-width: min(100%, 380px);
+    height: 38px;
+    padding: 0 4px 0 10px;
+    margin: 0;
+    box-sizing: border-box;
+    background: #f6f7f7;
+    pointer-events: auto;
+}
+
+.sto-field-row-input--editor .wp-media-buttons,
+.sto-field-row-input--editor .wp-editor-tabs {
+    float: none;
+}
+
+.sto-field-row-input--editor .wp-media-buttons {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.sto-field-row-input--editor .wp-media-buttons .button {
+    margin-top: 0;
+    margin-bottom: 0;
+    line-height: 1.4;
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.sto-field-row-input--editor .wp-editor-tabs {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    margin: 0;
+}
+
+.sto-field-row-input--editor .wp-switch-editor {
+    box-sizing: border-box;
+    float: none;
+    margin: 0 0 0 4px;
+    height: 30px;
+    line-height: 1.2;
+    padding: 4px 10px;
+    top: 0;
+    display: inline-flex;
+    align-items: center;
+}
+
+.sto-field-row-input--editor .wp-switch-editor.switch-tmce {
+    margin-left: 0;
+}
+
+/* Active tab: WP admin primary blue (reference: Visual selected). */
+.sto-field-row-input--editor .tmce-active .switch-tmce {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+}
+
+.sto-field-row-input--editor .tmce-active .switch-html {
+    background: #f0f0f1;
+    border-color: #c3c4c7;
+    color: #50575e;
+}
+
+.sto-field-row-input--editor .html-active .switch-html {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+}
+
+.sto-field-row-input--editor .html-active .switch-tmce {
+    background: #f0f0f1;
+    border-color: #c3c4c7;
+    color: #50575e;
+}
+
+.sto-field-row-input--editor .wp-editor-container {
+    border-radius: 0 0 4px 4px;
+}
+
+/* Reserve space on the first TinyMCE row so icons stay left of the overlay. */
+.sto-field-row-input--editor .wp-editor-wrap.tmce-active div.mce-toolbar-grp > div > .mce-toolbar:first-child,
+.sto-field-row-input--editor .wp-editor-wrap.tmce-active div.mce-toolbar-grp > .mce-toolbar:first-child {
+    padding-right: clamp(200px, 34vw, 360px);
+    box-sizing: border-box;
+}
+
+/* Code tab: quicktags bar is the top row — reserve the same strip. */
+.sto-field-row-input--editor .wp-editor-wrap.html-active .quicktags-toolbar {
+    padding-right: clamp(200px, 34vw, 360px);
+    box-sizing: border-box;
+}
+
+.rtl .sto-field-row-input--editor .wp-editor-tools {
+    right: auto;
+    left: 1px;
+}
+
+.rtl .sto-field-row-input--editor .wp-editor-wrap.tmce-active div.mce-toolbar-grp > div > .mce-toolbar:first-child,
+.rtl .sto-field-row-input--editor .wp-editor-wrap.tmce-active div.mce-toolbar-grp > .mce-toolbar:first-child {
+    padding-right: 0;
+    padding-left: clamp(200px, 34vw, 360px);
+}
+
+.rtl .sto-field-row-input--editor .wp-editor-wrap.html-active .quicktags-toolbar {
+    padding-right: 0;
+    padding-left: clamp(200px, 34vw, 360px);
+}
+
+/* Slightly tighter chrome for option panels */
+.sto-field-row-input--editor div.mce-toolbar-grp {
+    padding: 0 2px;
+}
+
+/* Optional toolbar_end slot: match default mce-btn height / alignment on row 1 */
+.sto-field-row-input--editor .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn {
+    display: inline-flex;
+    align-items: center;
+    margin: 2px 0 2px 1px;
+}
+
+.sto-field-row-input--editor .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn button {
+    box-sizing: border-box;
+    min-height: 26px;
+    height: 26px;
+    line-height: 1.2;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.sto-field-row-input--editor .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn.mce-active button,
+.sto-field-row-input--editor .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn:hover button {
+    color: #1d2327;
+}

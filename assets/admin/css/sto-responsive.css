@@ -1,0 +1,78 @@
+/**
+ * Responsive breakpoint controls (Theme Settings option rows).
+ */
+
+.sto-responsive {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Icon tabs (in title row or above panes) */
+.sto-responsive__toolbar {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 10px;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sto-field-title-row__trailing .sto-responsive__toolbar,
+.sto-field-group-item-title-row .sto-field-title-row__trailing .sto-responsive__toolbar {
+    margin: 0;
+}
+
+.sto-responsive__toolbar--icons .sto-responsive__tab {
+    margin: 0;
+    padding: 0;
+    width: 34px;
+    height: 30px;
+    border: 1px solid #c3c4c7;
+    border-radius: 6px;
+    background: #f6f7f7;
+    color: #50575e;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.sto-responsive__toolbar--icons .sto-responsive__tab i {
+    font-size: 15px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.sto-responsive__toolbar--icons .sto-responsive__tab:hover {
+    background: #fff;
+    border-color: #8c8f94;
+    color: #1d2327;
+}
+
+.sto-responsive__toolbar--icons .sto-responsive__tab.sto-is-active {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+}
+
+.sto-responsive__panes {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.sto-responsive__pane[hidden] {
+    display: none !important;
+}
+
+.sto-responsive__pane.sto-is-active {
+    display: block;
+}

@@ -1,0 +1,59 @@
+/*
+ * Background Control — color picker row (reuses .sto-field-row-color rules) + upload.
+ */
+
+.sto-option-panel-wrapper .sto-field-row-background-control .sto-background-control__controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.sto-option-panel-wrapper .sto-background-control-upload {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	height: 38px;
+	padding: 0 14px;
+	margin: 0;
+	border: 1px solid #d0d0d0;
+	border-radius: 6px;
+	background: #ececec;
+	color: #333;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	box-shadow: none;
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.sto-option-panel-wrapper .sto-background-control-upload:hover,
+.sto-option-panel-wrapper .sto-background-control-upload:focus {
+	background: #dedede;
+	border-color: #c4c4c4;
+	color: #222;
+}
+
+.sto-option-panel-wrapper .sto-background-control-upload:focus {
+	outline: 1px solid #2271b1;
+	outline-offset: 1px;
+}
+
+.sto-option-panel-wrapper .sto-background-control-upload i {
+	font-size: 15px;
+	opacity: 0.85;
+}
+
+.sto-option-panel-wrapper .sto-background-control__preview {
+	margin-top: 10px;
+}
+
+.sto-option-panel-wrapper .sto-background-control__thumb {
+	display: block;
+	border-radius: 4px;
+	border: 1px solid #dcdcdc;
+	object-fit: cover;
+}

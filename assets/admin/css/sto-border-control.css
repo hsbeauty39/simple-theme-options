@@ -1,0 +1,385 @@
+/**
+ * Border field: blue pill `Edit settings` button + floating popover (radius / style / width / color).
+ * Layout follows the Border control mock in the WoodMart-style screenshots.
+ *
+ * Shared input chrome (`--sto-field-soft-*`) is consumed where appropriate so the inner number
+ * input, color hex, and Select2 dropdown match every other Theme Settings control.
+ */
+
+.sto-option-panel-wrapper .sto-field-row-border {
+	max-width: 100%;
+}
+
+/* Reset (↻) button right after the title, before the responsive toolbar in __trailing. */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-row-reset {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	margin: 0 0 0 4px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: #646970;
+	cursor: pointer;
+	transition: color 0.12s ease, background 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-row-reset:hover,
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-row-reset:focus-visible {
+	color: #2271b1;
+	background: rgba(34, 113, 177, 0.08);
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-row-reset i {
+	font-size: 13px;
+	line-height: 1;
+}
+
+/* Anchor for popover (absolute positioned children). */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-control {
+	position: relative;
+	display: inline-block;
+	max-width: 100%;
+}
+
+/* WoodMart-style blue pill — leans on WP's built-in `.button` chrome but overrides colors / padding. */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-edit {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 34px;
+	padding: 6px 14px;
+	border: 1px solid #2271b1;
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: #2271b1;
+	color: #fff;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.2;
+	cursor: pointer;
+	box-shadow: none;
+	transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-edit:hover,
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-edit:focus-visible {
+	background: #135e96;
+	border-color: #135e96;
+	color: #fff;
+	outline: none;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 3px rgba(34, 113, 177, 0.18));
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-edit i {
+	font-size: 13px;
+	line-height: 1;
+}
+
+/* Popover panel — floating card anchored below the Edit settings pill. */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover {
+	position: absolute;
+	top: calc(100% + 8px);
+	left: 0;
+	z-index: 60;
+	min-width: 340px;
+	max-width: min(420px, 92vw);
+	padding: 18px 18px 16px;
+	background: #fff;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: 8px;
+	/* Floating element — elevation shadow is legitimate, not a "form-control resting" shadow. */
+	box-shadow: 0 12px 32px rgba(15, 34, 58, 0.12), 0 2px 8px rgba(15, 34, 58, 0.06);
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover[hidden] {
+	display: none !important;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row + .sto-border-popover__row {
+	margin-top: 14px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__label {
+	display: block;
+	margin: 0 0 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+/* Inputs row inside radius / width — slider grows, number stays compact, unit chip on the right. */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__inputs {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__slider {
+	flex: 1 1 auto;
+	min-width: 0;
+	height: 18px;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	-webkit-appearance: none;
+	appearance: none;
+	cursor: pointer;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__slider::-webkit-slider-runnable-track {
+	height: 4px;
+	border-radius: 2px;
+	background: linear-gradient(to right, #2271b1 0%, #2271b1 var(--sto-border-pct, 0%), #e8e8e8 var(--sto-border-pct, 0%), #e8e8e8 100%);
+	border: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+	margin-top: -5px;
+	cursor: pointer;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__slider::-moz-range-track {
+	height: 4px;
+	border-radius: 2px;
+	background: #e8e8e8;
+	border: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__slider::-moz-range-progress {
+	height: 4px;
+	border-radius: 2px;
+	background: #2271b1;
+	border: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__slider::-moz-range-thumb {
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+	cursor: pointer;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__number {
+	flex: 0 0 auto;
+	width: 68px;
+	height: 32px;
+	padding: 0 8px;
+	background: #fff;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	color: #1d2327;
+	font-size: 13px;
+	line-height: 1.2;
+	box-shadow: var(--sto-field-soft-shadow, none);
+	transition: border-color 0.12s ease, box-shadow 0.12s ease;
+	-moz-appearance: textfield;
+	appearance: textfield;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__number::-webkit-outer-spin-button,
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__number::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__number:focus {
+	border-color: #2271b1;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 3px rgba(34, 113, 177, 0.12));
+	outline: none;
+}
+
+/* Static unit chip (single-unit) — small uppercase label with thin underline accent. */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__unit {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #646970;
+	letter-spacing: 0.04em;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__unit--locked {
+	padding: 0 2px 2px;
+	border-bottom: 1px solid #c3c4c7;
+}
+
+/* Multi-unit toggle — small pill buttons */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__unit-btn {
+	min-width: 28px;
+	height: 24px;
+	padding: 0 8px;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	background: #fff;
+	border-radius: var(--sto-field-soft-radius, 6px);
+	color: #1d2327;
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+	letter-spacing: 0.04em;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__unit-btn + .sto-border-popover__unit-btn {
+	margin-left: 4px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__unit-btn.is-active,
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__unit-btn:hover {
+	background: #2271b1;
+	border-color: #2271b1;
+	color: #fff;
+}
+
+/* Style select — overrides any leftover sto-select2 width constraints inside the popover. */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row select.sto-border-popover__select,
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .select2-container {
+	width: 100% !important;
+	max-width: 100%;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row select.sto-border-popover__select {
+	display: block;
+	width: 100%;
+	height: 36px;
+	padding: 0 32px 0 12px;
+	background-color: #fff;
+	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23646970' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	background-size: 12px 12px;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	color: #1d2327;
+	font-size: 13px;
+	line-height: 1.2;
+	box-shadow: var(--sto-field-soft-shadow, none);
+	-webkit-appearance: none;
+	appearance: none;
+	cursor: pointer;
+	transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row select.sto-border-popover__select:focus {
+	border-color: #2271b1;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 3px rgba(34, 113, 177, 0.12));
+	outline: none;
+}
+
+/* Color row: keep the wp-color-picker shell aligned with the popover row gap.
+   Flex layout (instead of grid stack) keeps the `Select Color` chip and the small `↻` reset
+   button on the SAME row — fixes the wide gray bar that was caused by a 1-column grid
+   pushing the reset button to its own full-width row. */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .sto-color-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+/* Let the wp-color-picker chip take its natural width instead of stretching to 100%. */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .sto-color-wrap > .wp-picker-container {
+	flex: 0 1 auto;
+	min-width: 0;
+}
+
+/* Before wpColorPicker init the bare input is the chip — give it a sensible width so the
+   reset button can still sit next to it. After init the input is hidden by core. */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .sto-color-input {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* Reset chip styled to match the popover aesthetic — compact 34px square, soft border,
+   blue hover state mirroring the unit toggle buttons / Edit settings pill focus halo.
+   Scoped to `.sto-field-row-border` because `sto-color.css` only styles `.sto-color-reset`
+   under `.sto-field-row-color`, so without this rule the button rendered as a default
+   browser button (wide grey bar). */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .sto-color-reset {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 34px;
+	height: 34px;
+	margin: 0;
+	padding: 0;
+	border: 1px solid #d8dde2;
+	border-radius: 6px;
+	background: #fff;
+	color: #6b7280;
+	cursor: pointer;
+	transition:
+		border-color 0.15s ease,
+		color 0.15s ease,
+		background 0.15s ease,
+		box-shadow 0.15s ease;
+	box-shadow: 0 1px 1px rgba(15, 23, 42, 0.03);
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .sto-color-reset:hover {
+	border-color: #2271b1;
+	color: #2271b1;
+	background: #f0f6fc;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .sto-color-reset:focus-visible {
+	border-color: #2271b1;
+	color: #2271b1;
+	background: #f0f6fc;
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.18);
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .sto-color-reset:active {
+	background: #e7f0fa;
+	transform: translateY(1px);
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.15);
+}
+
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .sto-color-reset i {
+	font-size: 14px;
+	line-height: 1;
+}
+
+/* When the popover opens, lift stacking; accordion clipping is handled in sto-accordion.css (:has). */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-control[data-sto-border-open="1"] {
+	z-index: 70;
+}
+
+/* Group context tightens label sizing to match other group_inner rows. */
+.sto-option-panel-wrapper .sto-field-row-border.sto-field-row--in-group .sto-border-edit {
+	min-height: 32px;
+	padding: 5px 12px;
+}
+
+@media (max-width: 600px) {
+	.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover {
+		left: 0;
+		right: 0;
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__inputs {
+		flex-wrap: wrap;
+	}
+}

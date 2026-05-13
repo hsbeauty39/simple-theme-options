@@ -1,0 +1,1298 @@
+/* Theme Settings panel: allow nested sidebar + dropdowns without clipping. */
+.wrap.sto-section-content {
+    overflow: visible;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper {
+    background: #fff;
+    width: 100%;
+    max-width: min(1350px, 100%);
+    margin-top: 15px;
+    border-radius: 10px;
+    overflow: visible;
+    box-sizing: border-box;
+    /* Shared “soft” chrome for text inputs, selects, Select2, range number, color hex, etc.
+       Updated: no resting drop shadow (cleaner / flatter look), softer / lighter border,
+       slightly rounder corners, focus uses a diffuse halo only (no harsh 1px blue stroke). */
+    --sto-field-soft-border: #e6e8eb;
+    --sto-field-soft-shadow: none;
+    --sto-field-soft-radius: 6px;
+    --sto-field-soft-shadow-focus: 0 0 0 3px rgba(34, 113, 177, 0.12);
+}
+
+.sto-option-panel-wrapper .sto-option-panel-title {
+    padding: 0;
+}
+
+.spo-option-panel-head {
+    padding: 17px 20px;
+    padding-top: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.sto-panel-head-with-search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 24px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sto-panel-head-with-search .sto-option-panel-title {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.sto-quick-search {
+    position: relative;
+    flex: 1 1 280px;
+    max-width: 520px;
+    min-width: 220px;
+}
+
+/* Flex shell: icon column + input avoids WP admin padding overrides and overlap. */
+.sto-quick-search-field {
+    display: flex;
+    align-items: stretch;
+    box-sizing: border-box;
+    min-height: 42px;
+    background: #fff;
+    border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+    border-radius: var(--sto-field-soft-radius, 5px);
+    box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sto-quick-search-field:focus-within {
+    border-color: #2271b1;
+    box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+}
+
+.sto-quick-search-icon-wrap {
+    flex: 0 0 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    background: #f6f7f7;
+    border-right: 1px solid #e2e4e7;
+    border-radius: 5px 0 0 5px;
+    pointer-events: none;
+}
+
+.sto-quick-search-field:focus-within .sto-quick-search-icon-wrap {
+    background: #f0f6fc;
+    border-right-color: #c5d9ed;
+}
+
+.sto-quick-search-icon {
+    font-size: 15px;
+    line-height: 1;
+    color: #6c7781;
+}
+
+.sto-quick-search-field:focus-within .sto-quick-search-icon {
+    color: #2271b1;
+}
+
+/* High specificity: WordPress core often sets global input padding. */
+.sto-section-content .sto-option-panel-wrapper .sto-quick-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 1%;
+    max-width: none;
+    margin: 0;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.45;
+    font-weight: 400;
+    color: #1d2327;
+    background: #fff;
+    border: 0;
+    border-radius: 0 6px 6px 0;
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+    vertical-align: middle;
+}
+
+.sto-section-content .sto-option-panel-wrapper .sto-quick-search-input::placeholder {
+    color: #8c8f94;
+    opacity: 1;
+}
+
+.sto-section-content .sto-option-panel-wrapper .sto-quick-search-input:focus {
+    outline: none;
+    box-shadow: none;
+    border: 0;
+}
+
+/* When the list is open, attach dropdown to the field (WoodMart-style single frame). */
+.sto-quick-search:has(.sto-quick-search-results:not([hidden])) .sto-quick-search-field {
+    border-radius: 6px 6px 0 0;
+    border-bottom-color: #e2e4e7;
+}
+
+.sto-quick-search:has(.sto-quick-search-results:not([hidden])) .sto-quick-search-icon-wrap {
+    border-radius: 5px 0 0 0;
+}
+
+.sto-quick-search:has(.sto-quick-search-results:not([hidden])) .sto-quick-search-input {
+    border-radius: 0 6px 0 0;
+}
+
+.sto-quick-search-results {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    z-index: 50;
+    max-height: 340px;
+    overflow-y: auto;
+    margin: -1px 0 0;
+    padding: 6px 0;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #2271b1;
+    border-top: 1px solid #e2e4e7;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.sto-quick-search-results[hidden] {
+    display: none !important;
+}
+
+.sto-quick-search-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    margin: 0;
+    padding: 10px 14px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.35;
+    color: #1d2327;
+    transition: background-color 0.12s ease;
+}
+
+.sto-quick-search-item:hover,
+.sto-quick-search-item:focus {
+    background: #f0f6fc;
+    outline: none;
+}
+
+/*
+ * Keyboard-driven active row — applied by `initStoQuickSearch()` in `main.js` when the user
+ * navigates with ArrowUp / ArrowDown / Home / End. Mouse hover **also** mirrors this state
+ * (via `mouseenter`) so pressing Enter after hovering activates the hovered row instead of
+ * the previously-arrowed row (standard combo-box pattern).
+ *
+ * The visual upgrade over plain `:hover` is a left-side WordPress-blue accent bar — gives
+ * the row a clear "this is the current selection" cue without forcing programmatic focus
+ * (focus must stay on the search input so the arrow keys keep working).
+ */
+.sto-quick-search-item.sto-quick-search-item--active {
+    background: #e7f1f9;
+    box-shadow: inset 3px 0 0 #2271b1;
+}
+
+.sto-quick-search-item.sto-quick-search-item--active .sto-quick-search-item-icon {
+    color: #135e96;
+}
+
+.sto-quick-search-item.sto-quick-search-item--active .sto-quick-search-item-title {
+    color: #0a4b78;
+}
+
+.sto-quick-search-item-icon {
+    flex: 0 0 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+    color: #2271b1;
+    font-size: 15px;
+}
+
+.sto-quick-search-item-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sto-quick-search-item-title {
+    display: block;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.sto-quick-search-item-path {
+    display: block;
+    margin-top: 3px;
+    font-size: 12px;
+    font-weight: 400;
+    color: #787c82;
+}
+
+
+/**
+* STO Bootstrap-like grid system.
+* Prefix: sto-
+*/
+.sto-container,
+.sto-container-fluid {
+    width: 100%;
+    padding-right: 12px;
+    padding-left: 12px;
+    margin-right: auto;
+    margin-left: auto;
+    box-sizing: border-box;
+}
+
+.sto-row {
+    --sto-gutter-x: 24px;
+    --sto-gutter-y: 0;
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: calc(-1 * var(--sto-gutter-y));
+    margin-right: calc(-0.5 * var(--sto-gutter-x));
+    margin-left: calc(-0.5 * var(--sto-gutter-x));
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sto-row > * {
+    box-sizing: border-box;
+    flex-shrink: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-right: calc(var(--sto-gutter-x) * 0.5);
+    padding-left: calc(var(--sto-gutter-x) * 0.5);
+    margin-top: var(--sto-gutter-y);
+}
+
+.sto-col {
+    flex: 1 0 0%;
+}
+
+.sto-col-auto {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+.sto-col-1 { flex: 0 0 auto; width: 8.33333333%; }
+.sto-col-2 { flex: 0 0 auto; width: 16.66666667%; }
+.sto-col-3 { flex: 0 0 auto; width: 25%; }
+.sto-col-4 { flex: 0 0 auto; width: 33.33333333%; }
+.sto-col-5 { flex: 0 0 auto; width: 41.66666667%; }
+.sto-col-6 { flex: 0 0 auto; width: 50%; }
+.sto-col-7 { flex: 0 0 auto; width: 58.33333333%; }
+.sto-col-8 { flex: 0 0 auto; width: 66.66666667%; }
+.sto-col-9 { flex: 0 0 auto; width: 75%; }
+.sto-col-10 { flex: 0 0 auto; width: 83.33333333%; }
+.sto-col-11 { flex: 0 0 auto; width: 91.66666667%; }
+.sto-col-12 { flex: 0 0 auto; width: 100%; }
+
+@media (min-width: 576px) {
+    .sto-col-sm { flex: 1 0 0%; }
+    .sto-col-sm-auto { flex: 0 0 auto; width: auto; }
+    .sto-col-sm-1 { flex: 0 0 auto; width: 8.33333333%; }
+    .sto-col-sm-2 { flex: 0 0 auto; width: 16.66666667%; }
+    .sto-col-sm-3 { flex: 0 0 auto; width: 25%; }
+    .sto-col-sm-4 { flex: 0 0 auto; width: 33.33333333%; }
+    .sto-col-sm-5 { flex: 0 0 auto; width: 41.66666667%; }
+    .sto-col-sm-6 { flex: 0 0 auto; width: 50%; }
+    .sto-col-sm-7 { flex: 0 0 auto; width: 58.33333333%; }
+    .sto-col-sm-8 { flex: 0 0 auto; width: 66.66666667%; }
+    .sto-col-sm-9 { flex: 0 0 auto; width: 75%; }
+    .sto-col-sm-10 { flex: 0 0 auto; width: 83.33333333%; }
+    .sto-col-sm-11 { flex: 0 0 auto; width: 91.66666667%; }
+    .sto-col-sm-12 { flex: 0 0 auto; width: 100%; }
+}
+
+@media (min-width: 768px) {
+    .sto-col-md { flex: 1 0 0%; }
+    .sto-col-md-auto { flex: 0 0 auto; width: auto; }
+    .sto-col-md-1 { flex: 0 0 auto; width: 8.33333333%; }
+    .sto-col-md-2 { flex: 0 0 auto; width: 16.66666667%; }
+    .sto-col-md-3 { flex: 0 0 auto; width: 25%; }
+    .sto-col-md-4 { flex: 0 0 auto; width: 33.33333333%; }
+    .sto-col-md-5 { flex: 0 0 auto; width: 41.66666667%; }
+    .sto-col-md-6 { flex: 0 0 auto; width: 50%; }
+    .sto-col-md-7 { flex: 0 0 auto; width: 58.33333333%; }
+    .sto-col-md-8 { flex: 0 0 auto; width: 66.66666667%; }
+    .sto-col-md-9 { flex: 0 0 auto; width: 75%; }
+    .sto-col-md-10 { flex: 0 0 auto; width: 83.33333333%; }
+    .sto-col-md-11 { flex: 0 0 auto; width: 91.66666667%; }
+    .sto-col-md-12 { flex: 0 0 auto; width: 100%; }
+}
+
+@media (min-width: 992px) {
+    .sto-col-lg { flex: 1 0 0%; }
+    .sto-col-lg-auto { flex: 0 0 auto; width: auto; }
+    .sto-col-lg-1 { flex: 0 0 auto; width: 8.33333333%; }
+    .sto-col-lg-2 { flex: 0 0 auto; width: 16.66666667%; }
+    .sto-col-lg-3 { flex: 0 0 auto; width: 25%; }
+    .sto-col-lg-4 { flex: 0 0 auto; width: 33.33333333%; }
+    .sto-col-lg-5 { flex: 0 0 auto; width: 41.66666667%; }
+    .sto-col-lg-6 { flex: 0 0 auto; width: 50%; }
+    .sto-col-lg-7 { flex: 0 0 auto; width: 58.33333333%; }
+    .sto-col-lg-8 { flex: 0 0 auto; width: 66.66666667%; }
+    .sto-col-lg-9 { flex: 0 0 auto; width: 75%; }
+    .sto-col-lg-10 { flex: 0 0 auto; width: 83.33333333%; }
+    .sto-col-lg-11 { flex: 0 0 auto; width: 91.66666667%; }
+    .sto-col-lg-12 { flex: 0 0 auto; width: 100%; }
+}
+
+@media (min-width: 1200px) {
+    .sto-col-xl { flex: 1 0 0%; }
+    .sto-col-xl-auto { flex: 0 0 auto; width: auto; }
+    .sto-col-xl-1 { flex: 0 0 auto; width: 8.33333333%; }
+    .sto-col-xl-2 { flex: 0 0 auto; width: 16.66666667%; }
+    .sto-col-xl-3 { flex: 0 0 auto; width: 25%; }
+    .sto-col-xl-4 { flex: 0 0 auto; width: 33.33333333%; }
+    .sto-col-xl-5 { flex: 0 0 auto; width: 41.66666667%; }
+    .sto-col-xl-6 { flex: 0 0 auto; width: 50%; }
+    .sto-col-xl-7 { flex: 0 0 auto; width: 58.33333333%; }
+    .sto-col-xl-8 { flex: 0 0 auto; width: 66.66666667%; }
+    .sto-col-xl-9 { flex: 0 0 auto; width: 75%; }
+    .sto-col-xl-10 { flex: 0 0 auto; width: 83.33333333%; }
+    .sto-col-xl-11 { flex: 0 0 auto; width: 91.66666667%; }
+    .sto-col-xl-12 { flex: 0 0 auto; width: 100%; }
+}
+
+@media (min-width: 1400px) {
+    .sto-col-xxl { flex: 1 0 0%; }
+    .sto-col-xxl-auto { flex: 0 0 auto; width: auto; }
+    .sto-col-xxl-1 { flex: 0 0 auto; width: 8.33333333%; }
+    .sto-col-xxl-2 { flex: 0 0 auto; width: 16.66666667%; }
+    .sto-col-xxl-3 { flex: 0 0 auto; width: 25%; }
+    .sto-col-xxl-4 { flex: 0 0 auto; width: 33.33333333%; }
+    .sto-col-xxl-5 { flex: 0 0 auto; width: 41.66666667%; }
+    .sto-col-xxl-6 { flex: 0 0 auto; width: 50%; }
+    .sto-col-xxl-7 { flex: 0 0 auto; width: 58.33333333%; }
+    .sto-col-xxl-8 { flex: 0 0 auto; width: 66.66666667%; }
+    .sto-col-xxl-9 { flex: 0 0 auto; width: 75%; }
+    .sto-col-xxl-10 { flex: 0 0 auto; width: 83.33333333%; }
+    .sto-col-xxl-11 { flex: 0 0 auto; width: 91.66666667%; }
+    .sto-col-xxl-12 { flex: 0 0 auto; width: 100%; }
+}
+
+/* STO Sidebar Theme Settings style */
+.sto-option-panel-body {
+    padding: 14px 14px 18px;
+    overflow: visible;
+}
+
+/* Stable left rail + main column (avoids xxl-only grid collapsing into a broken strip). */
+.sto-option-panel-nav-layout {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 20px;
+    overflow: visible;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sto-option-panel-sidebar-wrap {
+    position: relative;
+    flex: 0 0 auto;
+    width: 232px;
+    max-width: min(232px, 100%);
+    overflow: visible;
+}
+
+/*
+ * Desktop: keep the dark left nav visible while the main column scrolls.
+ * `top` clears the fixed WP admin bar (WP 6.4+ exposes `--wp-admin--admin-bar--height`
+ * in admin; fallback 32px matches the default bar height when the var is absent).
+ * `max-height` + `overflow-y: auto` lets a long menu scroll inside the rail.
+ */
+@media (min-width: 783px) {
+    .sto-option-panel-sidebar-wrap {
+        position: sticky;
+        top: calc(var(--wp-admin--admin-bar--height, 32px) + 16px);
+        align-self: flex-start;
+        max-height: calc(100vh - var(--wp-admin--admin-bar--height, 32px) - 24px);
+        overflow-y: auto;
+        overflow-x: visible;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+.sto-option-panel-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: visible;
+}
+
+@media (max-width: 782px) {
+    .sto-option-panel-nav-layout {
+        flex-direction: column;
+        flex-wrap: wrap;
+        gap: 14px;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .sto-option-panel-sidebar-wrap {
+        width: 100%;
+        max-width: none;
+    }
+
+    .sto-option-panel-main {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .sto-option-panel-body {
+        padding: 12px 10px 16px;
+    }
+
+    .sto-panel-head-with-search {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .sto-panel-head-with-search .sto-option-panel-title {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+
+    .sto-quick-search {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .sto-option-panel-content-head {
+        flex-wrap: wrap;
+        row-gap: 8px;
+        min-width: 0;
+    }
+
+    .sto-option-panel-content-title {
+        font-size: clamp(18px, 5vw, 24px);
+        overflow-wrap: anywhere;
+        word-wrap: break-word;
+    }
+
+    .spo-option-panel-head {
+        padding: 14px 14px;
+        padding-top: 16px;
+    }
+
+    .sto-options-form-footer {
+        margin-inline: 0;
+        padding: 12px 10px 14px;
+    }
+
+    .sto-field-group[data-sto-group-depth="0"] .sto-field-group-inner {
+        padding: 6px 12px 4px;
+    }
+
+    .sto-field-group--nested {
+        padding: 12px 12px 10px;
+    }
+
+    .sto-field-group--nested .sto-field-group-inner {
+        padding: 12px 12px 10px;
+    }
+
+    /* Prefixed grid inside the panel: one column so multi-column rows do not overflow narrow admin. */
+    .sto-option-panel-wrapper .sto-row > * {
+        flex: 0 0 100%;
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+.sto-option-panel-sidebar {
+    margin: 0;
+    padding: 8px;
+    list-style: none;
+    background: #1d2327;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+    position: relative;
+    z-index: 1;
+    /* Defeat broad admin/theme rules that set ul { display:flex; flex-flow: row wrap }. */
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sto-option-panel-sidebar > .sto-option-panel-sidebar-item {
+    position: relative;
+    float: none;
+    width: 100%;
+    max-width: 100%;
+}
+
+.sto-option-panel-sidebar-item {
+    margin: 0;
+    padding: 0;
+}
+
+.sto-option-panel-sidebar-item + .sto-option-panel-sidebar-item {
+    margin-top: 2px;
+}
+
+.sto-option-panel-sidebar-item--nav-locked {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sto-option-panel-sidebar-item--nav-locked > .sto-option-panel-sidebar-item-link {
+    opacity: 0.92;
+}
+
+.sto-option-panel-sidebar-item-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 6px 10px;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color .2s ease, color .2s ease;
+    font-size: 13px;
+    line-height: 1.3;
+    font-weight: 400;
+    position: relative;
+}
+
+.sto-option-panel-sidebar-item-link:hover,
+.sto-option-panel-sidebar-item-link:focus {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+    outline: none;
+}
+
+.sto-option-panel-sidebar-item-link .sto-option-panel-icon {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+    line-height: 14px;
+    color: #94a5b7;
+    flex: 0 0 14px;
+    margin-top: 1px;
+}
+
+.sto-option-panel-sidebar-item-title {
+    font-size: 13px;
+    line-height: 1.3;
+    font-weight: 400;
+}
+
+.sto-option-panel-sidebar-toggle {
+    margin-left: auto;
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+    line-height: 14px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.sto-option-panel-sidebar-item.sto-is-active > .sto-option-panel-sidebar-item-link,
+.sto-option-panel-sidebar-item-link.sto-is-active {
+    background: #1273c6;
+    color: #ffffff;
+}
+
+.sto-option-panel-sidebar-item.sto-is-active > .sto-option-panel-sidebar-item-link .sto-option-panel-icon,
+.sto-option-panel-sidebar-item-link.sto-is-active .sto-option-panel-icon {
+    color: #ffffff;
+}
+
+/* Parent on the active path: soft "ancestor of current" state, NOT the full blue. */
+.sto-option-panel-sidebar-item.sto-is-parent-active > .sto-option-panel-sidebar-item-link,
+.sto-option-panel-sidebar-item-link.sto-is-parent-active {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+.sto-option-panel-sidebar-item.sto-is-parent-active > .sto-option-panel-sidebar-item-link .sto-option-panel-icon,
+.sto-option-panel-sidebar-item-link.sto-is-parent-active .sto-option-panel-icon {
+    color: #ffffff;
+}
+
+.sto-option-panel-sidebar-item.sto-is-parent-active > .sto-option-panel-sidebar-item-link:hover,
+.sto-option-panel-sidebar-item-link.sto-is-parent-active:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Nested subsection lists: vertical `ul > li > ul` under each parent row. */
+.sto-option-panel-sidebar-children {
+    margin: 4px 0 6px;
+    padding: 6px 6px 6px 10px;
+    list-style: none;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+    border-left: 3px solid rgba(18, 115, 198, 0.35);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sto-option-panel-sidebar-children.sto-is-collapsed {
+    display: none;
+}
+
+.sto-option-panel-sidebar-children.sto-is-open {
+    display: block;
+}
+
+.sto-option-panel-sidebar-children .sto-option-panel-sidebar-item + .sto-option-panel-sidebar-item {
+    margin-top: 2px;
+}
+
+.sto-option-panel-sidebar-children .sto-option-panel-sidebar-item-link {
+    min-height: 30px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.sto-option-panel-sidebar-item.sto-is-child.sto-has-children > .sto-option-panel-sidebar-item-link {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* Active leaf inside nested lists: same blue as top-level leaves. */
+.sto-option-panel-sidebar-item.sto-is-child.sto-is-active > .sto-option-panel-sidebar-item-link,
+.sto-option-panel-sidebar-item.sto-is-child > .sto-option-panel-sidebar-item-link.sto-is-active {
+    background: #1273c6;
+    color: #ffffff;
+}
+
+.sto-option-panel-sidebar-item.sto-is-child.sto-is-active > .sto-option-panel-sidebar-item-link .sto-option-panel-icon,
+.sto-option-panel-sidebar-item.sto-is-child > .sto-option-panel-sidebar-item-link.sto-is-active .sto-option-panel-icon {
+    color: #ffffff;
+}
+
+.sto-option-panel-sidebar-item.sto-is-child.sto-is-active > .sto-option-panel-sidebar-item-link:hover,
+.sto-option-panel-sidebar-item.sto-is-child > .sto-option-panel-sidebar-item-link.sto-is-active:hover {
+    background: #1273c6;
+}
+
+/* Child heading rows (items that have children) should not get the leaf active background. */
+.sto-option-panel-sidebar-item.sto-is-child.sto-has-children.sto-is-active > .sto-option-panel-sidebar-item-link,
+.sto-option-panel-sidebar-item.sto-is-child.sto-has-children > .sto-option-panel-sidebar-item-link.sto-is-active {
+    background: transparent;
+    color: #ffffff;
+}
+
+/* Right content header */
+.sto-option-panel-content-head {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 2px 4px;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sto-option-panel-content-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    background-color: #f3f3f3;
+    margin-inline-end: 12px;
+    flex: 0 0 48px;
+}
+
+.sto-option-panel-content-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 24px;
+    line-height: 24px;
+    color: #4a4a4a;
+}
+
+.sto-option-panel-content-title {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 24px;
+    line-height: 1.2;
+    font-weight: 500;
+    color: #1d2327;
+}
+
+.sto-option-panel-content-body {
+    margin-top: 16px;
+    /* Reserve space so the last fields are not covered when scrolled to the bottom (sticky save bar). */
+    padding-bottom: 72px;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sto-options-form {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Sticky save bar (WoodMart-style): light strip + top rule, stays above long option lists while scrolling. */
+.sto-options-form-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin-top: auto;
+    margin-inline: -2px;
+    padding: 14px 6px 16px;
+    border-top: 1px solid #dcdcde;
+    background: #f9f9f9;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.sto-save-notice {
+    margin-top: 14px;
+    margin-bottom: 16px;
+    padding: 11px 14px;
+    border-radius: 3px;
+    border: 1px solid #bfe3bf;
+    background: #ecf7ed;
+    color: #2f5f2f;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.sto-validation-notice {
+    margin-top: 14px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    border: 1px solid #dba617;
+    background: #fcf9e8;
+    color: #614b00;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.sto-validation-notice-title {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a3b00;
+}
+
+.sto-validation-notice-lead {
+    margin: 0 0 8px;
+}
+
+.sto-validation-notice-list {
+    margin: 0 0 0 1.1em;
+    padding: 0;
+}
+
+.sto-validation-notice-list li {
+    margin-bottom: 4px;
+}
+
+.sto-option-panel-section.sto-is-hidden {
+    display: none;
+}
+
+.sto-option-panel-section.sto-is-active {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* One fieldset per leaf panel: disabled when the section is hidden so HTML5 required / form
+ * controls in other tabs do not block Save (same form, display:none only does not exempt validation). */
+.sto-panel-section-fields {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+}
+
+.sto-option-panel-section-placeholder {
+    margin: 0;
+    padding: 16px;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #fff;
+    color: #50575e;
+}
+
+.sto-option-panel-sidebar-children .sto-option-panel-sidebar-item-title {
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* Option field blocks (WoodMart-style: title → rule → select → help) */
+.sto-field-row {
+    padding: 0 0 20px;
+    margin: 0;
+    border-bottom: 1px solid #e8e8e8;
+    background: transparent;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sto-field-row + .sto-field-row {
+    margin-top: 14px;
+}
+
+.sto-field-row.sto-required-hidden {
+    display: none !important;
+}
+
+.sto-field-row:last-child {
+    border-bottom: none;
+}
+
+.sto-field-row-select {
+    max-width: 100%;
+}
+
+.sto-field-title {
+    margin: 0 0 10px;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 600;
+    color: #333;
+    cursor: default;
+    letter-spacing: 0;
+}
+
+.sto-field-title-sep {
+    display: block;
+    width: 100%;
+    height: 1px;
+    margin: 0 0 16px;
+    padding: 0;
+    border: 0;
+    background: #e0e0e0;
+}
+
+.sto-select-wrap {
+    max-width: 100%;
+    width: 100%;
+}
+
+/* Native selects: FA chevron (same family/size as Select2 in sto-select2.css) */
+.sto-option-panel-wrapper .sto-select-wrap {
+    position: relative;
+}
+
+.sto-option-panel-wrapper .sto-select-wrap .sto-input-select {
+    background-image: none;
+    padding-right: 40px;
+}
+
+.sto-option-panel-wrapper .sto-select-wrap::after {
+    font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", sans-serif;
+    font-weight: 300;
+    content: "\f078";
+    font-size: 15px;
+    line-height: 1;
+    color: #50575e;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 1;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Native chevron only — hide when Select2 is active (otherwise two arrows stack). */
+.sto-option-panel-wrapper .sto-select-wrap:has(.select2-container)::after,
+.sto-option-panel-wrapper .sto-select-wrap:has(select.select2-hidden-accessible)::after {
+    display: none !important;
+    content: none !important;
+}
+
+.sto-option-panel-wrapper .sto-typography-cell {
+    position: relative;
+}
+
+.sto-option-panel-wrapper .sto-typography-cell > select.sto-input-select:not(.select2-hidden-accessible) {
+    background-image: none;
+    padding-right: 40px;
+}
+
+.sto-option-panel-wrapper .sto-typography-cell:has(> select.sto-input-select:not(.select2-hidden-accessible))::after {
+    font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", sans-serif;
+    font-weight: 300;
+    content: "\f078";
+    font-size: 15px;
+    line-height: 1;
+    color: #50575e;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 1;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+}
+
+.sto-input-select {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-height: 38px;
+    margin: 0;
+    padding: 7px 34px 7px 11px;
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 400;
+    color: #333;
+    background-color: #fff;
+    border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+    border-radius: var(--sto-field-soft-radius, 5px);
+    box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%237a7a7a' d='M5 6.5L1 2.5h8z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+    background-size: 10px 10px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sto-input-select:hover {
+    border-color: #d0d0d0;
+}
+
+.sto-input-select:focus {
+    border-color: #2271b1;
+    box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+    outline: none;
+}
+
+/* First option often acts as placeholder (“Select”) */
+.sto-input-select option[value=""] {
+    color: #8c8f94;
+}
+
+.sto-field-description {
+    margin: 12px 0 0;
+    max-width: 640px;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #757575;
+    font-style: italic;
+    font-weight: 400;
+}
+
+.sto-section-actions {
+    padding-top: 18px;
+}
+
+/* Inline section save rows (if reintroduced) stay compact; global footer uses .sto-options-form-footer. */
+.sto-option-panel-section > .sto-section-actions:first-child {
+    padding-top: 0;
+}
+
+.sto-section-actions .button.button-primary {
+    min-height: 38px;
+    padding: 0 14px;
+    font-size: 13px;
+    line-height: 36px;
+    border-radius: 4px;
+}
+
+.sto-section-actions .button .fa-light {
+    margin-right: 6px;
+}
+
+/* Group control: heading + light panel with stacked fields */
+.sto-field-group {
+    margin-top: 22px;
+    margin-bottom: 0;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Root (depth 0): neutral panel; nested: tinted “frame” + white inner so hierarchy reads like premium theme UIs */
+.sto-field-group--nested {
+    margin-top: 20px;
+    margin-bottom: 0;
+    padding: 16px 18px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 3px rgba(15, 34, 58, 0.06);
+}
+
+.sto-field-group--nested:first-child {
+    margin-top: 0;
+}
+
+/* Nested depth tints (cool blue-grey ramp — readable, calm hierarchy) */
+.sto-field-group--nested[data-sto-group-depth="1"] {
+    background: #f0f4f8;
+    border-color: #c5d5e3;
+}
+
+.sto-field-group--nested[data-sto-group-depth="2"] {
+    background: #e6eef6;
+    border-color: #b0c8de;
+}
+
+.sto-field-group--nested[data-sto-group-depth="3"] {
+    background: #dde8f3;
+    border-color: #9fb8d4;
+}
+
+.sto-field-group--nested.sto-field-group--depth-deep {
+    background: #d3e0ef;
+    border-color: #8aa8c4;
+}
+
+/* Group panel title + optional `?` help (same trigger as FieldTitle field rows). */
+.sto-field-group-heading-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin: 0 0 10px;
+    justify-content: space-between;
+}
+
+.sto-field-group-heading-row .sto-field-title-row__leading .sto-field-group-heading {
+    margin: 0;
+    padding: 0;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.sto-field-group--nested > .sto-field-group-heading-row {
+    margin: 0 0 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(30, 41, 59, 0.1);
+}
+
+.sto-field-group-heading {
+    font-size: 18px;
+    line-height: 1.3;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.sto-field-group--nested > .sto-field-group-heading-row .sto-field-title-row__leading .sto-field-group-heading {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3338;
+}
+
+.sto-field-group-description {
+    margin: -4px 0 12px;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    font-style: italic;
+    font-weight: 400;
+    color: #757575;
+}
+
+.sto-field-group--nested .sto-field-group-description {
+    margin: -6px 0 14px;
+    color: #5c6570;
+}
+
+/* Root inner: soft neutral; nested inner: white card on tinted shell */
+.sto-field-group[data-sto-group-depth="0"] .sto-field-group-inner {
+    padding: 6px 20px 4px;
+    background: #f3f4f5;
+    border: 1px solid #e2e4e7;
+    border-radius: 6px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sto-field-group--nested .sto-field-group-inner {
+    padding: 14px 18px 12px;
+    background: #fff;
+    border: 1px solid rgba(30, 41, 59, 0.1);
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(15, 34, 58, 0.05);
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* 12-column grid host — each direct child is `.sto-field-group-cell` carrying a span class
+   that mirrors Tabs' inner grid (same 1-2 / 1/3 / 2-3 / full / integer 1–12 grammar via
+   `Common\LayoutWidth::parse_span()`). Default span 12 keeps every cell full-width so groups
+   without `width` set look identical to the legacy stacked layout. */
+.sto-field-group-inner {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 16px;
+    row-gap: 0;
+    align-items: start;
+}
+
+.sto-field-group-cell {
+    grid-column: span 12;
+    min-width: 0;
+}
+
+.sto-field-group-cell--span-1  { grid-column: span 1; }
+.sto-field-group-cell--span-2  { grid-column: span 2; }
+.sto-field-group-cell--span-3  { grid-column: span 3; }
+.sto-field-group-cell--span-4  { grid-column: span 4; }
+.sto-field-group-cell--span-5  { grid-column: span 5; }
+.sto-field-group-cell--span-6  { grid-column: span 6; }
+.sto-field-group-cell--span-7  { grid-column: span 7; }
+.sto-field-group-cell--span-8  { grid-column: span 8; }
+.sto-field-group-cell--span-9  { grid-column: span 9; }
+.sto-field-group-cell--span-10 { grid-column: span 10; }
+.sto-field-group-cell--span-11 { grid-column: span 11; }
+.sto-field-group-cell--span-12 { grid-column: span 12; }
+
+/* Narrow panels: collapse every cell to a full row so multi-column inner layouts never
+   overflow the (~782px or smaller) options panel. Mirrors Tabs `@media (max-width: 960px)`. */
+@media (max-width: 960px) {
+    .sto-field-group-cell[class*="sto-field-group-cell--span"] {
+        grid-column: 1 / -1;
+    }
+}
+
+.sto-field-group-cell.sto-required-hidden {
+    display: none !important;
+}
+
+.sto-field-group-inner .sto-field-row--in-group {
+    padding: 16px 0;
+    margin: 0;
+    border-bottom: none;
+}
+
+/* Vertical separator hairline — only between consecutive full-width cells (visually stacked).
+   Side-by-side cells (e.g. 1-2 + 1-2 or 1-3 + 1-3 + 1-3) intentionally skip the line so the
+   row reads as one logical strip. On ≤960px every cell is forced to span 12 so the line
+   reappears between every row (handled below via the same selector). */
+.sto-field-group-cell--span-12 + .sto-field-group-cell--span-12 > .sto-field-row--in-group {
+    border-top: 1px solid #e0e0e0;
+    margin-top: 0;
+    padding-top: 16px;
+}
+
+@media (max-width: 960px) {
+    .sto-field-group-cell + .sto-field-group-cell > .sto-field-row--in-group {
+        border-top: 1px solid #e0e0e0;
+        margin-top: 0;
+        padding-top: 16px;
+    }
+}
+
+.sto-field-group-cell:last-child > .sto-field-row--in-group {
+    padding-bottom: 14px;
+}
+
+.sto-field-group-inner .sto-field-group-item-title {
+    margin: 0 0 10px;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 600;
+    color: #333;
+    cursor: default;
+}
+
+.sto-field-group-inner .sto-field-row--in-group .sto-select-wrap {
+    max-width: 100%;
+}
+
+.sto-field-group.sto-required-hidden {
+    display: none !important;
+}
+
+/* Set by JS when every field/subgroup inside the panel is hidden by required rules */
+.sto-field-group.sto-field-group--empty-body {
+    display: none !important;
+}
+
+/* -------------------------------------------------------------------------------------------- */
+/* Quick-search jump highlight                                                                  */
+/*                                                                                              */
+/* `stoFlashFieldTarget()` in `main.js` (quick search + accordion demo intro cards) adds `.sto-field-flash` after */
+/* it scrolls into view, then removes it once the keyframe finishes (~1.6s later). The pulse    */
+/* draws a soft WordPress-blue halo around the row and gently tints its background so the user  */
+/* can spot which field they jumped to — the flash decays back to default state so the row      */
+/* doesn't keep drawing attention after the user starts editing.                                */
+/*                                                                                              */
+/* The target element ID comes from `Menu`'s search index (`sto-field-{id}` for standalone /    */
+/* group-inner fields, `sto-group-{id}` for whole groups). Both `.sto-field-row` and            */
+/* `.sto-field-group` carry the class — the rules below cover both contexts.                    */
+/* -------------------------------------------------------------------------------------------- */
+
+@keyframes stoFieldFlash {
+    0% {
+        background-color: rgba(34, 113, 177, 0.14);
+        box-shadow: 0 0 0 0 rgba(34, 113, 177, 0.55), 0 0 0 1px rgba(34, 113, 177, 0.45);
+    }
+    25% {
+        background-color: rgba(34, 113, 177, 0.12);
+        box-shadow: 0 0 0 6px rgba(34, 113, 177, 0), 0 0 0 1px rgba(34, 113, 177, 0.45);
+    }
+    100% {
+        background-color: rgba(34, 113, 177, 0);
+        box-shadow: 0 0 0 0 rgba(34, 113, 177, 0), 0 0 0 0 rgba(34, 113, 177, 0);
+    }
+}
+
+.sto-field-flash {
+    animation: stoFieldFlash 1.6s ease-out 1;
+    border-radius: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Honour reduced-motion preferences — fall back to a static tint that fades over 0.6s
+   instead of the pulsing halo. The user still gets a "this is the row" cue, just gentler. */
+@media (prefers-reduced-motion: reduce) {
+    @keyframes stoFieldFlash {
+        0% { background-color: rgba(34, 113, 177, 0.12); }
+        100% { background-color: rgba(34, 113, 177, 0); }
+    }
+
+    .sto-field-flash {
+        animation-duration: 0.6s;
+        box-shadow: none;
+    }
+}

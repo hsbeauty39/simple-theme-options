@@ -1,0 +1,286 @@
+/*
+ * Color field — compact swatch, visible hex/rgba field, core default/clear,
+ * external reset, Iris + alpha via wp-color-picker-alpha. Alpha preview uses
+ * a full-bleed .color-alpha layer over the vendor checkerboard. Container is
+ * inline-grid so row 1 stays one line; `.wp-picker-holder` is `display:none`
+ * until `.wp-picker-active` so closed pickers never show an empty bordered strip.
+ * Open holder trims inline-block gap above Iris. Standalone rows are flush.
+ */
+
+.sto-option-panel-wrapper .sto-field-row-color .sto-field-group-item-title + .sto-color-wrap,
+.sto-option-panel-wrapper .sto-field-row-color.sto-field-row--in-group .sto-field-group-item-title + .sto-color-wrap {
+	margin-top: 4px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .sto-color-wrap {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	gap: 6px;
+	max-width: 100%;
+}
+
+/*
+ * Grid: row 1 = swatch + wrap; row 2 = Iris holder (display:none when closed — no ghost strip).
+ */
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-container {
+	display: inline-grid;
+	grid-template-columns: auto max-content;
+	grid-template-rows: auto auto;
+	align-items: center;
+	column-gap: 6px;
+	row-gap: 4px;
+	flex: 0 0 auto;
+	min-width: 0;
+	max-width: 100%;
+	position: relative;
+	vertical-align: top;
+	margin: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-container .wp-color-result.button {
+	grid-column: 1;
+	grid-row: 1;
+	height: 38px;
+	min-width: 38px;
+	width: 38px;
+	max-width: 38px;
+	margin: 0;
+	padding: 0 !important;
+	border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+	border-radius: var(--sto-field-soft-radius, 5px);
+	box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+	position: relative;
+	overflow: hidden;
+	background-color: #fff !important;
+}
+
+/* Alpha: one swatch — full-area color (incl. transparency) over vendor checkerboard (no split strip) */
+.sto-option-panel-wrapper .sto-field-row-color .sto-color-wrap.sto-color--alpha .wp-color-result.button .color-alpha {
+	left: 0 !important;
+	right: 0 !important;
+	top: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+	border-radius: inherit;
+	box-sizing: border-box;
+	z-index: 1;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .wp-color-result-text {
+	display: none !important;
+}
+
+/*
+ * Row 1: swatch + wrap (hex/rgba field + default + clear). Value field is visible
+ * for manual entry; Iris / wp-color-picker-alpha keep it in sync with the picker.
+ */
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap {
+	grid-column: 2;
+	grid-row: 1;
+	position: relative;
+	display: inline-flex !important;
+	align-items: center;
+	flex-wrap: nowrap;
+	gap: 6px;
+	width: auto !important;
+	max-width: none !important;
+	min-width: 0;
+	min-height: 38px;
+	margin: 0 !important;
+	vertical-align: top;
+	justify-self: start;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap.hidden {
+	display: inline-flex !important;
+}
+
+/*
+ * Core wraps the field in <label> then places Default after it — flex children
+ * of .wp-picker-input-wrap are [label, button], not [input, button].
+ */
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap > label {
+	position: relative !important;
+	display: inline-flex !important;
+	align-items: center;
+	width: auto !important;
+	height: auto !important;
+	min-height: 38px;
+	padding: 0 !important;
+	margin: 0 !important;
+	overflow: visible !important;
+	clip: auto !important;
+	clip-path: none !important;
+	border: 0 !important;
+	order: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap > label .screen-reader-text {
+	position: absolute !important;
+	width: 1px !important;
+	height: 1px !important;
+	padding: 0 !important;
+	margin: -1px !important;
+	overflow: hidden !important;
+	clip: rect(0, 0, 0, 0) !important;
+	clip-path: inset(50%) !important;
+	border: 0 !important;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap input[type="text"].wp-color-picker {
+	float: none !important;
+	position: relative !important;
+	left: auto !important;
+	top: auto !important;
+	flex: 0 1 auto;
+	width: 12em !important;
+	min-width: 132px !important;
+	max-width: 260px !important;
+	height: 38px !important;
+	min-height: 38px !important;
+	padding: 6px 8px !important;
+	margin: 0 !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis;
+	opacity: 1 !important;
+	clip: auto !important;
+	clip-path: none !important;
+	border: 1px solid var(--sto-field-soft-border, #e0e0e0) !important;
+	border-radius: var(--sto-field-soft-radius, 5px) !important;
+	box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05)) !important;
+	box-sizing: border-box !important;
+	pointer-events: auto !important;
+	font-family: inherit;
+	font-size: 13px;
+	line-height: 1.35;
+	color: #1d2327;
+	background: #fff !important;
+	transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap input[type="text"].wp-color-picker:focus {
+	border-color: #2271b1 !important;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12)) !important;
+	outline: none !important;
+}
+
+/* “Default” is a text control — do not force 38px square (clips label). Clear stays compact. */
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap .button.wp-picker-default {
+	order: 2;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 0;
+	width: auto;
+	height: 38px;
+	margin: 0;
+	padding: 0 10px;
+	line-height: 1;
+	border-radius: 4px;
+	box-sizing: border-box;
+	white-space: nowrap;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-input-wrap .button.wp-picker-clear {
+	order: 2;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 38px;
+	width: 38px;
+	height: 38px;
+	margin: 0;
+	padding: 0;
+	line-height: 1;
+	border-radius: 4px;
+	box-sizing: border-box;
+}
+
+/* Closed: Iris target is still in the tree — hide the holder so border/padding don’t read as a second “input” */
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-container:not(.wp-picker-active) .wp-picker-holder {
+	display: none !important;
+}
+
+/* Open: popover shell + Iris (trim inline-block gap above square) */
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-container.wp-picker-active .wp-picker-holder {
+	display: block;
+	grid-column: 1 / -1;
+	grid-row: 2;
+	width: auto;
+	min-width: 0;
+	max-width: 100%;
+	border: 1px solid #dcdcdc;
+	border-radius: 4px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	margin-top: 0;
+	background: #fff;
+	padding: 4px 6px 6px;
+	box-sizing: border-box;
+	line-height: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .wp-picker-container.wp-picker-active .wp-picker-holder .iris-picker {
+	vertical-align: top;
+	line-height: normal;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .iris-picker {
+	border: 0 !important;
+	margin: 0 !important;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .iris-border {
+	margin: 0 !important;
+	border-radius: 4px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .iris-picker-inner {
+	vertical-align: top;
+}
+
+/* Alpha strip: checkerboard + gradient (script sets background) */
+.sto-option-panel-wrapper .sto-field-row-color .iris-strip.iris-strip-alpha {
+	border-radius: 3px;
+	overflow: hidden;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+/* External reset */
+.sto-option-panel-wrapper .sto-field-row-color .sto-color-reset {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	margin: 0 0 0 2px;
+	padding: 0;
+	border: 1px solid #dcdcdc;
+	border-radius: 4px;
+	background: #fff;
+	color: #646970;
+	cursor: pointer;
+	transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+	flex: 0 0 auto;
+	align-self: center;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .sto-color-reset:hover {
+	border-color: #2271b1;
+	color: #2271b1;
+	background: #f6f7f7;
+}
+
+.sto-option-panel-wrapper .sto-field-row-color .sto-color-reset i {
+	font-size: 15px;
+	line-height: 1;
+}
+
+.sto-field-row--in-group .sto-color-wrap {
+	max-width: 100%;
+}
+
+/* Tighter copy under the control row */
+.sto-option-panel-wrapper .sto-field-row-color .sto-field-description {
+	margin-top: 6px;
+}

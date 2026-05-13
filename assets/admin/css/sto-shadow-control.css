@@ -1,0 +1,176 @@
+/**
+ * Shadow field — code-defined CSS selector + box-shadow (popup or inline).
+ */
+
+.sto-option-panel-wrapper .sto-field-row-shadow {
+	max-width: 100%;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-row-reset {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	margin: 0 0 0 4px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: #646970;
+	cursor: pointer;
+	transition: color 0.12s ease, background 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-row-reset:hover,
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-row-reset:focus-visible {
+	color: #2271b1;
+	background: rgba(34, 113, 177, 0.08);
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-row-reset i {
+	font-size: 13px;
+	line-height: 1;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-control {
+	position: relative;
+	display: block;
+	max-width: 100%;
+}
+
+/* Summary row (popup mode): edit pill — selector is code-defined */
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-summary {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin-top: 4px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-summary--compact {
+	justify-content: flex-start;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-edit {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 34px;
+	padding: 6px 14px;
+	border: 1px solid #2271b1;
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: #2271b1;
+	color: #fff;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.2;
+	cursor: pointer;
+	box-shadow: none;
+	transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-edit:hover,
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-edit:focus-visible {
+	background: #135e96;
+	border-color: #135e96;
+	color: #fff;
+	outline: none;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 3px rgba(34, 113, 177, 0.18));
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-popover {
+	position: absolute;
+	top: calc(100% + 8px);
+	left: 0;
+	z-index: 60;
+	min-width: 320px;
+	max-width: min(400px, 92vw);
+	padding: 16px 16px 14px;
+	background: #fff;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: 8px;
+	box-shadow: 0 12px 32px rgba(15, 34, 58, 0.12), 0 2px 8px rgba(15, 34, 58, 0.06);
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-popover[hidden] {
+	display: none !important;
+}
+
+/* Inline mode: color + offsets + position (selector is code-defined) */
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-inline {
+	margin-top: 4px;
+	padding: 14px 14px 10px;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: #fafbfc;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-inline .sto-shadow-popover__row:first-child {
+	margin-top: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-popover__row + .sto-shadow-popover__row {
+	margin-top: 12px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-popover__label {
+	display: block;
+	margin: 0 0 6px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #50575e;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-popover__inputs {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-popover__slider {
+	flex: 1 1 120px;
+	min-width: 80px;
+	accent-color: #2271b1;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-popover__number {
+	width: 4.5rem;
+	height: 32px;
+	padding: 4px 8px;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	font-size: 13px;
+	background: #fff;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-popover__select {
+	min-width: 140px;
+	height: 34px;
+	padding: 4px 28px 4px 10px;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: #fff;
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-color-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+
+@media (max-width: 600px) {
+	.sto-option-panel-wrapper .sto-field-row-shadow .sto-shadow-popover {
+		left: 0;
+		right: 0;
+		max-width: none;
+	}
+}

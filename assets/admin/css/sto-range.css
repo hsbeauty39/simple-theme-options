@@ -1,0 +1,223 @@
+/**
+ * Range slider + number + unit column (Theme Settings).
+ *
+ * WebKit/Blink: input height = track height; thumb uses negative margin-top so the
+ * circle centers on the track (classic pattern). Wrapper flex-centers that strip in the row.
+ * Firefox: slightly taller control so the thumb is not clipped; track stays 6px.
+ */
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range {
+	max-width: 100%;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px 14px;
+	width: 100%;
+}
+
+/* Centers the slider strip vertically next to the 36px number field (avoids baseline stretch). */
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__slider-wrap {
+	--sto-range-track-h: 6px;
+	--sto-range-thumb: 18px;
+	flex: 1 1 160px;
+	min-width: 120px;
+	min-height: 28px;
+	display: flex;
+	align-items: center;
+	align-self: center;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__slider {
+	--sto-range-track-h: 6px;
+	--sto-range-thumb: 18px;
+	width: 100%;
+	height: var(--sto-range-track-h);
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	line-height: 0;
+	-webkit-appearance: none;
+	appearance: none;
+	box-sizing: border-box;
+	cursor: pointer;
+}
+
+/* Chrome / Safari / Edge (Chromium): thumb must pull up to sit on track midline. */
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: var(--sto-range-thumb);
+	height: var(--sto-range-thumb);
+	box-sizing: border-box;
+	border-radius: 50%;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.08),
+		0 2px 6px rgba(0, 0, 0, 0.12),
+		0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+	cursor: pointer;
+	margin-top: calc((var(--sto-range-track-h) - var(--sto-range-thumb)) / 2);
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__slider::-webkit-slider-runnable-track {
+	height: var(--sto-range-track-h);
+	margin: 0;
+	border-radius: 3px;
+	background: linear-gradient(to right, #2271b1 0%, #2271b1 var(--sto-range-pct, 0%), #e8e8e8 var(--sto-range-pct, 0%), #e8e8e8 100%);
+	border: 0;
+}
+
+/* Firefox: give enough control height so the thumb paints fully; track/progress stay thin. */
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__slider::-moz-range-thumb {
+	width: var(--sto-range-thumb);
+	height: var(--sto-range-thumb);
+	box-sizing: border-box;
+	border-radius: 50%;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.08),
+		0 2px 6px rgba(0, 0, 0, 0.12),
+		0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+	cursor: pointer;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__slider::-moz-range-track {
+	height: var(--sto-range-track-h);
+	border-radius: 3px;
+	background: #e8e8e8;
+	border: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__slider::-moz-range-progress {
+	height: var(--sto-range-track-h);
+	border-radius: 3px;
+	background: #2271b1;
+	border: 0;
+}
+
+@supports (-moz-appearance: none) {
+	.sto-option-panel-wrapper .sto-field-row-range .sto-range__slider {
+		height: var(--sto-range-thumb);
+		min-height: var(--sto-range-thumb);
+	}
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__number {
+	width: 72px;
+	max-width: 100%;
+	height: 36px;
+	padding: 0 8px;
+	border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+	border-radius: var(--sto-field-soft-radius, 5px);
+	background: #fff;
+	font-size: 13px;
+	line-height: 1.2;
+	box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+	transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__number:focus {
+	border-color: #2271b1;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+	outline: none;
+}
+
+/* Optional register key `unit_label` — e.g. PAGE for “pages visited” (not stored in JSON). */
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__unit-label {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	color: #646970;
+	line-height: 1.2;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	white-space: nowrap;
+	user-select: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__units {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 2px;
+	min-width: 52px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__unit {
+	margin: 0;
+	padding: 2px 4px;
+	border: 0;
+	background: transparent;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	color: #646970;
+	cursor: pointer;
+	text-align: center;
+	text-decoration: none;
+	line-height: 1.2;
+	border-radius: 2px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__unit:hover {
+	color: #1d2327;
+	background: #f0f0f1;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__unit.sto-is-active {
+	color: #1d2327;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__unit-badge {
+	display: block;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	color: #646970;
+	line-height: 1.2;
+	text-align: center;
+	min-width: 2.5em;
+	padding: 2px 4px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__custom-suffix {
+	width: 88px;
+	max-width: 100%;
+	height: 36px;
+	padding: 0 8px;
+	border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+	border-radius: var(--sto-field-soft-radius, 5px);
+	background: #fff;
+	font-size: 12px;
+	box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+	transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-range .sto-range__custom-suffix:focus {
+	border-color: #2271b1;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+	outline: none;
+}
+
+/* Very narrow panels: slider row can use full width after number/units wrap. */
+@media (max-width: 480px) {
+	.sto-option-panel-wrapper .sto-field-row-range .sto-range__slider-wrap {
+		flex: 1 1 100%;
+		min-width: 0;
+	}
+}
+
+.sto-field-row-range.sto-required-hidden .sto-range :input {
+	opacity: 0.5;
+	pointer-events: none;
+}

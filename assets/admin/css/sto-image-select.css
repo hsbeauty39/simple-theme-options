@@ -1,0 +1,172 @@
+/* Image group select — fluid CSS-grid tiles (100% responsive, WoodMart-style).
+   Column count is controlled by inline custom properties from PHP:
+   --sto-img-cols-xxl  (default / desktop, always applies)
+   --sto-img-cols-md   (≤991px tablet override)
+   --sto-img-cols-mobile (≤600px small override)
+   Built-in fallbacks: 3 / 2 / 1 when admin omits `columns`. */
+
+.sto-field-row-image-select .sto-field-title-sep--inner {
+    display: block;
+    width: 100%;
+    height: 1px;
+    margin: 0 0 16px;
+    padding: 0;
+    border: 0;
+    background: var(--sto-field-soft-border, #e6e8eb);
+}
+
+.sto-field-row-image-select .sto-image-select {
+    display: grid;
+    grid-template-columns: repeat(var(--sto-img-cols-xxl, 3), minmax(0, 1fr));
+    gap: 14px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.sto-image-select__item {
+    position: relative;
+    display: block;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 6px;
+    min-width: 0; /* prevent grid blow-out on narrow tiles */
+}
+
+.sto-image-select__item:focus-within {
+    outline: none;
+}
+
+.sto-image-select__item:focus-within .sto-image-select__card {
+    border-color: #2271b1;
+    box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 3px rgba(34, 113, 177, 0.12));
+}
+
+.sto-image-select__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.sto-image-select__card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+    border-radius: var(--sto-field-soft-radius, 6px);
+    box-shadow: var(--sto-field-soft-shadow, none);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.sto-image-select__item:hover .sto-image-select__card {
+    border-color: #d6dadd;
+}
+
+.sto-image-select__item:has(.sto-image-select__input:checked) .sto-image-select__card,
+.sto-image-select__item--selected .sto-image-select__card {
+    border-width: 2px;
+    border-color: #2271b1;
+    box-shadow: none;
+    padding: 5px;
+}
+
+.sto-image-select__thumb {
+    display: block;
+    width: 100%;
+    aspect-ratio: 2.35 / 1;
+    min-height: 52px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.sto-image-select__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Wireframe: wide content bars */
+.sto-image-select__diagram {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 4px;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 3px;
+    background: #fff;
+}
+
+.sto-image-select__bar {
+    display: block;
+    border-radius: 2px;
+    min-height: 100%;
+}
+
+.sto-image-select__bar--solo {
+    flex: 1;
+    background: #b6babf;
+}
+
+.sto-image-select__bar--sidebar {
+    flex: 0 0 18%;
+    max-width: 36px;
+    background: #f0f0f1;
+    border: 1px solid #dcdcde;
+    box-sizing: border-box;
+}
+
+.sto-image-select__bar--content {
+    flex: 1;
+    background: #9ea3a8;
+}
+
+.sto-image-select__label {
+    display: block;
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: #1d2327;
+    text-align: center;
+    /* Truncate gracefully when tiles get narrow — full label still shows in hover tooltip. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* show_labels: false → hide visible captions; full label remains accessible via the hover/focus text tooltip. */
+.sto-image-select--no-labels .sto-image-select__label,
+.sto-field-row-image-select--no-labels .sto-image-select__label {
+    display: none;
+}
+
+/* Tablet override (admin) — cascade up to xxl when --sto-img-cols-md is unset. */
+@media (max-width: 991px) {
+    .sto-field-row-image-select .sto-image-select {
+        grid-template-columns: repeat(var(--sto-img-cols-md, var(--sto-img-cols-xxl, 2)), minmax(0, 1fr));
+        gap: 12px;
+    }
+}
+
+/* Mobile override (admin) — cascade up through md / xxl when --sto-img-cols-mobile is unset. */
+@media (max-width: 600px) {
+    .sto-field-row-image-select .sto-image-select {
+        grid-template-columns: repeat(var(--sto-img-cols-mobile, var(--sto-img-cols-md, var(--sto-img-cols-xxl, 1))), minmax(0, 1fr));
+        gap: 10px;
+    }
+}

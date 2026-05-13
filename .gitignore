@@ -1,0 +1,59 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.code-workspace
+
+# Logs / debug
+*.log
+debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies (re-build with package manager)
+node_modules/
+vendor/
+
+# Build / cache artefacts
+build/
+dist/
+.cache/
+.parcel-cache/
+.tmp/
+.tmp_*/
+*.tmp
+*.bak
+*.orig
+
+# WordPress-local stuff that shouldn't ship in the plugin repo
+wp-config.php
+.htaccess
+sitemap.xml
+sitemap.xml.gz
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+
+# Test / coverage
+coverage/
+.phpunit.result.cache
+.phpunit.cache/
+
+# Composer
+composer.phar
+composer.lock
+
+# Packaging
+*.zip
+*.tar
+*.tar.gz
+*.tgz

@@ -1,0 +1,316 @@
+/**
+ * Select2 appearance for Simple Theme Options (WordPress admin–style).
+ * All chrome is under .sto-option-panel-wrapper so fields in .sto-select-wrap and
+ * typography .sto-typography-cell share one path (typography has no wrap — vendor
+ * defaults were breaking padding/height/width there).
+ * Icons: Font Awesome 6 Pro (light) — clear + chevron-down / chevron-up.
+ */
+
+/* Vendor uses inline-block + height:28px on .select2-selection--single — breaks grid + typography */
+.sto-option-panel-wrapper .select2-container {
+	box-sizing: border-box;
+	display: block !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	vertical-align: top;
+	margin: 0;
+	position: relative;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--single {
+	box-sizing: border-box;
+	cursor: pointer;
+	display: block;
+	height: 40px !important;
+	min-height: 38px;
+	user-select: none;
+	-webkit-user-select: none;
+	position: relative;
+	padding: 0;
+	border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+	border-radius: var(--sto-field-soft-radius, 5px);
+	background-color: #fff;
+	box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--single .select2-selection__rendered {
+	display: block !important;
+	box-sizing: border-box;
+	padding: 7px 76px 7px 11px !important;
+	line-height: 1.4;
+	font-size: 16px;
+	font-weight: 400;
+	color: #333;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--single .select2-selection__placeholder {
+	color: #8c8f94;
+}
+
+.sto-option-panel-wrapper .select2-container--default.select2-container--focus .select2-selection--single,
+.sto-option-panel-wrapper .select2-container--default.select2-container--open .select2-selection--single {
+	border-color: #2271b1;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+}
+
+/* Clear — hide default × text, show FA xmark */
+.sto-option-panel-wrapper .select2-container--default .select2-selection__clear {
+	position: relative;
+	font-size: 0 !important;
+	color: transparent !important;
+	width: 30px;
+	height: 36px;
+	margin-right: 0;
+	margin-top: 0;
+	vertical-align: middle;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	line-height: 1;
+	transform: translateY(-5px);
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection__clear::before {
+	font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", sans-serif;
+	font-weight: 300;
+	content: "\f00d";
+	font-size: 15px;
+	line-height: 1;
+	color: #646970;
+	display: block;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-font-smoothing: antialiased;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection__clear:hover::before {
+	color: #d63638;
+}
+
+/* Dropdown chevron — hide border triangle, FA chevron-down / chevron-up */
+.sto-option-panel-wrapper .select2-container--default .select2-selection--single .select2-selection__arrow {
+	position: absolute;
+	right: 4px;
+	top: 50%;
+	transform: translateY(-50%);
+	height: 36px;
+	width: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	background: transparent !important;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--single .select2-selection__arrow b {
+	display: none !important;
+	border: none !important;
+	margin: 0 !important;
+	width: 0;
+	height: 0;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--single .select2-selection__arrow::after {
+	font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", sans-serif;
+	font-weight: 300;
+	content: "\f078";
+	font-size: 15px;
+	line-height: 1;
+	color: #50575e;
+	display: block;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-font-smoothing: antialiased;
+	transition: color 0.12s ease;
+}
+
+.sto-option-panel-wrapper .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow::after {
+	content: "\f077";
+	color: #2271b1;
+}
+
+.sto-option-panel-wrapper .select2-container--default.select2-container--focus .select2-selection--single .select2-selection__arrow::after {
+	color: #2271b1;
+}
+
+/* Dropdown panel (class from Select2 dropdownCssClass) */
+.select2-dropdown.sto-select2-dropdown-wrap {
+	border: 1px solid #2271b1;
+	border-radius: 0 0 3px 3px;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+	font-size: 13px;
+}
+
+.select2-dropdown.sto-select2-dropdown-wrap .select2-search--dropdown {
+	padding: 8px;
+	border-bottom: 1px solid #e8e8e8;
+}
+
+.select2-dropdown.sto-select2-dropdown-wrap .select2-search--dropdown .select2-search__field {
+	border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+	border-radius: var(--sto-field-soft-radius, 5px);
+	padding: 6px 8px;
+	font-size: 13px;
+	min-height: 32px;
+	box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+}
+
+.select2-dropdown.sto-select2-dropdown-wrap .select2-search--dropdown .select2-search__field:focus {
+	border-color: #2271b1;
+	outline: none;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+}
+
+.select2-dropdown.sto-select2-dropdown-wrap .select2-results__options {
+	max-height: 240px;
+}
+
+.select2-dropdown.sto-select2-dropdown-wrap .select2-results__option {
+	padding: 8px 11px;
+	margin: 0;
+}
+
+.select2-dropdown.sto-select2-dropdown-wrap .select2-results__option--highlighted[aria-selected] {
+	background-color: #2271b1 !important;
+	color: #fff !important;
+}
+
+.select2-dropdown.sto-select2-dropdown-wrap .select2-results__option[aria-selected="true"] {
+	background-color: #f0f6fc;
+	color: #1d2327;
+}
+
+.select2-dropdown.sto-select2-dropdown-wrap .select2-results__option[aria-selected="true"].select2-results__option--highlighted {
+	color: #fff !important;
+}
+
+/* Multiple selection — selected values render as blue chips ("× Label") inside the same field shell as single-select. */
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple {
+	box-sizing: border-box;
+	cursor: text;
+	display: block;
+	min-height: 38px;
+	padding: 3px 32px 3px 5px;
+	border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+	border-radius: var(--sto-field-soft-radius, 5px);
+	background-color: #fff;
+	box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	position: relative;
+}
+
+.sto-option-panel-wrapper .select2-container--default.select2-container--focus .select2-selection--multiple,
+.sto-option-panel-wrapper .select2-container--default.select2-container--open .select2-selection--multiple {
+	border-color: #2271b1;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: center;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+	min-height: 30px;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice {
+	display: inline-flex;
+	align-items: center;
+	background-color: #2271b1;
+	border: 1px solid #2271b1;
+	border-radius: 3px;
+	color: #fff;
+	font-size: 13px;
+	line-height: 1.2;
+	padding: 4px 10px 4px 6px;
+	margin: 0;
+	cursor: default;
+	max-width: 100%;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice__display {
+	color: #fff;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* "×" remove control sits before the label, white on the blue chip. */
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+	color: #fff !important;
+	background: transparent !important;
+	border: 0;
+	font-size: 0 !important;
+	width: 14px;
+	height: 14px;
+	margin: 0 6px 0 0;
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+	float: none;
+	cursor: pointer;
+	transition: color 0.12s ease;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice__remove::before {
+	font-family: "Font Awesome 6 Pro", "Font Awesome 6 Free", sans-serif;
+	font-weight: 300;
+	content: "\f00d";
+	font-size: 12px;
+	line-height: 1;
+	color: #fff;
+	display: block;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-font-smoothing: antialiased;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover,
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:focus {
+	background: transparent !important;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover::before,
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:focus::before {
+	color: #fff;
+	opacity: 0.85;
+}
+
+/* Inline search input inside the chip area. */
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-search--inline {
+	display: inline-flex;
+	align-items: center;
+	flex: 1 1 auto;
+	min-width: 80px;
+	margin: 0;
+}
+
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field {
+	font-size: 14px;
+	color: #1d2327;
+	margin: 0;
+	padding: 4px 6px;
+	min-height: 28px;
+	width: 100% !important;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	outline: none;
+}
+
+/* No native clear-all "×" for multiple — the per-chip remove buttons replace it. */
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__clear {
+	display: none !important;
+}
+
+/* Multi-select has no single chevron / native arrow row; suppress vendor remnants if any. */
+.sto-option-panel-wrapper .select2-container--default .select2-selection--multiple .select2-selection__arrow {
+	display: none !important;
+}

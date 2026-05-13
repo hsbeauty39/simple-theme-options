@@ -1,0 +1,144 @@
+/* Typography: flush with group (no panel tint); 2×2 grid; Select2 matches main STO selects; one-line preview */
+.sto-field-row-typography .sto-typography {
+    margin-top: 2px;
+}
+
+.sto-field-row--in-group .sto-field-group-item-title + .sto-typography {
+    margin-top: 6px;
+}
+
+.sto-typography {
+    position: relative;
+    max-width: 100%;
+}
+
+.sto-typography-loading {
+    padding: 20px 0 22px;
+    margin: 0;
+    background: transparent;
+    border: 0;
+    text-align: center;
+}
+
+.sto-typography-progress {
+    height: 4px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    background: #e8ecf0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.sto-typography-progress-bar {
+    height: 100%;
+    width: 32%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #2271b1, #72aee6, #2271b1);
+    background-size: 200% 100%;
+    animation: sto-typography-progress-move 1.1s ease-in-out infinite;
+}
+
+@keyframes sto-typography-progress-move {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(320%);
+    }
+}
+
+.sto-typography-body {
+    padding: 0;
+}
+
+/* No extra “card” behind controls — same surface as parent group / section */
+.sto-typography-panel {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.sto-typography-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px 14px;
+    align-items: stretch;
+}
+
+.sto-typography-cell {
+    min-width: 0;
+}
+
+.sto-typography-select,
+.sto-typography-cell .sto-input-select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-height: 38px;
+    margin: 0;
+    padding: 7px 40px 7px 11px;
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 400;
+    color: #333;
+    background-color: #fff;
+    border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+    border-radius: var(--sto-field-soft-radius, 5px);
+    box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sto-typography-select:hover,
+.sto-typography-cell .sto-input-select:hover {
+    border-color: #d0d0d0;
+}
+
+.sto-typography-select:focus,
+.sto-typography-cell .sto-input-select:focus {
+    border-color: #2271b1;
+    box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+    outline: none;
+}
+
+.sto-typography-cell .select2-container {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* Select2 chrome (FA icons, padding): shared rules in sto-select2.css under .sto-option-panel-wrapper */
+
+.sto-typography-preview {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+    border-radius: var(--sto-field-soft-radius, 5px);
+    box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.sto-typography-preview-text {
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.45;
+    color: #333;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.sto-field-row-typography.sto-required-hidden .sto-typography :input {
+    pointer-events: none;
+}

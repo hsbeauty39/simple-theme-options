@@ -1,0 +1,67 @@
+/*
+ * Link color field — paired Regular / Hover pickers. Reuses .sto-color-wrap +
+ * .wp-picker-input-wrap rules from sto-color.css; this stylesheet just lays
+ * out the two columns side-by-side (label above each picker) and lets the
+ * standard wp-color-picker hex / rgba text input + Iris popover render as-is
+ * so admins can type a custom color, paste a hex value, or pick from Iris.
+ */
+
+.sto-option-panel-wrapper .sto-field-row-link-color .sto-link-color {
+	margin-top: 4px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-link-color .sto-link-color__cols {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 24px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-link-color .sto-link-color__col {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+	min-width: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-link-color .sto-link-color__label {
+	display: inline-block;
+	font-size: 13px;
+	font-weight: 500;
+	color: #444;
+	line-height: 1.2;
+}
+
+/*
+ * Keep the visible hex/rgba text input but tighten its width so two pickers
+ * fit comfortably side-by-side at typical admin widths. Stack to one column
+ * on narrow screens (≤782px) — same threshold the rest of the panel uses.
+ */
+.sto-option-panel-wrapper .sto-field-row-link-color .sto-link-color__picker .wp-picker-input-wrap input[type="text"].wp-color-picker {
+	width: 11em !important;
+	min-width: 120px !important;
+	max-width: 220px !important;
+}
+
+/* Stack columns on narrow admins so the hex input never collides with the next picker. */
+@media (max-width: 782px) {
+	.sto-option-panel-wrapper .sto-field-row-link-color .sto-link-color__cols {
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-link-color .sto-link-color__col {
+		width: 100%;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-link-color .sto-link-color__picker .wp-picker-input-wrap input[type="text"].wp-color-picker {
+		width: 100% !important;
+		max-width: none !important;
+	}
+}
+
+/* Tighter description spacing like other compact rows. */
+.sto-option-panel-wrapper .sto-field-row-link-color .sto-field-description {
+	margin-top: 10px;
+}

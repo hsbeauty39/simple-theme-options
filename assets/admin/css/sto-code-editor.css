@@ -1,0 +1,671 @@
+/**
+ * Code editor field — wrapper chrome + CodeMirror skin overrides.
+ *
+ * Backed by `wp.codeEditor` (WordPress core CodeMirror 5). All visual tweaks are scoped
+ * to `.sto-field-row-code-editor` so they cannot leak into other WP CodeMirror UIs
+ * (e.g. Customizer `additional_css`, plugin / theme file editor).
+ */
+
+/* ------------------------------------------------------------------------------------------- */
+/* Wrapper + chrome bar                                                                        */
+/* ------------------------------------------------------------------------------------------- */
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor {
+	position: relative;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: 6px;
+	background: #fff;
+	box-shadow: var(--sto-field-soft-shadow, none);
+	overflow: hidden;
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor:focus-within {
+	border-color: #2271b1;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 3px rgba(34, 113, 177, 0.18));
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 8px 6px 10px;
+	background: linear-gradient(180deg, #f7f8fa 0%, #f1f3f5 100%);
+	border-bottom: 1px solid #e6e8eb;
+	min-height: 32px;
+	user-select: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar-spacer {
+	flex: 1 1 auto;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__mode-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 2px 10px 2px 8px;
+	border-radius: 999px;
+	background: #fff;
+	border: 1px solid #d8dde2;
+	color: #4b5563;
+	font-size: 11px;
+	line-height: 1.4;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__mode-pill i {
+	font-size: 11px;
+	color: #6b7280;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__mode-label {
+	text-transform: uppercase;
+}
+
+/* Chrome-bar language switcher — `sto-code-editor.js` upgrades the native `<select>` to a
+   compact Select2 pill (`selectionCssClass: 'sto-code-editor__lang-s2'`). Until Select2
+   mounts the raw `<select>` peeks through for ~one frame; hide it so there's no flash.
+   Once Select2 is mounted it auto-applies `display: none` to the source `<select>`. */
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__lang-select {
+	width: 160px;
+	max-width: 160px;
+	visibility: hidden;
+	pointer-events: none;
+	position: absolute;
+	left: -9999px;
+}
+
+/* --- Select2 selection chip (closed state) ------------------------------------------------- */
+/* Selectors carry 3 classes (panel-wrapper + bar + select2-container.s2) so they beat the
+   global `.sto-option-panel-wrapper .select2-container { width: 100% !important }` in
+   `sto-select2.css`. `!important` is mirrored where the global stylesheet uses it. */
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar .select2-container.sto-code-editor__lang-s2 {
+	width: auto !important;
+	max-width: 200px !important;
+	min-width: 130px;
+	display: inline-block !important;
+	vertical-align: middle;
+	margin: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar .select2-container.sto-code-editor__lang-s2 .select2-selection--single {
+	height: 26px !important;
+	min-height: 26px !important;
+	padding: 0 26px 0 10px !important;
+	border-radius: 999px !important;
+	border: 1px solid #d8dde2 !important;
+	background: #fff !important;
+	box-shadow: none !important;
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease,
+		background 0.15s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar .select2-container.sto-code-editor__lang-s2 .select2-selection--single:hover {
+	border-color: #b9c0c7 !important;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar .select2-container.sto-code-editor__lang-s2.select2-container--focus .select2-selection--single,
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar .select2-container.sto-code-editor__lang-s2.select2-container--open .select2-selection--single {
+	border-color: #2271b1 !important;
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.15) !important;
+	background: #f7fbff !important;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar .select2-container.sto-code-editor__lang-s2 .select2-selection__rendered {
+	padding: 0 !important;
+	margin: 0 !important;
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	line-height: 24px !important;
+	color: #1f2328;
+	letter-spacing: 0.02em;
+	display: block;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar .select2-container.sto-code-editor__lang-s2 .select2-selection__arrow {
+	height: 24px !important;
+	width: 22px !important;
+	top: 0 !important;
+	right: 4px !important;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar .select2-container.sto-code-editor__lang-s2 .select2-selection__arrow b {
+	display: none !important;
+}
+
+/* FA chevron — same glyph the rest of the plugin uses in `sto-select2.css`. */
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar .select2-container.sto-code-editor__lang-s2 .select2-selection__arrow::before {
+	content: "\f078";
+	font-family: "Font Awesome 6 Pro", "FontAwesome", sans-serif;
+	font-weight: 300;
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 9px;
+	color: #6b7280;
+	line-height: 1;
+	transition: transform 0.15s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar .select2-container.sto-code-editor__lang-s2.select2-container--open .select2-selection__arrow::before {
+	transform: translateY(-50%) rotate(180deg);
+}
+
+/* Selection chip — icon + label as flex row. */
+.sto-code-editor__lang-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+}
+
+.sto-code-editor__lang-chip-icon {
+	font-size: 11px;
+	color: #6b7280;
+	flex: 0 0 auto;
+	width: 12px;
+	text-align: center;
+}
+
+.sto-code-editor__lang-chip-text {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* --- Select2 dropdown popup --------------------------------------------------------------- */
+/* The dropdown is portaled to `dropdownParent` (`#wpbody-content`) so the field selector
+   can't reach it; we scope on the `dropdownCssClass` instead. */
+.sto-code-editor__lang-dropdown.select2-dropdown {
+	border: 1px solid #d8dde2 !important;
+	border-radius: 8px !important;
+	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12) !important;
+	overflow: hidden;
+	min-width: 180px !important;
+	margin-top: 4px;
+}
+
+.sto-code-editor__lang-dropdown .select2-results {
+	padding: 4px 0;
+}
+
+.sto-code-editor__lang-dropdown .select2-results__options {
+	max-height: 280px;
+	padding: 0;
+}
+
+.sto-code-editor__lang-dropdown .select2-results__option {
+	padding: 8px 14px !important;
+	font-size: 12px !important;
+	line-height: 1.5 !important;
+	color: #1f2328;
+	cursor: pointer;
+	margin: 0;
+	border-radius: 0;
+	transition: background 0.1s ease, color 0.1s ease;
+}
+
+/*
+ * Both **hover/keyboard-focus** (`.select2-results__option--highlighted`) and the
+ * **already-selected** row (`[aria-selected="true"]`) render in solid WordPress-blue
+ * with white text — matches the user-supplied reference (see chat screenshot of the
+ * Select2 multi-select with chip styling).
+ *
+ * Order matters: the `--highlighted` rule sits after the `[aria-selected="true"]` rule
+ * so when the keyboard cursor lands on the already-selected row it stays blue (Select2
+ * adds both classes simultaneously). Equal-specificity selectors with the same `!important`
+ * priority resolve to "later in source order wins", and both states intentionally produce
+ * the same paint — so this is a no-op in the dual case, but documents the contract.
+ */
+.sto-code-editor__lang-dropdown .select2-results__option[aria-selected="true"],
+.sto-code-editor__lang-dropdown .select2-results__option--highlighted,
+.sto-code-editor__lang-dropdown .select2-results__option--highlighted[aria-selected],
+.sto-code-editor__lang-dropdown .select2-results__option--highlighted[aria-selected="true"] {
+	background: #2271b1 !important;
+	color: #fff !important;
+}
+
+/* Dropdown row layout — icon column + label column. */
+.sto-code-editor__lang-opt {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+}
+
+.sto-code-editor__lang-opt-icon {
+	font-size: 12px;
+	color: #6b7280;
+	flex: 0 0 auto;
+	width: 14px;
+	text-align: center;
+	transition: color 0.1s ease;
+}
+
+/* Icon recolour for both hover-highlight and already-selected — both render against the
+   solid blue row background so we desaturate the FA glyph for readable contrast. */
+.sto-code-editor__lang-dropdown .select2-results__option[aria-selected="true"] .sto-code-editor__lang-opt-icon,
+.sto-code-editor__lang-dropdown .select2-results__option--highlighted .sto-code-editor__lang-opt-icon {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+.sto-code-editor__lang-opt-text {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Auto-detect badge — sits next to the language chip, communicates the resolved language.
+   Always rendered in PHP, but only shown while the wrapper carries `sto-code-editor--mode-auto`
+   (toggled by the chrome-bar switcher at runtime). */
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__auto-badge {
+	display: none;
+	align-items: center;
+	gap: 5px;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: linear-gradient(135deg, rgba(34, 113, 177, 0.10) 0%, rgba(34, 113, 177, 0.18) 100%);
+	border: 1px solid rgba(34, 113, 177, 0.35);
+	color: #1d4ed8;
+	font-size: 10px;
+	line-height: 1.4;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor.sto-code-editor--mode-auto .sto-code-editor__auto-badge {
+	display: inline-flex;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__auto-badge i {
+	font-size: 10px;
+	color: inherit;
+}
+
+/* Shortcut hint chip ("Ctrl + Space") on the right side of the chrome bar. Only visible
+   on viewports wide enough to fit the chrome comfortably — collapses below 600px. */
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__shortcut {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	color: #6b7280;
+	font-size: 10px;
+	line-height: 1.4;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+	user-select: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__shortcut kbd {
+	display: inline-block;
+	min-width: 22px;
+	padding: 1px 5px;
+	border-radius: 4px;
+	background: #fff;
+	border: 1px solid #d8dde2;
+	box-shadow: 0 1px 0 #d8dde2;
+	color: #1f2328;
+	font-family:
+		Consolas,
+		"SF Mono",
+		Menlo,
+		Monaco,
+		"Liberation Mono",
+		"Courier New",
+		monospace;
+	font-size: 10px;
+	line-height: 1.4;
+	font-weight: 600;
+	text-align: center;
+}
+
+@media (max-width: 600px) {
+	.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__shortcut {
+		display: none;
+	}
+}
+
+/* Fullscreen toggle — small icon button mirroring border-control popover reset chip aesthetic. */
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__fullscreen {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	margin: 0;
+	padding: 0;
+	border: 1px solid #d8dde2;
+	border-radius: 6px;
+	background: #fff;
+	color: #6b7280;
+	cursor: pointer;
+	transition:
+		border-color 0.15s ease,
+		color 0.15s ease,
+		background 0.15s ease,
+		box-shadow 0.15s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__fullscreen:hover,
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__fullscreen:focus-visible {
+	border-color: #2271b1;
+	color: #2271b1;
+	background: #f0f6fc;
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.15);
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__fullscreen i {
+	font-size: 13px;
+	line-height: 1;
+}
+
+/* Default state shows the expand icon; fullscreen state swaps to compress. */
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__icon-compress {
+	display: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor.sto-code-editor--is-fullscreen .sto-code-editor__icon-expand {
+	display: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor.sto-code-editor--is-fullscreen .sto-code-editor__icon-compress {
+	display: inline-block;
+}
+
+/* ------------------------------------------------------------------------------------------- */
+/* Textarea fallback (when CodeMirror is disabled in user profile)                              */
+/* ------------------------------------------------------------------------------------------- */
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__textarea {
+	display: block;
+	width: 100%;
+	border: 0;
+	border-radius: 0;
+	background: #fff;
+	color: #1f2328;
+	font-family:
+		Consolas,
+		"SF Mono",
+		Menlo,
+		Monaco,
+		"Liberation Mono",
+		"Courier New",
+		monospace;
+	font-size: 13px;
+	line-height: 1.55;
+	padding: 12px 14px;
+	margin: 0;
+	resize: vertical;
+	box-shadow: none;
+	outline: none;
+	white-space: pre;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__textarea::placeholder {
+	color: #9aa0a6;
+	font-style: italic;
+}
+
+/* Once `wp.codeEditor.initialize()` runs it replaces the textarea with `.CodeMirror`; hide the
+   raw `<textarea>` so users don't see two stacked editors. */
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor.sto-code-editor--initialized .sto-code-editor__textarea {
+	display: none;
+}
+
+/* ------------------------------------------------------------------------------------------- */
+/* CodeMirror skin overrides (scoped — never touches other WP CM screens)                       */
+/* ------------------------------------------------------------------------------------------- */
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror {
+	height: auto;
+	min-height: 160px;
+	border: 0;
+	border-radius: 0;
+	background: #fff;
+	color: #1f2328;
+	font-family:
+		Consolas,
+		"SF Mono",
+		Menlo,
+		Monaco,
+		"Liberation Mono",
+		"Courier New",
+		monospace;
+	font-size: 13px;
+	line-height: 1.55;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror-scroll {
+	min-height: inherit;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror-gutters {
+	background: #f7f8fa;
+	border-right: 1px solid #eef0f2;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror-linenumber {
+	color: #9aa0a6;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror-cursor {
+	border-left-color: #2271b1;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror-selected,
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror-focused .CodeMirror-selected {
+	background: rgba(34, 113, 177, 0.16);
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror-activeline-background {
+	background: rgba(34, 113, 177, 0.05);
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror-matchingbracket {
+	color: #2271b1 !important;
+	background: rgba(34, 113, 177, 0.12);
+	border-radius: 2px;
+}
+
+/* ------------------------------------------------------------------------------------------- */
+/* IDE-style syntax colors (VS Code Light-inspired)                                            */
+/*                                                                                             */
+/* Default WP CodeMirror skin is intentionally minimal — these overrides repaint each token   */
+/* type with the VS Code "Light Modern" palette so admins editing CSS / JS / HTML / PHP get    */
+/* the same color cues they're used to in their IDE. Scoped to the field so other WP screens  */
+/* (Customizer additional CSS, theme/plugin editor) stay untouched.                            */
+/* ------------------------------------------------------------------------------------------- */
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-keyword {
+	color: #0000ff;
+	font-weight: 500;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-atom {
+	color: #0070c1;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-number {
+	color: #098658;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-string,
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-string-2 {
+	color: #a31515;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-comment,
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-meta {
+	color: #008000;
+	font-style: italic;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-variable,
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-variable-2,
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-variable-3 {
+	color: #001080;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-def {
+	color: #795e26;
+	font-weight: 500;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-property {
+	color: #001080;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-operator {
+	color: #1f2328;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-builtin {
+	color: #0070c1;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-tag {
+	color: #800000;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-attribute {
+	color: #e50000;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-bracket {
+	color: #5c6166;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-qualifier {
+	color: #800000;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-header {
+	color: #800000;
+	font-weight: 700;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-link {
+	color: #2271b1;
+	text-decoration: underline;
+}
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-error,
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor .CodeMirror .cm-invalidchar {
+	color: #b91c1c;
+	background: rgba(185, 28, 28, 0.08);
+	border-radius: 2px;
+}
+
+/* ------------------------------------------------------------------------------------------- */
+/* Autocomplete popup (CodeMirror `show-hint` addon)                                           */
+/*                                                                                             */
+/* The popup is portaled to `<body>` by CodeMirror so the field selector can't reach it.       */
+/* These rules live at top-level but use the addon's own class (`.CodeMirror-hints`) which     */
+/* only exists when the addon is loaded — so they're effectively scoped to our field type.    */
+/* ------------------------------------------------------------------------------------------- */
+
+.CodeMirror-hints {
+	list-style: none;
+	margin: 0;
+	padding: 4px 0;
+	background: #fff;
+	border: 1px solid #d8dde2;
+	border-radius: 6px;
+	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+	min-width: 180px;
+	max-width: 360px;
+	max-height: 260px;
+	overflow-y: auto;
+	font-family:
+		Consolas,
+		"SF Mono",
+		Menlo,
+		Monaco,
+		"Liberation Mono",
+		"Courier New",
+		monospace;
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: #1f2328;
+	z-index: 100070;
+}
+
+.CodeMirror-hint {
+	padding: 4px 10px;
+	margin: 0;
+	cursor: pointer;
+	color: inherit;
+	white-space: pre;
+	border-radius: 3px;
+}
+
+.CodeMirror-hint:hover {
+	background: rgba(34, 113, 177, 0.08);
+}
+
+li.CodeMirror-hint-active {
+	background: #2271b1;
+	color: #fff;
+	outline: none;
+}
+
+li.CodeMirror-hint-active:hover {
+	background: #1e63a0;
+	color: #fff;
+}
+
+/* ------------------------------------------------------------------------------------------- */
+/* Fullscreen mode — overlay the entire viewport for distraction-free editing.                 */
+/* ------------------------------------------------------------------------------------------- */
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor.sto-code-editor--is-fullscreen {
+	position: fixed;
+	inset: 32px 0 0 0; /* leave the WP admin bar visible at the top */
+	z-index: 100050;
+	border-radius: 0;
+	border-color: #2271b1;
+	box-shadow: none;
+	display: flex;
+	flex-direction: column;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor.sto-code-editor--is-fullscreen .sto-code-editor__bar {
+	flex: 0 0 auto;
+}
+
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor.sto-code-editor--is-fullscreen .CodeMirror,
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor.sto-code-editor--is-fullscreen .sto-code-editor__textarea {
+	flex: 1 1 auto;
+	height: 100% !important;
+	min-height: 0;
+}
+
+/* Body-level lock to prevent background scrolling while the overlay is open. */
+body.sto-code-editor-fullscreen-lock {
+	overflow: hidden !important;
+}
+
+/* WP admin: keep the global admin bar above the overlay. */
+body.sto-code-editor-fullscreen-lock #wpadminbar {
+	z-index: 100060;
+}
+
+/* ------------------------------------------------------------------------------------------- */
+/* Group context — slightly tighter chrome to match other in-group rows.                       */
+/* ------------------------------------------------------------------------------------------- */
+
+.sto-option-panel-wrapper .sto-field-row-code-editor.sto-field-row--in-group .sto-code-editor__bar {
+	padding-block: 5px;
+	min-height: 30px;
+}
+
+/* ------------------------------------------------------------------------------------------- */
+/* Narrow admin                                                                                 */
+/* ------------------------------------------------------------------------------------------- */
+
+@media (max-width: 782px) {
+	.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__bar {
+		flex-wrap: wrap;
+		row-gap: 6px;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor.sto-code-editor--is-fullscreen {
+		inset: 46px 0 0 0; /* WP mobile admin bar is taller */
+	}
+}

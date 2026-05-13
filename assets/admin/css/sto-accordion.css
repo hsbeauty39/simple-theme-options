@@ -1,0 +1,630 @@
+/**
+ * Accordion field (Group inner or standalone): title row + vertical sections; inner grid matches Tabs density.
+ * Responsive: master strip in `.sto-field-title-row--tabs-master` (from FieldTitle) + stacked sections.
+ */
+
+.sto-option-panel-wrapper .sto-field-row-accordion {
+	max-width: 100%;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	padding: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion.sto-field-row--responsive > .sto-accordion {
+	margin-top: 16px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-field-group-item-title-row,
+.sto-option-panel-wrapper .sto-field-row-accordion:not(.sto-field-row--in-group) .sto-field-title-row {
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	padding: 0;
+	margin-bottom: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-field-group-item-title-row:not(.sto-field-title-row--tabs-master) > .sto-field-title-row__leading,
+.sto-option-panel-wrapper .sto-field-row-accordion:not(.sto-field-row--in-group) .sto-field-title-row:not(.sto-field-title-row--tabs-master) > .sto-field-title-row__leading {
+	padding-bottom: 8px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion.sto-field-row--responsive > .sto-field-title-row.sto-field-title-row--tabs-master .sto-field-title-row__leading,
+.sto-option-panel-wrapper .sto-field-row-accordion.sto-field-row--responsive > .sto-field-group-item-title-row.sto-field-title-row--tabs-master .sto-field-title-row__leading {
+	padding-bottom: 10px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-field-group-item-title {
+	margin: 0;
+	padding: 0 8px 0 0;
+	font-size: 17px;
+	line-height: 1.25;
+	font-weight: 600;
+	color: #1d2327;
+	cursor: default;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion:not(.sto-field-row--in-group) .sto-field-title-row .sto-field-title {
+	margin: 0;
+	padding: 0 8px 0 0;
+	font-size: 17px;
+	line-height: 1.25;
+	font-weight: 600;
+	color: #1d2327;
+	cursor: default;
+}
+
+/* Master toolbar (responsive): mirror Tabs chip look */
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__toolbar--sto-master {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 6px;
+	margin-left: auto;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__master-tab {
+	position: relative;
+	z-index: 0;
+	margin: 0;
+	padding: 7px 12px 9px;
+	border: 1px solid transparent;
+	border-radius: 6px 6px 0 0;
+	-webkit-appearance: none;
+	appearance: none;
+	background: transparent !important;
+	color: #1d2327;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.2;
+	cursor: pointer;
+	box-shadow: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__master-tab:hover,
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__master-tab:focus {
+	color: #1d2327;
+	background: transparent !important;
+	box-shadow: none;
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__master-tab:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__master-tab.sto-is-active {
+	z-index: 2;
+	margin-bottom: -1px;
+	padding-bottom: 10px;
+	border-color: #dcdcde;
+	border-bottom-color: #f9f9f9;
+	background: #f9f9f9 !important;
+	color: #2271b1;
+	box-shadow: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__master-tab.sto-is-active:hover,
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__master-tab.sto-is-active:focus {
+	background: #f9f9f9 !important;
+	color: #2271b1;
+}
+
+.sto-option-panel-wrapper .sto-accordion {
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-accordion__item {
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #fff;
+	margin-bottom: 10px;
+	overflow: hidden;
+}
+
+.sto-option-panel-wrapper .sto-accordion__item:last-child {
+	margin-bottom: 0;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+	margin: 0;
+	padding: 12px 14px;
+	border: 0;
+	border-bottom: 1px solid transparent;
+	background: #f6f7f7;
+	color: #1d2327;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.3;
+	text-align: left;
+	cursor: pointer;
+	box-shadow: none;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header:hover,
+.sto-option-panel-wrapper .sto-accordion__header:focus {
+	background: #f0f0f1;
+	color: #1d2327;
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: -2px;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header.sto-is-active {
+	background: #f9f9f9;
+	border-bottom-color: #dcdcde;
+	color: #2271b1;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header-label {
+	flex: 1;
+	min-width: 0;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header-chevron {
+	flex: 0 0 auto;
+	width: 10px;
+	height: 10px;
+	border-right: 2px solid #50575e;
+	border-bottom: 2px solid #50575e;
+	transform: rotate(45deg);
+	margin-top: -4px;
+	transition: transform 0.15s ease;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header.sto-is-active .sto-accordion__header-chevron {
+	transform: rotate(225deg);
+	margin-top: 2px;
+}
+
+.sto-option-panel-wrapper .sto-accordion__region[hidden] {
+	display: none !important;
+}
+
+.sto-option-panel-wrapper .sto-accordion__panel {
+	padding: 16px 18px;
+	background: #f9f9f9;
+	border: 0;
+	border-top: 1px solid #dcdcde;
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-accordion__grid {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	gap: 14px 16px;
+	align-items: start;
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-accordion__cell {
+	min-width: 0;
+}
+
+.sto-option-panel-wrapper .sto-accordion__cell--span-1 { grid-column: span 1; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-2 { grid-column: span 2; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-3 { grid-column: span 3; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-4 { grid-column: span 4; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-5 { grid-column: span 5; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-6 { grid-column: span 6; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-7 { grid-column: span 7; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-8 { grid-column: span 8; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-9 { grid-column: span 9; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-10 { grid-column: span 10; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-11 { grid-column: span 11; }
+.sto-option-panel-wrapper .sto-accordion__cell--span-12 { grid-column: span 12; }
+
+@media (max-width: 960px) {
+	.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__cell[class*="sto-accordion__cell--span"] {
+		grid-column: 1 / -1;
+	}
+}
+
+.sto-option-panel-wrapper .sto-accordion__cell > .sto-field-row {
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__panel .sto-field-row .sto-field-title-row,
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__panel .sto-field-row .sto-field-group-item-title-row {
+	padding-bottom: 4px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__panel .sto-field-row .sto-field-title-sep,
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__panel .sto-field-row .sto-field-title-sep--inner {
+	margin-top: 10px;
+	margin-bottom: 12px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__cell > .sto-field-row--responsive > .sto-field-title-row,
+.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__cell > .sto-field-row--responsive > .sto-field-group-item-title-row {
+	flex-wrap: wrap;
+	gap: 8px 10px;
+}
+
+.sto-field-row-accordion.sto-required-hidden .sto-accordion :input {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+@media (max-width: 782px) {
+	.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__center .sto-accordion__toolbar--sto-master {
+		width: 100%;
+		justify-content: flex-start;
+		overflow-x: auto;
+		flex-wrap: nowrap;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-accordion .sto-accordion__master-tab.sto-is-active {
+		margin-bottom: 0;
+		border-radius: 6px;
+		border-bottom-color: #dcdcde;
+	}
+}
+
+/* Title-row grid (FieldTitle uses `--tabs-master` whenever center HTML is set; same layout as Tabs). */
+.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__center .sto-accordion__toolbar--sto-master {
+	margin-left: 0;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-accordion__toolbar--sto-master .sto-accordion__master-tab.sto-is-active {
+	margin-bottom: -2px;
+	z-index: 3;
+}
+
+/* -------------------------------------------------------------------------
+ * Accordion v2 (card stack + index strip) + embed cells (tabs / group / nested accordion)
+ * ------------------------------------------------------------------------- */
+
+.sto-option-panel-wrapper .sto-field-row-accordion--v2 .sto-accordion--v2 {
+	border-radius: 10px;
+	background: linear-gradient(180deg, #fbfbfc 0%, #f3f4f6 100%);
+	padding: 4px;
+	border: 1px solid #d8dee4;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.sto-option-panel-wrapper .sto-accordion--v2 .sto-accordion__item--v2 {
+	border: 0;
+	border-radius: 8px;
+	margin-bottom: 8px;
+	background: #fff;
+	box-shadow: 0 1px 0 rgba(15, 23, 42, 0.06);
+	overflow: hidden;
+}
+
+.sto-option-panel-wrapper .sto-accordion--v2 .sto-accordion__item--v2:last-child {
+	margin-bottom: 0;
+}
+
+/* Border `Edit settings` popover is `position:absolute` on `.sto-border-control`; accordion cards
+   use `overflow:hidden` for rounded corners — that clips the popover. While open, let the card
+   paint past its box and stack above the next item (`:has` is supported in modern admin browsers). */
+.sto-option-panel-wrapper .sto-accordion__item:has(.sto-border-control[data-sto-border-open="1"]) {
+	overflow: visible;
+	position: relative;
+	z-index: 5;
+}
+
+.sto-option-panel-wrapper .sto-accordion__item:has(.sto-shadow-control[data-sto-shadow-open="1"]) {
+	overflow: visible;
+	position: relative;
+	z-index: 5;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header--v2 {
+	background: linear-gradient(90deg, #f8fafc 0%, #eef2f7 55%, #f8fafc 100%);
+	border-bottom: 1px solid #e2e8f0;
+	padding: 12px 14px 12px 10px;
+	gap: 10px;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header--v2:hover,
+.sto-option-panel-wrapper .sto-accordion__header--v2:focus {
+	background: linear-gradient(90deg, #f1f5f9 0%, #e8edf4 55%, #f1f5f9 100%);
+}
+
+.sto-option-panel-wrapper .sto-accordion__header--v2.sto-is-active {
+	background: #fff;
+	border-bottom-color: #e2e8f0;
+	color: #0f172a;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header-index {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 26px;
+	height: 26px;
+	padding: 0 6px;
+	border-radius: 8px;
+	background: #e2e8f0;
+	color: #334155;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header--v2.sto-is-active .sto-accordion__header-index {
+	background: #2271b1;
+	color: #fff;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header-text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.sto-option-panel-wrapper .sto-accordion__header-label {
+	font-size: 14px;
+	font-weight: 650;
+}
+
+.sto-option-panel-wrapper .sto-accordion__region--v2 .sto-accordion__panel--v2 {
+	padding: 14px 14px 16px;
+	background: #fafbfc;
+}
+
+.sto-option-panel-wrapper .sto-accordion__grid--v2 {
+	gap: 12px 14px;
+}
+
+.sto-option-panel-wrapper .sto-accordion__cell--v2.sto-accordion__cell--embed {
+	padding: 10px 10px 12px;
+	border-radius: 8px;
+	border: 1px solid #e5e7eb;
+	background: #fff;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.sto-option-panel-wrapper .sto-accordion__cell--embed > .sto-field-row-tabs,
+.sto-option-panel-wrapper .sto-accordion__cell--embed > .sto-field-row-accordion {
+	margin: 0;
+}
+
+.sto-option-panel-wrapper .sto-accordion__cell--embed .sto-field-row-tabs .sto-tabs__pane,
+.sto-option-panel-wrapper .sto-accordion__cell--embed .sto-field-row-accordion .sto-accordion--v2 {
+	border-radius: 8px;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-composer .sto-field-description {
+	color: #475569;
+	font-size: 13px;
+	line-height: 1.55;
+	max-width: 72ch;
+}
+
+/* -------------------------------------------------------------------------
+ * Accordion sample section: intro + vertical rhythm between demo rows
+ * ------------------------------------------------------------------------- */
+
+.sto-option-panel-wrapper .sto-acc-demo-intro {
+	margin: 0 0 32px;
+	padding: 18px 20px;
+	border-radius: 10px;
+	border: 1px solid #e2e8f0;
+	background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+	color: #334155;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-intro__kicker {
+	margin: 0 0 8px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #64748b;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-intro__lead {
+	margin: 0 0 16px;
+	font-size: 14px;
+	line-height: 1.65;
+	font-weight: 500;
+	color: #1e293b;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-types {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 12px;
+	margin: 0 0 20px;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-type {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	padding: 14px 14px 14px 12px;
+	border-radius: 8px;
+	border: 1px solid #e2e8f0;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	box-sizing: border-box;
+	min-width: 0;
+}
+
+/* Intro grid cards: in-page jump targets (see `initStoAccordionDemoJumpCards()` in `main.js`). */
+.sto-option-panel-wrapper .sto-acc-demo-type[role="button"][data-sto-jump-target] {
+	cursor: pointer;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-type[role="button"][data-sto-jump-target]:hover {
+	border-color: #c7d2fe;
+	box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+	background: #fafbff;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-type[role="button"][data-sto-jump-target]:focus {
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-type[role="button"][data-sto-jump-target]:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-type__index {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 8px;
+	background: #2271b1;
+	color: #fff;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-type__body {
+	min-width: 0;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-type__title {
+	margin: 0 0 4px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #0f172a;
+	line-height: 1.3;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-type__text {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #64748b;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-intro__list {
+	margin: 0;
+	padding-left: 1.25rem;
+	font-size: 13px;
+	line-height: 1.6;
+	color: #475569;
+}
+
+.sto-option-panel-wrapper .sto-acc-demo-intro__list li + li {
+	margin-top: 6px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion.sto-acc-demo-block {
+	margin-bottom: 40px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #e8ecf1;
+}
+
+.sto-option-panel-wrapper .sto-field-row-accordion.sto-acc-demo-block:has(+ .sto-field-group) {
+	border-bottom: 0;
+	margin-bottom: 28px;
+}
+
+.sto-option-panel-wrapper #sto-group-acc_host_group {
+	margin-top: 24px;
+	margin-bottom: 0;
+	padding-top: 8px;
+	border-top: 1px dashed #cbd5e1;
+}
+
+/* -------------------------------------------------------------------------
+ * Nested groups inside Tabs panes & Accordion cells (fix squeezed headings / overlap)
+ * ------------------------------------------------------------------------- */
+
+.sto-option-panel-wrapper .sto-tabs__pane .sto-field-group,
+.sto-option-panel-wrapper .sto-accordion__panel--v2 .sto-field-group,
+.sto-option-panel-wrapper .sto-tabs__cell--embed > .sto-field-group,
+.sto-option-panel-wrapper .sto-accordion__cell--embed > .sto-field-group {
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-tabs__pane .sto-field-group-heading-row,
+.sto-option-panel-wrapper .sto-accordion__panel--v2 .sto-field-group-heading-row {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-tabs__pane .sto-field-group-heading-row .sto-field-title-row__leading,
+.sto-option-panel-wrapper .sto-accordion__panel--v2 .sto-field-group-heading-row .sto-field-title-row__leading {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 10px;
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-tabs__pane .sto-field-group-heading-row .sto-field-title-row__leading .sto-field-group-heading,
+.sto-option-panel-wrapper .sto-accordion__panel--v2 .sto-field-group-heading-row .sto-field-title-row__leading .sto-field-group-heading {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+.sto-option-panel-wrapper .sto-tabs__pane .sto-field-group-description,
+.sto-option-panel-wrapper .sto-accordion__panel--v2 .sto-field-group-description {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-tabs__cell--embed > *,
+.sto-option-panel-wrapper .sto-accordion__cell--embed > * {
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__pane .sto-field-row-tabs {
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+}
+
+@media (max-width: 782px) {
+	.sto-option-panel-wrapper .sto-field-row-accordion.sto-acc-demo-block {
+		margin-bottom: 32px;
+	}
+}

@@ -1,0 +1,375 @@
+/**
+ * Tabs field (Group inner or standalone section row):
+ * — Title + tab strip: no panel background or border (flush with surrounding surface).
+ * — Tab panes: light gray card only around field content.
+ * — Responsive **`tabs`**: heading row is **title · Slot A/B** only; each **inner field** in the grid renders its own breakpoint toolbar (**`data-sto-responsive`** on that field row).
+ * Standalone rows use `.sto-field-title-row` / `.sto-field-title` from FieldTitle; group rows use
+ * `.sto-field-group-item-title-row` / `.sto-field-group-item-title` — both are styled below.
+ */
+
+.sto-option-panel-wrapper .sto-field-row-tabs {
+	max-width: 100%;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	padding: 0;
+}
+
+/* Responsive Tabs: space between heading (title · Slot A/B) and tab content cards */
+.sto-option-panel-wrapper .sto-field-row-tabs.sto-field-row--responsive > .sto-tabs {
+	margin-top: 16px;
+}
+
+/* Each inner field may be its own responsive row — allow title + device toolbar to wrap inside narrow grid spans. */
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell > .sto-field-row--responsive > .sto-field-title-row,
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell > .sto-field-row--responsive > .sto-field-group-item-title-row {
+	flex-wrap: wrap;
+	gap: 8px 10px;
+}
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell > .sto-field-row--responsive > .sto-field-title-row .sto-responsive__toolbar,
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell > .sto-field-row--responsive > .sto-field-group-item-title-row .sto-responsive__toolbar {
+	margin-left: auto;
+}
+
+/* Heading row + tabs: no “section” chrome.
+   margin-bottom: 0 — sto-switcher.css adds `margin: 0 0 10px` to every title row, which leaves an
+   invisible 10px gap between the inactive tabs and the pane below (active tab’s `margin-bottom: -1px`
+   bridge then fails: inactive tabs float over empty space, pane top border can’t connect). Same fix
+   already lives on the standalone tabs rule below (`margin-bottom: 0`) and the responsive master row
+   (`margin: 0`); this line covers non-responsive Tabs nested inside a Group. */
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-field-group-item-title-row {
+	align-items: flex-end;
+	flex-wrap: wrap;
+	gap: 8px 12px;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	padding: 0;
+	margin-bottom: 0;
+}
+
+/* Breathing room under the title only — the trailing tab strip still sits at the row’s bottom and
+   bridges the pane border via `margin-bottom: -1px`. `align-items: flex-end` on the row keeps both
+   columns bottom-aligned, so adding `padding-bottom` inside `__leading` lifts the title text upward
+   while the row’s bottom (and the tab/pane connection) stays untouched. Scoped to non-responsive
+   Tabs (group-inner + standalone) — responsive Tabs use the dedicated `--tabs-master` rules above. */
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-field-group-item-title-row:not(.sto-field-title-row--tabs-master) > .sto-field-title-row__leading,
+.sto-option-panel-wrapper .sto-field-row-tabs:not(.sto-field-row--in-group) .sto-field-title-row:not(.sto-field-title-row--tabs-master) > .sto-field-title-row__leading {
+	padding-bottom: 8px;
+}
+
+/* Standalone / section tabs: same heading + tab strip layout (FieldTitle default markup).
+   Exclude tabs-master: that row needs bottom spacing above the sep / content (see responsive block). */
+.sto-option-panel-wrapper .sto-field-row-tabs:not(.sto-field-row--in-group) .sto-field-title-row:not(.sto-field-title-row--tabs-master) {
+	align-items: flex-end;
+	flex-wrap: wrap;
+	gap: 8px 12px;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	padding: 0;
+	margin-bottom: 0;
+}
+
+/* Responsive Tabs: space under title row — Slot A/B chips stay flush to the sep (active tab uses margin-bottom overlap like in-pane tabs). */
+.sto-option-panel-wrapper .sto-field-row-tabs.sto-field-row--responsive > .sto-field-title-row.sto-field-title-row--tabs-master .sto-field-title-row__leading,
+.sto-option-panel-wrapper .sto-field-row-tabs.sto-field-row--responsive > .sto-field-group-item-title-row.sto-field-title-row--tabs-master .sto-field-title-row__leading {
+	padding-bottom: 10px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs.sto-field-row--responsive > .sto-field-title-row.sto-field-title-row--tabs-master .sto-field-title-row__center,
+.sto-option-panel-wrapper .sto-field-row-tabs.sto-field-row--responsive > .sto-field-group-item-title-row.sto-field-title-row--tabs-master .sto-field-title-row__center {
+	padding-bottom: 0;
+}
+
+/* Tab pane inner fields: gap between label and horizontal rule (.sto-field-title-sep) */
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__pane .sto-field-row .sto-field-title-row,
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__pane .sto-field-row .sto-field-group-item-title-row {
+	padding-bottom: 4px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__pane .sto-field-row .sto-field-title-sep,
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__pane .sto-field-row .sto-field-title-sep--inner {
+	margin-top: 10px;
+	margin-bottom: 12px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-field-group-item-title {
+	margin: 0;
+	padding: 0 8px 0 0;
+	font-size: 17px;
+	line-height: 1.25;
+	font-weight: 600;
+	color: #1d2327;
+	cursor: default;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs:not(.sto-field-row--in-group) .sto-field-title-row .sto-field-title {
+	margin: 0;
+	padding: 0 8px 0 0;
+	font-size: 17px;
+	line-height: 1.25;
+	font-weight: 600;
+	color: #1d2327;
+	cursor: default;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs {
+	background: transparent;
+	border: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__body {
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	border: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__toolbar {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 6px;
+	margin-left: auto;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__tab {
+	position: relative;
+	z-index: 0;
+	margin: 0;
+	padding: 7px 12px 9px;
+	border: 1px solid transparent;
+	border-radius: 6px 6px 0 0;
+	-webkit-appearance: none;
+	appearance: none;
+	background: transparent !important;
+	color: #1d2327;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.2;
+	cursor: pointer;
+	box-shadow: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__tab:hover,
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__tab:focus {
+	color: #1d2327;
+	background: transparent !important;
+	box-shadow: none;
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__tab:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__tab.sto-is-active {
+	z-index: 2;
+	/* Slightly stronger overlap than the pane's 1px border so the active tab meets the card edge without a hairline gap (flex baseline rounding). */
+	margin-bottom: -2px;
+	padding-bottom: 11px;
+	border-color: #dcdcde;
+	border-bottom-color: #f9f9f9;
+	background: #f9f9f9 !important;
+	color: #2271b1;
+	box-shadow: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__tab.sto-is-active:hover,
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__tab.sto-is-active:focus {
+	background: #f9f9f9 !important;
+	color: #2271b1;
+}
+
+/* Only the field area is boxed */
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__pane {
+	margin-top: 0;
+	padding: 16px 18px;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #f9f9f9;
+	position: relative;
+	z-index: 1;
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__pane[hidden] {
+	display: none !important;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__grid {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	gap: 14px 16px;
+	align-items: start;
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell {
+	min-width: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-1 { grid-column: span 1; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-2 { grid-column: span 2; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-3 { grid-column: span 3; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-4 { grid-column: span 4; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-5 { grid-column: span 5; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-6 { grid-column: span 6; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-7 { grid-column: span 7; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-8 { grid-column: span 8; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-9 { grid-column: span 9; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-10 { grid-column: span 10; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-11 { grid-column: span 11; }
+/* Full-width cells: without this, span 12 from `width` / `1-1` had no rule and defaulted to one column — crushed nested groups beside siblings. */
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--span-12 { grid-column: span 12; }
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--embed {
+	padding: 8px 8px 10px;
+	border-radius: 8px;
+	border: 1px dashed #cbd5e1;
+	background: rgba(255, 255, 255, 0.65);
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--embed > * {
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell--embed > .sto-field-row {
+	margin: 0;
+}
+@media (max-width: 960px) {
+	.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell[class*="sto-tabs__cell--span"] {
+		grid-column: 1 / -1;
+	}
+}
+
+@media (max-width: 782px) {
+	.sto-option-panel-wrapper .sto-field-row-tabs .sto-field-group-item-title-row {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-tabs:not(.sto-field-row--in-group) .sto-field-title-row:not(.sto-field-title-row--tabs-master) {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	/* Responsive Tabs master row: stack title → tabs → devices on narrow screens */
+	.sto-option-panel-wrapper .sto-field-title-row.sto-field-title-row--tabs-master,
+	.sto-option-panel-wrapper .sto-field-group-item-title-row.sto-field-title-row--tabs-master,
+	.sto-option-panel-wrapper .sto-field-group-heading-row.sto-field-title-row--tabs-master {
+		grid-template-columns: 1fr;
+		justify-items: stretch;
+	}
+
+	.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__leading,
+	.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__center,
+	.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__trailing {
+		grid-column: 1;
+		justify-self: stretch;
+	}
+
+	.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__trailing {
+		justify-content: flex-end;
+	}
+
+	.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__center .sto-tabs__toolbar--sto-master {
+		width: 100%;
+		justify-content: flex-start;
+		overflow-x: auto;
+		flex-wrap: nowrap;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__toolbar {
+		margin-left: 0;
+		width: 100%;
+		overflow-x: auto;
+		flex-wrap: nowrap;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__tab.sto-is-active {
+		margin-bottom: 0;
+		border-radius: 6px;
+		border-bottom-color: #dcdcde;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__pane {
+		margin-top: 8px;
+		border-radius: 6px;
+	}
+}
+
+.sto-option-panel-wrapper .sto-field-row-tabs .sto-tabs__cell > .sto-field-row {
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.sto-field-row-tabs.sto-required-hidden .sto-tabs :input {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+/* Responsive Tabs: one heading row — title (left) | tab strip (true center); empty third column keeps center alignment when using the same grid as older three-column rows.
+   margin: 0 — sto-switcher’s .sto-field-title-row { margin-bottom: 10px } would otherwise leave a gap above .sto-field-title-sep under Slot A/B. */
+.sto-option-panel-wrapper .sto-field-title-row.sto-field-title-row--tabs-master,
+.sto-option-panel-wrapper .sto-field-group-item-title-row.sto-field-title-row--tabs-master,
+.sto-option-panel-wrapper .sto-field-group-heading-row.sto-field-title-row--tabs-master {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+	align-items: end;
+	gap: 10px 16px;
+	width: 100%;
+	box-sizing: border-box;
+	margin: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__leading {
+	grid-column: 1;
+	justify-self: start;
+	min-width: 0;
+	flex: 0 1 auto; /* nested inline-flex: do not grow to swallow the row */
+}
+
+.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__center {
+	grid-column: 2;
+	justify-self: center;
+	display: flex;
+	align-items: flex-end;
+	min-width: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__center .sto-tabs__toolbar--sto-master {
+	margin-left: 0;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+/* Active master tab: bridge the 1px sep (sto-switcher row margin was the main white gap; overlap stays subtle). */
+.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-tabs__toolbar--sto-master .sto-tabs__tab.sto-is-active {
+	margin-bottom: -2px;
+	z-index: 3;
+}
+
+.sto-option-panel-wrapper .sto-field-title-row--tabs-master .sto-field-title-row__trailing {
+	grid-column: 3;
+	justify-self: end;
+	margin-left: 0;
+	display: inline-flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}

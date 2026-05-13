@@ -1,0 +1,238 @@
+/**
+ * Segmented button group (Theme Settings).
+ */
+
+.sto-field-row-button-group .sto-button-group-wrap {
+    max-width: 100%;
+    width: fit-content;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+}
+
+/*
+ * Segmented control — reference layout:
+ * light outer border, ~3px white “inset” before blue pill, 2px gutters between cells,
+ * inactive = regular gray label + optional small ? circle to the right of text,
+ * active = bold white label + white ? circle, hint sits inline (not a vertical divider).
+ * Each segment uses intrinsic width (not equal flex columns) so long labels are not clipped.
+ */
+.sto-button-group {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    position: relative;
+    box-sizing: border-box;
+    width: max-content;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    background: #fff;
+    overflow: visible;
+    vertical-align: middle;
+}
+
+.sto-button-group__segment {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 0 0 auto;
+    width: max-content;
+    min-width: min-content;
+    min-height: 32px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    position: relative;
+    gap: 6px;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+/* Radio + caption: grows with label text; does not shrink below content (no clipping). */
+.sto-button-group__choice {
+    position: relative;
+    display: flex;
+    flex: 0 1 auto;
+    min-width: min-content;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 4px 8px 4px 12px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+}
+
+.sto-button-group__segment--has-hint .sto-button-group__choice {
+    padding-right: 4px;
+}
+
+.sto-button-group__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    border: 0;
+    white-space: nowrap;
+}
+
+.sto-button-group__label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-width: min-content;
+    padding: 0;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.25;
+    letter-spacing: 0;
+    color: #3c434a;
+    cursor: inherit;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.sto-button-group__segment--selected {
+    background: #2271b1;
+    z-index: 1;
+}
+
+.sto-button-group__segment--selected .sto-button-group__label {
+    color: #fff;
+    font-weight: 700;
+}
+
+.sto-button-group__segment:not(.sto-button-group__segment--selected):hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.sto-button-group__segment:not(.sto-button-group__segment--selected):hover .sto-button-group__label {
+    color: #1d2327;
+}
+
+/* Per-option ? — inline after label, no full-height separator */
+.sto-button-group__hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 4px 12px 4px 4px;
+    border: 0;
+    background: transparent;
+    color: #787c82;
+    cursor: help;
+    flex: 0 0 auto;
+    align-self: center;
+}
+
+.sto-button-group__segment--selected .sto-button-group__hint {
+    color: #fff;
+}
+
+.sto-button-group__hint:hover,
+.sto-button-group__hint:focus {
+    outline: none;
+}
+
+.sto-button-group__segment:not(.sto-button-group__segment--selected) .sto-button-group__hint:hover .sto-button-group__hint-glyph,
+.sto-button-group__segment:not(.sto-button-group__segment--selected) .sto-button-group__hint:focus .sto-button-group__hint-glyph {
+    border-color: #2271b1;
+    color: #2271b1;
+}
+
+.sto-button-group__segment--selected .sto-button-group__hint:hover .sto-button-group__hint-glyph,
+.sto-button-group__segment--selected .sto-button-group__hint:focus .sto-button-group__hint-glyph {
+    border-color: #fff;
+    color: #fff;
+}
+
+.sto-button-group__hint-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid #c3c4c7;
+    background: transparent;
+    color: #787c82;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.sto-button-group__segment--selected .sto-button-group__hint-glyph {
+    border-color: rgba(255, 255, 255, 0.92);
+    color: #fff;
+}
+
+/* Shared text tooltip — single floating element appended to <body> by main.js. */
+#sto-text-tooltip.sto-text-tooltip {
+    position: fixed;
+    z-index: 100001;
+    margin: 0;
+    padding: 7px 10px;
+    max-width: min(80vw, 280px);
+    background: #1d2327;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.45;
+    text-align: left;
+    border-radius: 4px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), 0 1px 4px rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+    box-sizing: border-box;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+#sto-text-tooltip.sto-text-tooltip.sto-is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#sto-text-tooltip .sto-text-tooltip__body {
+    display: block;
+}
+
+#sto-text-tooltip .sto-text-tooltip__arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-color: transparent;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+#sto-text-tooltip.sto-text-tooltip--above .sto-text-tooltip__arrow {
+    bottom: -6px;
+    border-width: 6px 6px 0 6px;
+    border-top-color: #1d2327;
+}
+
+#sto-text-tooltip.sto-text-tooltip--below .sto-text-tooltip__arrow {
+    top: -6px;
+    border-width: 0 6px 6px 6px;
+    border-bottom-color: #1d2327;
+}
