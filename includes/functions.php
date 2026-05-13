@@ -9,6 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
+use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\ViewportOptions;
 
 /**
@@ -109,4 +110,19 @@ function sto_get_shadow_css_rule( $field_id ) {
 	}
 
 	return ShadowControl::instance()->get_css_rule_string( $field_id );
+}
+
+/**
+ * Compiled `background-image` gradient value for a registered **Gradient** field (value only, no property name).
+ *
+ * @param string $field_id Option key registered with {@see \SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl::register()}.
+ * @return string e.g. `linear-gradient(180deg, #2271b1 0%, #fff 100%)` or `none`.
+ */
+function sto_get_gradient_background_image( $field_id ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return 'none';
+	}
+
+	return GradientControl::instance()->value_to_css_background_image( $field_id );
 }

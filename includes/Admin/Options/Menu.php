@@ -7,6 +7,7 @@ use SimpleThemeOptions\Admin\Options\Fields\ImageSelect\ImageSelect;
 use SimpleThemeOptions\Admin\Options\Fields\BackgroundControl\BackgroundControl;
 use SimpleThemeOptions\Admin\Options\Fields\BorderControl\BorderControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
+use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
@@ -146,6 +147,7 @@ final class Menu {
             BackgroundControl::get_field_ids_for_section( $section_slug ),
             BorderControl::get_field_ids_for_section( $section_slug ),
             ShadowControl::get_field_ids_for_section( $section_slug ),
+            GradientControl::get_field_ids_for_section( $section_slug ),
             LinkColor::get_field_ids_for_section( $section_slug ),
             Input::get_field_ids_for_section( $section_slug ),
             Range::get_field_ids_for_section( $section_slug ),
@@ -243,6 +245,12 @@ final class Menu {
             if ( ShadowControl::is_registered_field_id( $option_key ) ) {
                 $raw_shadow = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
                 $sanitized_options[ $option_key ] = ShadowControl::sanitize_posted_value( $option_key, $raw_shadow );
+                continue;
+            }
+
+            if ( GradientControl::is_registered_field_id( $option_key ) ) {
+                $raw_grad = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
+                $sanitized_options[ $option_key ] = GradientControl::sanitize_posted_value( $option_key, $raw_grad );
                 continue;
             }
 
@@ -501,6 +509,7 @@ final class Menu {
             BackgroundControl::get_all_fields_for_search(),
             BorderControl::get_all_fields_for_search(),
             ShadowControl::get_all_fields_for_search(),
+            GradientControl::get_all_fields_for_search(),
             CodeEditor::get_all_fields_for_search(),
             LinkColor::get_all_fields_for_search()
         );

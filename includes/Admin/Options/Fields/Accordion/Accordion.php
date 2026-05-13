@@ -4,6 +4,7 @@ namespace SimpleThemeOptions\Admin\Options\Fields\Accordion;
 use SimpleThemeOptions\Admin\Options\Fields\BackgroundControl\BackgroundControl;
 use SimpleThemeOptions\Admin\Options\Fields\BorderControl\BorderControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
+use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\Admin\Options\Fields\ButtonGroup\ButtonGroup;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
@@ -527,6 +528,11 @@ final class Accordion {
 
 			return ShadowControl::get_field( $section, $fid ) ? 'shadow' : '';
 		}
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'gradient' ) {
+			GradientControl::register( $clone_reg );
+
+			return GradientControl::get_field( $section, $fid ) ? 'gradient' : '';
+		}
 		if ( isset( $clone_reg['type'] ) && $clone_reg['type'] === 'switcher' ) {
 			Switcher::register( $clone_reg );
 
@@ -984,6 +990,13 @@ final class Accordion {
 				if ( $f ) {
 					$f = $this->with_accordion_responsive_pane_bp( $f, $parent_device_bp );
 					ShadowControl::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
+			case 'gradient':
+				$f = GradientControl::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					$f = $this->with_accordion_responsive_pane_bp( $f, $parent_device_bp );
+					GradientControl::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
 			case 'switcher':

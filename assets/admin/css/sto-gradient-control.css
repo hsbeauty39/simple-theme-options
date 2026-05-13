@@ -1,0 +1,359 @@
+/**
+ * Gradient field — preview strip, popover / inline, bar + stop pins, flip, type / angle.
+ */
+
+.sto-option-panel-wrapper .sto-field-row-gradient {
+	max-width: 100%;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-row-reset {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	margin: 0 0 0 4px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: #646970;
+	cursor: pointer;
+	transition: color 0.12s ease, background 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-row-reset:hover,
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-row-reset:focus-visible {
+	color: #2271b1;
+	background: rgba(34, 113, 177, 0.08);
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-control {
+	position: relative;
+	display: block;
+	max-width: 100%;
+}
+
+/* Summary (popover mode) */
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-summary {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-top: 4px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-preview {
+	flex: 1 1 120px;
+	min-width: 100px;
+	max-width: 220px;
+	height: 40px;
+	border-radius: var(--sto-field-soft-radius, 8px);
+	border: 1px solid #d8dde2;
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-preview--inline {
+	max-width: 100%;
+	margin-bottom: 12px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-edit {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 34px;
+	padding: 6px 14px;
+	border: 1px solid #2271b1;
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: #2271b1;
+	color: #fff;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.2;
+	cursor: pointer;
+	box-shadow: none;
+	transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-edit:hover,
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-edit:focus-visible {
+	background: #135e96;
+	border-color: #135e96;
+	color: #fff;
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-popover {
+	position: absolute;
+	z-index: 10020;
+	left: 0;
+	top: calc(100% + 6px);
+	min-width: min(100%, 380px);
+	max-width: 100%;
+	padding: 14px 16px 16px;
+	background: #fff;
+	border: 1px solid #d8dde2;
+	border-radius: 10px;
+	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-inline {
+	margin-top: 4px;
+	padding: 12px 0 0;
+	border-top: 1px solid #f0f0f1;
+}
+
+/* ——— Main editor ——— */
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-ui {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-viz {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-viz__track {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-viz__pins {
+	position: relative;
+	width: 100%;
+	height: 32px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-viz__bar {
+	width: 100%;
+	height: 22px;
+	border-radius: 9px;
+	border: 1px solid #c3c4c7;
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+	background-color: #f6f7f7;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-pin {
+	position: absolute;
+	bottom: 2px;
+	left: 0;
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 22px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+	transform: translateX(-50%);
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-pin:focus-visible .sto-gradient-pin__face {
+	box-shadow: 0 0 0 2px #2271b1, 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-pin__face {
+	display: block;
+	width: 18px;
+	height: 18px;
+	border-radius: 5px;
+	border: 2px solid #fff;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+	box-sizing: border-box;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-pin::after {
+	content: "";
+	display: block;
+	width: 0;
+	height: 0;
+	margin-top: 2px;
+	border-left: 5px solid transparent;
+	border-right: 5px solid transparent;
+	border-top: 6px solid #50575e;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-pin--active .sto-gradient-pin__face {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1, 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-pin--active::after {
+	border-top-color: #2271b1;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-flip {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: 100%;
+	min-height: 38px;
+	margin: 0;
+	padding: 8px 14px;
+	border: 1px solid #c3c4c7;
+	border-radius: var(--sto-field-soft-radius, 8px);
+	background: #f6f7f7;
+	color: #1d2327;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.2;
+	cursor: pointer;
+	box-shadow: 0 1px 0 #fff inset;
+	transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-flip:hover,
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-flip:focus-visible {
+	background: #f0f0f1;
+	border-color: #8c8f94;
+	color: #1d2327;
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-field-label {
+	display: block;
+	margin: 0 0 6px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	color: #646970;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-editor-grid,
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-footer-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 12px 16px;
+	align-items: start;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-editor-cell {
+	min-width: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-active-color-wrap {
+	max-width: 100%;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-stop-percent {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	min-height: 32px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-active-position {
+	flex: 1 1 auto;
+	min-width: 0;
+	max-width: 100%;
+	height: 32px;
+	margin: 0;
+	padding: 0 10px;
+	border: 1px solid #8c8f94;
+	border-radius: var(--sto-field-soft-radius, 6px);
+	font-size: 13px;
+	background: #fff;
+	box-shadow: 0 0 0 transparent;
+	transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-active-position:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-stop-percent__suffix {
+	flex: 0 0 auto;
+	font-size: 13px;
+	font-weight: 500;
+	color: #50575e;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-type-select {
+	width: 100%;
+	max-width: 100%;
+	min-height: 32px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-angle-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 32px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-angle-input {
+	flex: 1 1 auto;
+	min-width: 0;
+	height: 32px;
+	margin: 0;
+	padding: 0 10px;
+	border: 1px solid #8c8f94;
+	border-radius: var(--sto-field-soft-radius, 6px);
+	font-size: 13px;
+	background: #fff;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-angle-input:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-angle-suffix {
+	flex: 0 0 auto;
+	font-size: 12px;
+	font-weight: 600;
+	color: #50575e;
+	letter-spacing: 0.04em;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-top: 2px;
+	padding-top: 10px;
+	border-top: 1px solid #f0f0f1;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-remove-stop {
+	color: #b32d2e;
+	border-color: #dcdcde;
+	background: #fff;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-remove-stop:hover,
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-remove-stop:focus-visible {
+	color: #8a2424;
+	background: #fcf0f1;
+	border-color: #c3c4c7;
+	outline: none;
+}
+
+@media (max-width: 600px) {
+	.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-popover {
+		left: 0;
+		right: 0;
+		min-width: 0;
+	}
+}

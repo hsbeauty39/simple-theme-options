@@ -336,6 +336,12 @@
 	z-index: 5;
 }
 
+.sto-option-panel-wrapper .sto-accordion__item:has(.sto-gradient-control[data-sto-gradient-open="1"]) {
+	overflow: visible;
+	position: relative;
+	z-index: 5;
+}
+
 .sto-option-panel-wrapper .sto-accordion__header--v2 {
 	background: linear-gradient(90deg, #f8fafc 0%, #eef2f7 55%, #f8fafc 100%);
 	border-bottom: 1px solid #e2e8f0;

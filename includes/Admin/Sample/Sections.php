@@ -26,6 +26,7 @@ final class Sections {
 
 		$options_menu->add_section( __( 'Colors & surfaces', 'simple-theme-options' ), 'colors-surfaces', 'fa-light fa-palette' );
 		$options_menu->add_sub_section( __( 'Solid colors', 'simple-theme-options' ), 'appearance-color', 'fa-light fa-droplet', 'colors-surfaces' );
+		$options_menu->add_sub_section( __( 'Gradient colors', 'simple-theme-options' ), 'appearance-gradient', 'fa-light fa-fill-drip', 'colors-surfaces' );
 		$options_menu->add_sub_section( __( 'Surfaces & media', 'simple-theme-options' ), 'appearance-surfaces', 'fa-light fa-image', 'colors-surfaces' );
 		$options_menu->add_sub_section( __( 'Link colors', 'simple-theme-options' ), 'appearance-links', 'fa-light fa-link', 'colors-surfaces' );
 
@@ -46,6 +47,7 @@ final class Sections {
 			'layout-code-borders',
 			'layout-tabs-side',
 			'appearance-color',
+			'appearance-gradient',
 			'appearance-surfaces',
 			'appearance-links',
 			'accordion',

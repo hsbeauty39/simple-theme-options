@@ -226,6 +226,9 @@
                     if (typeof window.stoInitShadowControls === 'function') {
                         window.stoInitShadowControls($ap);
                     }
+                    if (typeof window.stoInitGradientControls === 'function') {
+                        window.stoInitGradientControls($ap);
+                    }
                     if (typeof window.stoInitLinkColors === 'function') {
                         window.stoInitLinkColors($ap);
                     }
@@ -678,6 +681,9 @@
             }
             if (typeof window.stoInitShadowControls === 'function') {
                 window.stoInitShadowControls($activePanel);
+            }
+            if (typeof window.stoInitGradientControls === 'function') {
+                window.stoInitGradientControls($activePanel);
             }
             if (typeof window.stoInitLinkColors === 'function') {
                 window.stoInitLinkColors($activePanel);

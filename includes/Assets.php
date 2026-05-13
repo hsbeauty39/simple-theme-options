@@ -160,6 +160,11 @@ final class Assets {
 				'deps'    => array( 'sto-color' ),
 				'version' => STO_VERSION,
 			),
+			'sto-gradient-control' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-gradient-control.css',
+				'deps'    => array( 'sto-color' ),
+				'version' => STO_VERSION,
+			),
 			'sto-link-color' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-link-color.css',
 				'deps'    => array( 'sto-color' ),
@@ -348,6 +353,12 @@ final class Assets {
 			),
 			'sto-shadow-control' => array(
 				'src'       => STO_URL . 'assets/admin/js/sto-shadow-control.js',
+				'deps'      => array( 'jquery', 'sto-color', 'display-section-on-menu' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
+			'sto-gradient-control' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-gradient-control.js',
 				'deps'      => array( 'jquery', 'sto-color', 'display-section-on-menu' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
