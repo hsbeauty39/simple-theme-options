@@ -37,8 +37,44 @@ final class Menu {
     private $sub_sections = array();
     private $parent_menu_slug = '';
 
-    public function register($name, $slug, $icon) {
-        $this->parent_menu_slug = $slug;
+	/**
+	 * When false, sample sections cannot be shown (no Field samples / Appearance / Accordion); **Advance** still is.
+	 * User-facing demo visibility also requires {@see is_demo_mode_enabled()} (stored preference, default off).
+	 *
+	 * @var bool
+	 */
+	private $demo_capability_allowed = true;
+
+	/**
+	 * Whether the packaged **Field samples** / **Colors & surfaces** / **Accordion** demo UI is active.
+	 * Requires {@see is_demo_capability_allowed()} and the Advance **Demo mode** toggle (option **`sto_theme_settings_ui_demo_enabled`**, default off).
+	 * Filter {@see 'sto_theme_settings_demo_mode'} receives this combined boolean.
+	 */
+	public function is_demo_mode_enabled() {
+		$ui_on = wp_validate_boolean( get_option( ThemeSettingsImportExport::OPTION_UI_DEMO_ENABLED, false ) );
+
+		$base = $this->demo_capability_allowed && $ui_on;
+
+		return (bool) apply_filters( 'sto_theme_settings_demo_mode', $base );
+	}
+
+	/**
+	 * Whether `register()` allows the demo UI at all (`'demo' => false` forbids it; no Advance switcher).
+	 */
+	public function is_demo_capability_allowed() {
+		return $this->demo_capability_allowed;
+	}
+
+	/**
+	 * @param string               $name Admin menu page title.
+	 * @param string               $slug Top-level `page` slug (e.g. `theme-settings`).
+	 * @param string               $icon Dashicon class or URL.
+	 * @param array<string, mixed> $args Optional. **`demo`** (bool) — default **true** (samples *may* be shown when the Advance toggle is on). When **false**, samples never register; use **`Sample\Menu::register_menu()`** with **`'demo' => true`** to allow the packaged samples + Advance switcher.
+	 */
+	public function register( $name, $slug, $icon, $args = array() ) {
+		$args                         = is_array( $args ) ? $args : array();
+		$this->demo_capability_allowed = array_key_exists( 'demo', $args ) ? (bool) $args['demo'] : true;
+		$this->parent_menu_slug = $slug;
         add_action( 'admin_init', array( $this, 'maybe_handle_save_request' ) );
 
         add_action('admin_menu', function() use ($name, $slug, $icon) {

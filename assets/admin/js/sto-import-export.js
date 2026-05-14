@@ -1,5 +1,6 @@
 /**
- * Theme Settings Advance: full `sto_options` export / import (AJAX, file, clipboard).
+ * Theme Settings Advance: full `sto_options` export / import (AJAX, file, clipboard),
+ * demo mode toggle, last-import log actions.
  */
 (function($) {
     'use strict';
@@ -45,6 +46,28 @@
         });
     }
 
+    function triggerSubsetExport(scope, optionKey, done) {
+        var c = cfg();
+        var data = {
+            action: c.actionImportSubsetExport,
+            nonce: c.nonce,
+            export_scope: scope
+        };
+        if (scope === 'single' && optionKey) {
+            data.option_key = optionKey;
+        }
+        $.post(c.ajaxUrl, data).done(function(res) {
+            if (res && res.success && res.data && res.data.json) {
+                done(null, res.data.json, res.data.filename || 'theme-settings-subset.json');
+            } else {
+                var msg = (res && res.data && res.data.message) ? res.data.message : i18n('exportFailed');
+                done(msg);
+            }
+        }).fail(function() {
+            done(i18n('exportFailed'));
+        });
+    }
+
     function downloadJson(filename, jsonString) {
         var blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
         var url = URL.createObjectURL(blob);
@@ -79,6 +102,166 @@
         }
     }
 
+    function setDemoUi($root, $btn, $inp, on) {
+        $inp.val(on ? '1' : '0');
+        $btn.toggleClass('sto-switcher--on', !!on);
+        $btn.attr('aria-pressed', on ? 'true' : 'false');
+    }
+
+    function bindDemoSwitch($root) {
+        var c = cfg();
+        if (!c.demoCapability) {
+            return;
+        }
+        var $btn = $root.find('[data-sto-advance-demo-switch]');
+        var $inp = $root.find('[data-sto-advance-demo-input]');
+        var $st = $root.find('[data-sto-advance-demo-status]');
+        if (!$btn.length || !$inp.length) {
+            return;
+        }
+
+        $root.on('click', '[data-sto-advance-demo-switch]', function(ev) {
+            ev.preventDefault();
+            var cur = $inp.val() === '1';
+            var next = !cur;
+            setDemoUi($root, $btn, $inp, next);
+            $st.text(i18n('savingDemo'));
+            $.post(
+                c.ajaxUrl,
+                {
+                    action: c.actionSetUiDemo,
+                    nonce: c.nonce,
+                    ui_demo: next ? '1' : '0'
+                }
+            ).done(function(res) {
+                if (res && res.success) {
+                    window.location.reload();
+                } else {
+                    var msg = (res && res.data && res.data.message) ? res.data.message : i18n('demoSaveFailed');
+                    setDemoUi($root, $btn, $inp, cur);
+                    $st.text(msg);
+                }
+            }).fail(function() {
+                setDemoUi($root, $btn, $inp, cur);
+                $st.text(i18n('demoSaveFailed'));
+            });
+        });
+    }
+
+    function bindImportLog($root) {
+        var c = cfg();
+        var $logStatus = $root.find('[data-sto-advance-import-log-status]');
+        var $log = $root.find('[data-sto-advance-import-log]');
+        if (!$log.length) {
+            return;
+        }
+
+        function reloadAfterMutation() {
+            window.location.reload();
+        }
+
+        $root.on('click', '[data-sto-advance-import-download-key]', function(ev) {
+            ev.preventDefault();
+            setStatus($log, $logStatus, '', false);
+            var key = $(this).attr('data-sto-advance-import-download-key') || '';
+            triggerSubsetExport('single', key, function(err, jsonString, filename) {
+                if (err) {
+                    setStatus($log, $logStatus, err, true);
+                    return;
+                }
+                downloadJson(filename, jsonString);
+                setStatus($log, $logStatus, i18n('fileDownloaded'), false);
+            });
+        });
+
+        $root.on('click', '[data-sto-advance-import-download-all]', function(ev) {
+            ev.preventDefault();
+            setStatus($log, $logStatus, '', false);
+            triggerSubsetExport('all', '', function(err, jsonString, filename) {
+                if (err) {
+                    setStatus($log, $logStatus, err, true);
+                    return;
+                }
+                downloadJson(filename, jsonString);
+                setStatus($log, $logStatus, i18n('fileDownloaded'), false);
+            });
+        });
+
+        $root.on('click', '[data-sto-advance-import-remove-key]', function(ev) {
+            ev.preventDefault();
+            setStatus($log, $logStatus, '', false);
+            var key = $(this).attr('data-sto-advance-import-remove-key') || '';
+            if (!key || !window.confirm(i18n('confirmRemoveKey'))) {
+                return;
+            }
+            $.post(
+                c.ajaxUrl,
+                {
+                    action: c.actionImportKeyRemove,
+                    nonce: c.nonce,
+                    option_key: key
+                }
+            ).done(function(res) {
+                if (res && res.success) {
+                    reloadAfterMutation();
+                } else {
+                    var msg = (res && res.data && res.data.message) ? res.data.message : i18n('importFailed');
+                    setStatus($log, $logStatus, msg, true);
+                }
+            }).fail(function() {
+                setStatus($log, $logStatus, i18n('importFailed'), true);
+            });
+        });
+
+        $root.on('click', '[data-sto-advance-import-remove-all]', function(ev) {
+            ev.preventDefault();
+            setStatus($log, $logStatus, '', false);
+            if (!window.confirm(i18n('confirmRemoveAllKeys'))) {
+                return;
+            }
+            $.post(
+                c.ajaxUrl,
+                {
+                    action: c.actionImportKeysRemoveAll,
+                    nonce: c.nonce
+                }
+            ).done(function(res) {
+                if (res && res.success) {
+                    reloadAfterMutation();
+                } else {
+                    var msg = (res && res.data && res.data.message) ? res.data.message : i18n('importFailed');
+                    setStatus($log, $logStatus, msg, true);
+                }
+            }).fail(function() {
+                setStatus($log, $logStatus, i18n('importFailed'), true);
+            });
+        });
+
+        $root.on('click', '[data-sto-advance-import-dismiss-log]', function(ev) {
+            ev.preventDefault();
+            setStatus($log, $logStatus, '', false);
+            if (!window.confirm(i18n('confirmDismissLog'))) {
+                return;
+            }
+            $.post(
+                c.ajaxUrl,
+                {
+                    action: c.actionImportLogDismiss,
+                    nonce: c.nonce
+                }
+            ).done(function(res) {
+                if (res && res.success) {
+                    reloadAfterMutation();
+                } else {
+                    var msg = (res && res.data && res.data.message) ? res.data.message : i18n('importFailed');
+                    setStatus($log, $logStatus, msg, true);
+                }
+            }).fail(function() {
+                setStatus($log, $logStatus, i18n('importFailed'), true);
+            });
+        });
+    }
+
     function bindOne($root) {
         if ($root.data('stoAdvanceImportExportBound')) {
             return;
@@ -90,6 +273,9 @@
         var $textarea = $root.find('[data-sto-advance-textarea]');
         var $file = $root.find('[data-sto-advance-file]');
         var $drop = $root.find('[data-sto-advance-dropzone]');
+
+        bindDemoSwitch($root);
+        bindImportLog($root);
 
         $root.on('click', '[data-sto-advance-export-copy]', function(ev) {
             ev.preventDefault();
