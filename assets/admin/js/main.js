@@ -235,6 +235,12 @@
                     if (typeof window.stoInitRangeControls === 'function') {
                         window.stoInitRangeControls($ap);
                     }
+                    if (typeof window.stoInitDateFields === 'function') {
+                        window.stoInitDateFields($ap);
+                    }
+                    if (typeof window.stoInitDateTimeFields === 'function') {
+                        window.stoInitDateTimeFields($ap);
+                    }
                     if (typeof window.stoInitCheckboxControls === 'function') {
                         window.stoInitCheckboxControls($ap);
                     }
@@ -690,6 +696,12 @@
             }
             if (typeof window.stoInitRangeControls === 'function') {
                 window.stoInitRangeControls($activePanel);
+            }
+            if (typeof window.stoInitDateFields === 'function') {
+                window.stoInitDateFields($activePanel);
+            }
+            if (typeof window.stoInitDateTimeFields === 'function') {
+                window.stoInitDateTimeFields($activePanel);
             }
             if (typeof window.stoInitCheckboxControls === 'function') {
                 window.stoInitCheckboxControls($activePanel);

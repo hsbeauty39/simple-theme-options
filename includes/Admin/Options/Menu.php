@@ -16,6 +16,8 @@ use SimpleThemeOptions\Admin\Options\Fields\CheckboxControl\CheckboxControl;
 use SimpleThemeOptions\Admin\Options\Fields\Typography\Typography;
 use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
+use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
+use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\ButtonGroup\ButtonGroup;
 use SimpleThemeOptions\Admin\ThemeSettingsCleanScreen;
@@ -150,6 +152,8 @@ final class Menu {
             GradientControl::get_field_ids_for_section( $section_slug ),
             LinkColor::get_field_ids_for_section( $section_slug ),
             Input::get_field_ids_for_section( $section_slug ),
+            DateField::get_field_ids_for_section( $section_slug ),
+            DateTimeField::get_field_ids_for_section( $section_slug ),
             Range::get_field_ids_for_section( $section_slug ),
             CodeEditor::get_field_ids_for_section( $section_slug ),
             Typography::get_field_ids_for_section( $section_slug ),
@@ -302,6 +306,18 @@ final class Menu {
                 continue;
             }
 
+            if ( DateField::is_registered_field_id( $option_key ) ) {
+                $raw_date = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
+                $sanitized_options[ $option_key ] = DateField::sanitize_posted_value( $option_key, $raw_date );
+                continue;
+            }
+
+            if ( DateTimeField::is_registered_field_id( $option_key ) ) {
+                $raw_dt = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
+                $sanitized_options[ $option_key ] = DateTimeField::sanitize_posted_value( $option_key, $raw_dt );
+                continue;
+            }
+
             if ( Range::is_registered_field_id( $option_key ) ) {
                 $raw_range = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
                 $sanitized_options[ $option_key ] = Range::sanitize_posted_value( $option_key, $raw_range );
@@ -368,7 +384,11 @@ final class Menu {
          */
         $validation_errors = apply_filters(
             'sto_theme_settings_validation_errors',
-            Input::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            array_merge(
+                Input::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+                DateField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+                DateTimeField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options )
+            ),
             $section_slug,
             $sanitized_options,
             $posted_options
@@ -503,6 +523,8 @@ final class Menu {
             CheckboxControl::get_all_fields_for_search(),
             Color::get_all_fields_for_search(),
             Input::get_all_fields_for_search(),
+            DateField::get_all_fields_for_search(),
+            DateTimeField::get_all_fields_for_search(),
             Range::get_all_fields_for_search(),
             ButtonGroup::get_all_fields_for_search(),
             Typography::get_all_fields_for_search(),

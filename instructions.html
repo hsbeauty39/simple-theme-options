@@ -1076,6 +1076,8 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 						<li class="sto-docs-nav__nest"><a href="#f-border">6.8 Border</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-shadow">6.9 Shadow</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-range">6.10 Range</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-date">6.10.1 Date</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-datetime">6.10.2 Date &amp; time</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-typo">6.11 Typography</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-img">6.12 Image select</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-btng">6.13 Button group</a></li>
@@ -1289,6 +1291,16 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-range">PHP →</a></p>
 
 			<hr class="sep" />
+			<h3 id="f-date">6.10.1 DateField</h3>
+<p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-date">PHP →</a></p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'date'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, <code>default</code> (<strong>Y-m-d</strong> or empty), <code>placeholder</code>, optional inclusive <code>min_date</code> / <code>max_date</code> (<strong>Y-m-d</strong>), conditional <code>required</code>, <code>html_required</code>, <code>responsive</code> / <code>device</code>. Stored value is <strong>Y-m-d</strong> or a per-breakpoint map. Boot <code>DateField::instance()</code> before <code>Group::register()</code> when using dates inside groups. Picker uses core <code>jquery-ui-datepicker</code> + <code>wp_localize_jquery_ui_datepicker()</code>. The row renders one combined control (icon + date + clear) and a styled calendar popover (<code>sto-date-field.css</code>).</p>
+
+			<hr class="sep" />
+			<h3 id="f-datetime">6.10.2 DateTimeField</h3>
+<p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-datetime">PHP →</a></p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'datetime'</code> plus the same keys as <strong>date</strong>, with <code>default</code> as <strong>Y-m-d H:i</strong> (24-hour) or empty, and optional <code>time_step</code> (seconds for <code>&lt;input type="time"&gt;</code> <code>step</code>, default <strong>60</strong>). <code>min_date</code> / <code>max_date</code> bound the <strong>date</strong> portion only. Stored value is <strong>Y-m-d H:i</strong> or a per-breakpoint map. Boot <code>DateTimeField::instance()</code> before <code>Group::register()</code> when using datetime rows inside groups. Assets: <code>sto-datetime-field.css</code> + <code>sto-datetime-field.js</code> (calendar popover skin still comes from <code>sto-date-field.css</code> via <code>sto-datepicker--sto</code>). Hook priority <strong>19.39</strong> on <code>sto_render_section_content</code> (after <strong>DateField</strong> <strong>19.38</strong>).</p>
+
+			<hr class="sep" />
 			<h3 id="f-typo">6.11 Typography</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-typography">PHP →</a></p>
 
@@ -1364,6 +1376,8 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 					<tr><td>19.30</td><td>BorderControl</td></tr>
 					<tr><td>19.31</td><td>ShadowControl</td></tr>
 					<tr><td>19.35</td><td>Range</td></tr>
+					<tr><td>19.38</td><td>DateField</td></tr>
+					<tr><td>19.39</td><td>DateTimeField</td></tr>
 					<tr><td>19.45</td><td>Tabs</td></tr>
 					<tr><td>19.46</td><td>Accordion</td></tr>
 					<tr><td>19.55</td><td>CodeEditor</td></tr>
@@ -1926,6 +1940,45 @@ Input::register(
 		'max'           => 1920,
 		'step'          => 1,
 		'units'         => array( 'px' ),
+		'responsive'    => true,
+	)
+);</code></pre>
+				</section>
+				<section class="sto-php-snippet" id="php-date" aria-labelledby="php-h-date">
+					<div class="sto-php-snippet__bar" id="php-h-date">
+						<span class="sto-php-snippet__pill">PHP</span>
+						<span class="sto-php-snippet__label">date</span>
+						<a class="sto-php-snippet__back" href="#f-date">↑ Docs</a>
+					</div>
+					<pre class="sto-php-snippet__pre"><code class="language-php">DateField::register(
+	array(
+		'section_slug'  => 'misc',
+		'id'            => 'launch_date',
+		'title'         => __( 'Launch date', 'simple-theme-options' ),
+		'default'       => '',
+		'placeholder'   => __( 'Pick a date…', 'simple-theme-options' ),
+		'min_date'      => '2000-01-01',
+		'max_date'      => '2035-12-31',
+		'responsive'    => true,
+	)
+);</code></pre>
+				</section>
+				<section class="sto-php-snippet" id="php-datetime" aria-labelledby="php-h-datetime">
+					<div class="sto-php-snippet__bar" id="php-h-datetime">
+						<span class="sto-php-snippet__pill">PHP</span>
+						<span class="sto-php-snippet__label">datetime</span>
+						<a class="sto-php-snippet__back" href="#f-datetime">↑ Docs</a>
+					</div>
+					<pre class="sto-php-snippet__pre"><code class="language-php">DateTimeField::register(
+	array(
+		'section_slug'  => 'misc',
+		'id'            => 'launch_at',
+		'title'         => __( 'Launch date and time', 'simple-theme-options' ),
+		'default'       => '',
+		'placeholder'   => __( 'Pick date and time…', 'simple-theme-options' ),
+		'min_date'      => '2000-01-01',
+		'max_date'      => '2035-12-31',
+		'time_step'     => 60,
 		'responsive'    => true,
 	)
 );</code></pre>

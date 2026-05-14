@@ -1,0 +1,374 @@
+/**
+ * Date field: combined control (icon + display + clear) + jQuery UI Datepicker skin.
+ * Matches `.sto-input-control` tokens from `style.css` / `sto-input.css`.
+ */
+
+.sto-field-row-date .sto-date-field {
+	max-width: 100%;
+}
+
+.sto-field-row-date .sto-input-wrap.sto-date-field__shell {
+	max-width: min(640px, 100%);
+}
+
+/* One chrome bar: icon | editable-looking field | clear (same family as text inputs). */
+.sto-field-row-date .sto-date-field__control {
+	display: flex;
+	align-items: stretch;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: min(640px, 100%);
+	min-height: 40px;
+	background: #fff;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	box-shadow: var(--sto-field-soft-shadow, none);
+	overflow: hidden;
+	transition: border-color 0.12s ease-in-out, box-shadow 0.12s ease-in-out;
+}
+
+.sto-field-row-date .sto-date-field__shell:focus-within .sto-date-field__control {
+	border-color: #2271b1;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+}
+
+.sto-field-row-date .sto-date-field__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 42px;
+	color: #787c82;
+	font-size: 17px;
+	line-height: 1;
+	user-select: none;
+	background: #f6f7f7;
+	border-right: 1px solid var(--sto-field-soft-border, #e6e8eb);
+}
+
+.sto-field-row-date .sto-date-field__icon i {
+	opacity: 0.9;
+}
+
+.sto-field-row-date .sto-date-field__display {
+	flex: 1 1 auto;
+	min-width: 0;
+	margin: 0;
+	padding: 8px 12px;
+	font-size: 14px;
+	line-height: 1.5;
+	color: #2c3338;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	outline: none;
+	cursor: pointer;
+}
+
+.sto-field-row-date .sto-date-field__display::placeholder {
+	color: #787c82;
+	opacity: 1;
+}
+
+.sto-field-row-date .sto-date-field__clear {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	margin: 0;
+	padding: 0 10px;
+	font-family: inherit;
+	font-size: 20px;
+	font-weight: 400;
+	line-height: 1;
+	color: #646970;
+	background: #fafafa;
+	border: none;
+	border-left: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: 0;
+	cursor: pointer;
+	transition: color 0.12s ease-in-out, background 0.12s ease-in-out;
+}
+
+.sto-field-row-date .sto-date-field__clear:hover,
+.sto-field-row-date .sto-date-field__clear:focus-visible {
+	color: #b32d2e;
+	background: #fcf0f1;
+	outline: none;
+}
+
+.sto-field-row-date .sto-date-field__clear-x {
+	display: block;
+	line-height: 1;
+	text-decoration: none;
+	border-bottom: 1px solid transparent;
+	transition: border-color 0.12s ease-in-out;
+}
+
+.sto-field-row-date .sto-date-field__clear:hover .sto-date-field__clear-x,
+.sto-field-row-date .sto-date-field__clear:focus-visible .sto-date-field__clear-x {
+	border-bottom-color: currentColor;
+}
+
+.sto-field-row-date.sto-required-hidden .sto-date-field input,
+.sto-field-row-date.sto-required-hidden .sto-date-field button {
+	pointer-events: none;
+}
+
+/* -------------------------------------------------------------------------
+ * jQuery UI Datepicker (scoped: class added in sto-date-field.js beforeShow)
+ * ------------------------------------------------------------------------- */
+#ui-datepicker-div.sto-datepicker--sto {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	font-size: 13px;
+	line-height: 1.45;
+	min-width: 272px;
+	padding: 12px 14px 14px;
+	color: #1d2327;
+	background: #fff;
+	border: 1px solid var(--sto-field-soft-border, #dcdcde);
+	border-radius: var(--sto-field-soft-radius, 8px);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.04);
+	z-index: 100010 !important;
+	box-sizing: border-box;
+}
+
+#ui-datepicker-div.sto-datepicker--sto * {
+	box-sizing: border-box;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-header {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 8px 10px;
+	margin: 0 0 10px;
+	padding: 4px 40px 8px;
+	border: none;
+	background: transparent;
+}
+
+/* Prev / next: hide broken sprite icons; show clean chevrons. */
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-prev,
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-next {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 34px;
+	height: 34px;
+	margin: 0;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: var(--sto-field-soft-radius, 6px);
+	cursor: pointer;
+	background: transparent;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-prev {
+	left: 0;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-next {
+	right: 0;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-prev-hover,
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-next-hover {
+	top: 50%;
+	transform: translateY(-50%);
+	border-color: var(--sto-field-soft-border, #e6e8eb);
+	background: #f6f7f7;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-prev .ui-icon,
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-next .ui-icon {
+	position: static;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	background: none !important;
+	text-indent: 0;
+	overflow: hidden;
+	font-size: 0;
+	line-height: 0;
+	color: transparent;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-prev .ui-icon::before,
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-next .ui-icon::before {
+	content: "";
+	display: block;
+	width: 8px;
+	height: 8px;
+	border: solid #2271b1;
+	border-width: 0 0 2px 2px;
+	font-size: 0;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-prev .ui-icon::before {
+	transform: rotate(45deg);
+	margin-left: 3px;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-next .ui-icon::before {
+	transform: rotate(-135deg);
+	margin-right: 3px;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-prev.ui-state-disabled,
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-next.ui-state-disabled {
+	opacity: 0.3;
+	cursor: default;
+	pointer-events: none;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	float: none;
+	width: 100%;
+	margin: 0;
+	line-height: 1.3;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-title select {
+	margin: 0;
+}
+
+#ui-datepicker-div.sto-datepicker--sto select.ui-datepicker-month,
+#ui-datepicker-div.sto-datepicker--sto select.ui-datepicker-year {
+	min-height: 32px;
+	padding: 4px 32px 4px 10px;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.4;
+	color: #1d2327;
+	background-color: #fff;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23505860' d='M1.4 0L6 4.6 10.6 0 12 1.4l-6 6-6-6z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	background-size: 10px 6px;
+	border: 1px solid #8c8f94;
+	border-radius: var(--sto-field-soft-radius, 4px);
+	box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+}
+
+#ui-datepicker-div.sto-datepicker--sto select.ui-datepicker-month:focus,
+#ui-datepicker-div.sto-datepicker--sto select.ui-datepicker-year:focus {
+	border-color: #2271b1;
+	outline: 1px solid transparent;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+#ui-datepicker-div.sto-datepicker--sto table {
+	width: 100%;
+	margin: 4px 0 0;
+	font-size: 13px;
+	border-collapse: separate;
+	border-spacing: 2px;
+}
+
+#ui-datepicker-div.sto-datepicker--sto thead {
+	border: none;
+}
+
+#ui-datepicker-div.sto-datepicker--sto th {
+	padding: 6px 0 8px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #787c82;
+	text-align: center;
+	border: none;
+}
+
+#ui-datepicker-div.sto-datepicker--sto th span {
+	display: block;
+}
+
+#ui-datepicker-div.sto-datepicker--sto td {
+	padding: 1px;
+	border: none;
+	text-align: center;
+	vertical-align: middle;
+}
+
+#ui-datepicker-div.sto-datepicker--sto td a,
+#ui-datepicker-div.sto-datepicker--sto td span {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	margin: 0 auto;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	font-size: 13px;
+	font-weight: 500;
+	text-align: center;
+	text-decoration: none;
+	color: #1d2327;
+	background: transparent;
+	box-sizing: border-box;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-state-default {
+	background: transparent;
+}
+
+#ui-datepicker-div.sto-datepicker--sto td a.ui-state-hover {
+	border-color: #c3c4c7;
+	background: #f0f0f1;
+	color: #1d2327;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-today a,
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-today span {
+	font-weight: 700;
+	color: #2271b1;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-current-day a {
+	border-color: #1d2327;
+	background: #fff;
+	color: #1d2327;
+	box-shadow: 0 0 0 1px #1d2327 inset;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-other-month a,
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-other-month span {
+	color: #c3c4c7;
+	font-weight: 400;
+	opacity: 0.75;
+}
+
+#ui-datepicker-div.sto-datepicker--sto .ui-datepicker-unselectable .ui-state-default {
+	opacity: 0.35;
+	cursor: default;
+}
+
+@media (max-width: 782px) {
+	.sto-field-row-date .sto-date-field__control {
+		max-width: 100%;
+	}
+
+	#ui-datepicker-div.sto-datepicker--sto {
+		min-width: 260px;
+		padding: 10px 12px 12px;
+	}
+}

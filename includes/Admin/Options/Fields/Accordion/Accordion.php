@@ -16,6 +16,8 @@ use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
 use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
 use SimpleThemeOptions\Admin\Options\Fields\ImageSelect\ImageSelect;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
+use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
+use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
@@ -558,6 +560,16 @@ final class Accordion {
 
 			return Range::get_field( $section, $fid ) ? 'range' : '';
 		}
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'date' ) {
+			DateField::register( $clone_reg );
+
+			return DateField::get_field( $section, $fid ) ? 'date' : '';
+		}
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'datetime' ) {
+			DateTimeField::register( $clone_reg );
+
+			return DateTimeField::get_field( $section, $fid ) ? 'datetime' : '';
+		}
 		if ( isset( $clone_reg['type'] ) && $clone_reg['type'] === 'button_group' && ! empty( $clone_reg['options'] ) && is_array( $clone_reg['options'] ) ) {
 			ButtonGroup::register( $clone_reg );
 
@@ -1039,6 +1051,20 @@ final class Accordion {
 				if ( $f ) {
 					$f = $this->with_accordion_responsive_pane_bp( $f, $parent_device_bp );
 					Range::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
+			case 'date':
+				$f = DateField::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					$f = $this->with_accordion_responsive_pane_bp( $f, $parent_device_bp );
+					DateField::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
+			case 'datetime':
+				$f = DateTimeField::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					$f = $this->with_accordion_responsive_pane_bp( $f, $parent_device_bp );
+					DateTimeField::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
 			case 'select':

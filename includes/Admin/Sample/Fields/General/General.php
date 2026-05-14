@@ -6,6 +6,8 @@ use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
+use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
+use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
@@ -31,6 +33,8 @@ final class General {
 		ButtonGroup::instance();
 		Input::instance();
 		Range::instance();
+		DateField::instance();
+		DateTimeField::instance();
 		Tabs::instance();
 		Switcher::instance();
 		// Priority 18: boot Select + DynamicObject before CheckboxControl so **layout-nav** rows render in nav order (selects → search pickers → tiles), not tiles first.
@@ -277,6 +281,37 @@ final class General {
 						'max'             => '12',
 						'step'            => '1',
 						'placeholder'     => __( '1–12', 'simple-theme-options' ),
+					),
+					array(
+						'type'          => 'date',
+						'id'            => 'layout_sample_date',
+						'title'         => __( 'Sample date', 'simple-theme-options' ),
+						'description'   => __( 'jQuery UI calendar; value stored as Y-m-d (empty allowed). Uses the site date format in the picker.', 'simple-theme-options' ),
+						'default'       => '',
+						'placeholder'   => __( 'Select a date…', 'simple-theme-options' ),
+						'min_date'      => '2000-01-01',
+						'max_date'      => '2035-12-31',
+					),
+					array(
+						'type'          => 'date',
+						'id'            => 'layout_responsive_date',
+						'title'         => __( 'Responsive date', 'simple-theme-options' ),
+						'description'   => __( 'Per-breakpoint date map; shown only when Site header is Default layout (conditional visibility demo).', 'simple-theme-options' ),
+						'default'       => '',
+						'placeholder'   => __( 'Select…', 'simple-theme-options' ),
+						'responsive'    => true,
+						'required'      => array( 'layout_header' => 'default_header_layout' ),
+					),
+					array(
+						'type'          => 'datetime',
+						'id'            => 'layout_sample_datetime',
+						'title'         => __( 'Sample date & time', 'simple-theme-options' ),
+						'description'   => __( 'Calendar plus native time; stored as Y-m-d H:i (empty allowed).', 'simple-theme-options' ),
+						'default'       => '',
+						'placeholder'   => __( 'Pick date & time…', 'simple-theme-options' ),
+						'min_date'      => '2000-01-01',
+						'max_date'      => '2035-12-31',
+						'time_step'     => 60,
 					),
 					array(
 						'type'          => 'textarea',

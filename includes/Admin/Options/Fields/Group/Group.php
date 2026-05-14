@@ -18,6 +18,8 @@ use SimpleThemeOptions\Admin\Options\Fields\CheckboxControl\CheckboxControl;
 use SimpleThemeOptions\Admin\Options\Fields\Typography\Typography;
 use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
+use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
+use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Accordion\Accordion;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
@@ -63,6 +65,8 @@ final class Group {
 	 * - Input: `type` => `text`|`number`|`textarea`|`editor`|`email`|`phone`|`search` (or `type` => `input` with `input_type` set to one of those), plus `id`, `title`, optional `description`, `default`, `placeholder` (all types; editor sets textarea placeholder), optional **`html_required`** (HTML5 `required`, separate from conditional `required`), `min`/`max`/`step` (number), `rows`/`cols` (textarea), `editor_height`/`media_buttons`/`teeny`/`drag_drop_upload` (editor), optional **`toolbar_end`** on **editor** => `array( 'label', 'tooltip', 'snippet' )` (TinyMCE row-1 after kitchen sink), conditional **`required`**, `tooltip`, optional **`responsive`**, **`device`** (not for **`editor`**).
 	 * - **Button group:** `type` => **`button_group`**, `id`, `title`, **`options`** (value => label string **or** array with **`label`**, optional **`tooltip`** (plain text on segment **`?`** when no **`preview_image`**), optional **`preview_image`** URL shown in the same floating image popover as **`FieldTitle`** on segment **`?` hover**), optional **`default`**, `description`, conditional **`required`**, row **`tooltip`** / **`tooltip_image`** via **`FieldTitle`**, optional **`responsive`**, **`device`**.
 	 * - **Range:** `type` => **`range`**, `id`, `title`, optional `description`, `default` (number, `760px`-style string, or array `v` / `u` / `c`), numeric `min` / `max` / `step`, optional **`units`** => ordered non-empty subset of **`px`**, **`%`**, **`rem`**, **`em`**, **`custom`** (default: all five; one entry = locked unit; **`custom`** alone = suffix field only), optional **`unit_label`** (UI-only text after the number, e.g. `PAGE`; with **`units` => array( 'custom' )** hides the suffix field and CUSTOM chip), conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**.
+	 * - **Date:** `type` => **`date`**, **`id`**, **`title`**, optional **`description`**, **`default`** (Y-m-d or empty), **`placeholder`**, optional **`min_date`** / **`max_date`** (inclusive Y-m-d), optional **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as **`Y-m-d`** string or per-breakpoint map. Theme: read **`sto_options['id']`** (string or array).
+	 * - **Date + time:** `type` => **`datetime`**, same keys as **date** plus optional **`time_step`** (seconds for native time input **`step`**, default **60**). Stored as **`Y-m-d H:i`** (24-hour) or per-breakpoint map. Boot **`DateTimeField::instance()`** when used inside groups.
 	 * - **Tabs:** `type` => **`tabs`**, **`id`**, **`title`**, **`tabs`**, **`fields`** — **`fields`** may mix **leaf** controls, **`type` => `accordion`**, **nested groups** (`id`, `title`, `fields`), and **nested `tabs`** (ids auto-prefixed per nesting level). Optional **`responsive`**, **`device`**. Stored keys: **`{tabs_id}_{tab_id}_{inner_id}`** (and scoped ids for nested blocks). **`sto-tabs.css`** stacks grid cells full-width at **960px**.
 	 * - **Accordion:** `type` => **`accordion`**, **`id`**, **`title`**, **`panels`**, **`fields`** — each **`panels[]`** row: **`id`**, **`label`**, optional **`expanded`** / **`show`** / **`open`** (first truthy row starts open; otherwise all collapsed on load). **`fields`** may mix **leaf** fields, **`tabs`**, **`accordion`**, and **nested groups** (same composition rules as **Tabs** / tree builders). Optional **`responsive`**, **`device`**, **`description`**, **`required`**, **`tooltip`**. Stored keys: **`{accordion_id}_{panel_id}_{inner_id}`**. **`sto-accordion.css`** / **`sto-accordion.js`**.
 	 * - Nested groups: array with `id`, `title`, `fields` (no top-level `options`), optional `description`, `required`, optional **`tooltip`** / **`tooltip_image`** (same shapes as **`FieldTitle::get_tooltip_config`**).
@@ -406,6 +410,36 @@ final class Group {
 				continue;
 			}
 
+			if ( $this->is_date_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				DateField::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && DateField::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'date',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
+			if ( $this->is_datetime_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				DateTimeField::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && DateTimeField::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'datetime',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
 			if ( $this->is_nested_group_item( $item ) ) {
 				$child_id          = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
 				$child_title       = isset( $item['title'] ) ? (string) $item['title'] : '';
@@ -534,6 +568,14 @@ final class Group {
 
 	private function is_range_item( $item ) {
 		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'range' && ! empty( $item['id'] );
+	}
+
+	private function is_date_item( $item ) {
+		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'date' && ! empty( $item['id'] );
+	}
+
+	private function is_datetime_item( $item ) {
+		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'datetime' && ! empty( $item['id'] );
 	}
 
 	private function is_tabs_item( $item ) {
@@ -867,6 +909,16 @@ final class Group {
 							$rfield = Range::get_field( $section_slug, (string) $node['id'] );
 							if ( $rfield ) {
 								Range::instance()->render_field_markup( $rfield, 'group_inner' );
+							}
+						} elseif ( $node['kind'] === 'date' && ! empty( $node['id'] ) ) {
+							$dfield = DateField::get_field( $section_slug, (string) $node['id'] );
+							if ( $dfield ) {
+								DateField::instance()->render_field_markup( $dfield, 'group_inner' );
+							}
+						} elseif ( $node['kind'] === 'datetime' && ! empty( $node['id'] ) ) {
+							$dtfield = DateTimeField::get_field( $section_slug, (string) $node['id'] );
+							if ( $dtfield ) {
+								DateTimeField::instance()->render_field_markup( $dtfield, 'group_inner' );
 							}
 						} elseif ( $node['kind'] === 'tabs' && ! empty( $node['id'] ) ) {
 							$tcfg = Tabs::instance()->get_config( $section_slug, (string) $node['id'] );

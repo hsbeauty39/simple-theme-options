@@ -1,0 +1,151 @@
+/**
+ * Date + time row chrome (calendar popover styles live in sto-date-field.css → #ui-datepicker-div.sto-datepicker--sto).
+ */
+
+.sto-field-row-datetime .sto-datetime-field {
+	max-width: 100%;
+}
+
+.sto-field-row-datetime .sto-input-wrap.sto-datetime-field__shell {
+	max-width: min(640px, 100%);
+}
+
+.sto-field-row-datetime .sto-datetime-field__control {
+	display: flex;
+	align-items: stretch;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: min(640px, 100%);
+	min-height: 40px;
+	background: #fff;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	box-shadow: var(--sto-field-soft-shadow, none);
+	overflow: hidden;
+	transition: border-color 0.12s ease-in-out, box-shadow 0.12s ease-in-out;
+}
+
+.sto-field-row-datetime .sto-datetime-field__shell:focus-within .sto-datetime-field__control {
+	border-color: #2271b1;
+	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
+}
+
+.sto-field-row-datetime .sto-datetime-field__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 42px;
+	color: #787c82;
+	font-size: 17px;
+	line-height: 1;
+	user-select: none;
+	background: #f6f7f7;
+	border-right: 1px solid var(--sto-field-soft-border, #e6e8eb);
+}
+
+.sto-field-row-datetime .sto-datetime-field__icon i {
+	opacity: 0.9;
+}
+
+.sto-field-row-datetime .sto-datetime-field__date {
+	flex: 1 1 auto;
+	min-width: 0;
+	margin: 0;
+	padding: 8px 12px;
+	font-size: 14px;
+	line-height: 1.5;
+	color: #2c3338;
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	outline: none;
+	cursor: pointer;
+}
+
+.sto-field-row-datetime .sto-datetime-field__date::placeholder {
+	color: #787c82;
+	opacity: 1;
+}
+
+.sto-field-row-datetime .sto-datetime-field__time {
+	flex: 0 1 auto;
+	min-width: 7.25rem;
+	max-width: 9.5rem;
+	margin: 0;
+	padding: 6px 10px;
+	font-size: 14px;
+	line-height: 1.5;
+	font-family: inherit;
+	color: #2c3338;
+	background: #fafafa;
+	border: none;
+	border-left: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: 0;
+	box-shadow: none;
+	outline: none;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.sto-field-row-datetime .sto-datetime-field__time::-webkit-calendar-picker-indicator {
+	cursor: pointer;
+	opacity: 0.75;
+}
+
+.sto-field-row-datetime .sto-datetime-field__time:focus {
+	background: #fff;
+}
+
+.sto-field-row-datetime .sto-datetime-field__clear {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	margin: 0;
+	padding: 0 10px;
+	font-family: inherit;
+	font-size: 20px;
+	font-weight: 400;
+	line-height: 1;
+	color: #646970;
+	background: #fafafa;
+	border: none;
+	border-left: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: 0;
+	cursor: pointer;
+	transition: color 0.12s ease-in-out, background 0.12s ease-in-out;
+}
+
+.sto-field-row-datetime .sto-datetime-field__clear:hover,
+.sto-field-row-datetime .sto-datetime-field__clear:focus-visible {
+	color: #b32d2e;
+	background: #fcf0f1;
+	outline: none;
+}
+
+.sto-field-row-datetime .sto-datetime-field__clear-x {
+	display: block;
+	line-height: 1;
+	text-decoration: none;
+	border-bottom: 1px solid transparent;
+	transition: border-color 0.12s ease-in-out;
+}
+
+.sto-field-row-datetime .sto-datetime-field__clear:hover .sto-datetime-field__clear-x,
+.sto-field-row-datetime .sto-datetime-field__clear:focus-visible .sto-datetime-field__clear-x {
+	border-bottom-color: currentColor;
+}
+
+.sto-field-row-datetime.sto-required-hidden .sto-datetime-field input,
+.sto-field-row-datetime.sto-required-hidden .sto-datetime-field button {
+	pointer-events: none;
+}
+
+@media (max-width: 782px) {
+	.sto-field-row-datetime .sto-datetime-field__control {
+		max-width: 100%;
+	}
+}

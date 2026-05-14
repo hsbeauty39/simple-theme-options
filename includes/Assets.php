@@ -132,7 +132,7 @@ final class Assets {
 			),
 			'sto-select2' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-select2.css',
-				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-range', 'sto-tabs', 'sto-accordion' ),
+				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-range', 'sto-tabs', 'sto-accordion' ),
 				'version' => STO_VERSION,
 			),
 			'sto-typography' => array(
@@ -175,6 +175,16 @@ final class Assets {
 				'deps'    => array( 'sto-style', 'editor-buttons' ),
 				'version' => STO_VERSION,
 			),
+			'sto-date-field' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-date-field.css',
+				'deps'    => array( 'sto-style', 'sto-input' ),
+				'version' => STO_VERSION,
+			),
+			'sto-datetime-field' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-datetime-field.css',
+				'deps'    => array( 'sto-date-field' ),
+				'version' => STO_VERSION,
+			),
 			'sto-range' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-range.css',
 				'deps'    => array( 'sto-style', 'sto-switcher' ),
@@ -215,6 +225,10 @@ final class Assets {
 		foreach ( $scripts as $handle => $script ) {
 			$version = $this->bust_cache_version( $script['src'], $script['version'] );
 			wp_enqueue_script( $handle, $script['src'], $script['deps'], $version, $script['in_footer'] );
+		}
+
+		if ( function_exists( 'wp_localize_jquery_ui_datepicker' ) ) {
+			wp_localize_jquery_ui_datepicker();
 		}
 
 		$page_slug = OptionsMenu::instance()->get_parent_menu_slug();
@@ -317,7 +331,7 @@ final class Assets {
 			),
 			'display-section-on-menu' => array(
 				'src'       => STO_URL . 'assets/admin/js/main.js',
-				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox' ),
+				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),
@@ -372,6 +386,18 @@ final class Assets {
 			'sto-range' => array(
 				'src'       => STO_URL . 'assets/admin/js/sto-range.js',
 				'deps'      => array( 'jquery', 'display-section-on-menu' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
+			'sto-date-field' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-date-field.js',
+				'deps'      => array( 'jquery', 'jquery-ui-datepicker' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
+			'sto-datetime-field' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-datetime-field.js',
+				'deps'      => array( 'jquery', 'jquery-ui-datepicker' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),

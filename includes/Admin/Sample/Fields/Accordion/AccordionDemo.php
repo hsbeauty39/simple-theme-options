@@ -11,6 +11,8 @@ use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
 use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
 use SimpleThemeOptions\Admin\Options\Fields\ImageSelect\ImageSelect;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
+use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
+use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
@@ -43,6 +45,8 @@ final class AccordionDemo {
 		Select::instance();
 		Input::instance();
 		Range::instance();
+		DateField::instance();
+		DateTimeField::instance();
 		Switcher::instance();
 		add_action( 'sto_render_section_content', array( $this, 'render_section_intro' ), 5, 2 );
 		$this->register_fields();
