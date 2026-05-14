@@ -2,7 +2,10 @@
 namespace SimpleThemeOptions;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
+use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
+use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
+use SimpleThemeOptions\Admin\Options\ImportExport\ThemeSettingsImportExport;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
 use SimpleThemeOptions\ViewportOptions;
 use SimpleThemeOptions\Traits\SingletonTrait;
@@ -133,7 +136,7 @@ final class Assets {
 			),
 			'sto-select2' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-select2.css',
-				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-range', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field', 'sto-google-map-field', 'sto-tabs', 'sto-accordion' ),
+				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-range', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field', 'sto-google-map-field', 'sto-icon-select-field', 'sto-tabs', 'sto-accordion', 'sto-import-export' ),
 				'version' => STO_VERSION,
 			),
 			'sto-typography' => array(
@@ -206,9 +209,19 @@ final class Assets {
 				'deps'    => array( 'sto-style', 'sto-switcher' ),
 				'version' => STO_VERSION,
 			),
+			'sto-leaflet' => array(
+				'src'     => 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+				'deps'    => array(),
+				'version' => '1.9.4',
+			),
 			'sto-google-map-field' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-google-map-field.css',
-				'deps'    => array( 'sto-style', 'sto-input' ),
+				'deps'    => array( 'sto-style', 'sto-input', 'sto-leaflet' ),
+				'version' => STO_VERSION,
+			),
+			'sto-icon-select-field' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-icon-select-field.css',
+				'deps'    => array( 'sto-style', 'sto-fontawesome', 'dashicons' ),
 				'version' => STO_VERSION,
 			),
 			'sto-tabs' => array(
@@ -219,6 +232,11 @@ final class Assets {
 			'sto-accordion' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-accordion.css',
 				'deps'    => array( 'sto-style', 'sto-switcher' ),
+				'version' => STO_VERSION,
+			),
+			'sto-import-export' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-import-export.css',
+				'deps'    => array( 'sto-style' ),
 				'version' => STO_VERSION,
 			),
 			'sto-code-editor' => array(
@@ -303,6 +321,12 @@ final class Assets {
 						'input_too_short' => __( 'Type at least %d characters to search for posts.', 'simple-theme-options' ),
 					),
 				),
+				'sto_field_help'     => array(
+					'loading'      => __( 'Loading preview…', 'simple-theme-options' ),
+					'loading_hint' => __( 'Please wait.', 'simple-theme-options' ),
+					'not_found'    => __( 'Preview not found', 'simple-theme-options' ),
+					'error_hint'   => __( 'This image could not be loaded. Check the URL or your connection.', 'simple-theme-options' ),
+				),
 			)
 		);
 
@@ -311,12 +335,50 @@ final class Assets {
 				'sto-google-map-field',
 				'stoGoogleMapField',
 				array(
-					'i18n' => array(
-						'searchPlaceholder' => __( 'Search address…', 'simple-theme-options' ),
+					'nominatim' => array(
+						'email' => (string) apply_filters( 'sto_nominatim_contact_email', '' ),
 					),
 				)
 			);
 		}
+
+		if ( IconSelect::instance()->registry_has_fields() ) {
+			wp_localize_script(
+				'sto-icon-select-field',
+				'stoIconSelectField',
+				array(
+					'manifestUrl' => STO_URL . 'assets/admin/data/sto-icon-select-manifest.json',
+					'dashicons'   => IconSelect::get_dashicons_for_localize(),
+					'i18n'        => array(
+						'noIcon' => __( 'No icon', 'simple-theme-options' ),
+					),
+				)
+			);
+		}
+
+		wp_localize_script(
+			'sto-import-export',
+			'stoThemeSettingsImportExport',
+			array(
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'sto_theme_settings_import_export' ),
+				'actionExport' => 'sto_theme_settings_export',
+				'actionImport' => 'sto_theme_settings_import',
+				'sectionSlug'  => ThemeSettingsImportExport::SECTION_SLUG,
+				'i18n'         => array(
+					'confirmImport'          => __( 'Replace all Theme Settings on this site with this backup? You cannot undo this.', 'simple-theme-options' ),
+					'fileDownloaded'         => __( 'JSON file download started.', 'simple-theme-options' ),
+					'clipboardCopied'        => __( 'Backup JSON copied to the clipboard.', 'simple-theme-options' ),
+					'clipboardDenied'        => __( 'Your browser blocked clipboard access. Copy from the downloaded file instead.', 'simple-theme-options' ),
+					'exportFailed'           => __( 'Could not create the export. Try again.', 'simple-theme-options' ),
+					'importFailed'           => __( 'Import failed.', 'simple-theme-options' ),
+					'emptyPayload'           => __( 'Add a JSON file or paste export text before importing.', 'simple-theme-options' ),
+					'invalidFile'          => __( 'Could not read that file as UTF-8 text.', 'simple-theme-options' ),
+					'readClipboardFailed'  => __( 'Could not read the clipboard. Paste the JSON into the box instead.', 'simple-theme-options' ),
+					'importSuccessReloading' => __( 'Settings imported. Reloading…', 'simple-theme-options' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -364,7 +426,7 @@ final class Assets {
 			),
 			'display-section-on-menu' => array(
 				'src'       => STO_URL . 'assets/admin/js/main.js',
-				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field', 'sto-google-map-field' ),
+				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field', 'sto-google-map-field', 'sto-icon-select-field', 'sto-import-export' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),
@@ -440,8 +502,26 @@ final class Assets {
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),
+			'sto-leaflet' => array(
+				'src'       => 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+				'deps'      => array(),
+				'version'   => '1.9.4',
+				'in_footer' => true,
+			),
 			'sto-google-map-field' => array(
 				'src'       => STO_URL . 'assets/admin/js/sto-google-map-field.js',
+				'deps'      => array( 'jquery', 'sto-leaflet' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
+			'sto-icon-select-field' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-icon-select-field.js',
+				'deps'      => array( 'jquery' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
+			'sto-import-export' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-import-export.js',
 				'deps'      => array( 'jquery' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,

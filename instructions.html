@@ -1056,6 +1056,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 						<li class="sto-docs-nav__nest"><a href="#doc-boot_wiring">1.1 Sections + fields</a></li>
 						<li class="sto-docs-nav__nest"><a href="#doc-field_skeleton">1.2 Field class</a></li>
 						<li><a href="#nav-menu">2. Sections &amp; nav</a></li>
+						<li class="sto-docs-nav__nest"><a href="#doc-advance-import-export">2.1b Advance backup</a></li>
 						<li class="sto-docs-nav__nest"><a href="#doc-nav_sections">2.2 Sections.php</a></li>
 						<li><a href="#responsive">3. Responsive</a></li>
 						<li class="sto-docs-nav__nest"><a href="#doc-responsive_select">3.5 Sample</a></li>
@@ -1079,6 +1080,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 						<li class="sto-docs-nav__nest"><a href="#f-date">6.10.1 Date</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-datetime">6.10.2 Date &amp; time</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-dimension">6.10.3 Dimensions</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-icon-select">6.10.3a Icon select</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-gallery">6.10.4 Gallery</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-google-map">6.10.5 Google map</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-alignment">6.10.6 Alignment</a></li>
@@ -1177,6 +1179,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 				<dt>Parent click</dt>
 				<dd>Resolves to <strong>first child</strong> leaf URL. Unknown <code>section</code> falls back to default leaf.</dd>
 			</dl>
+			<p id="doc-advance-import-export"><strong>Advance (import / export):</strong> The sample <code>includes/Admin/Sample/Sections.php</code> registers a plugin-owned leaf <strong>Advance</strong> (<code>section=advance</code>, <code>nav_locked</code>, last in the sidebar). It does not register <code>sto_options</code> fields — the panel is built by <code>ThemeSettingsImportExport</code>: export full JSON (copy or download), import from a <strong>.json</strong> file (click or drag-and-drop) or from the clipboard / pasted text, then <strong>Apply import</strong> (AJAX <code>sto_theme_settings_export</code> / <code>sto_theme_settings_import</code>). The main <strong>Save options</strong> bar is hidden on this leaf. Filters: <code>sto_theme_settings_export_payload</code>, <code>sto_theme_settings_import_options_before_save</code>. After a successful import the page reloads with <code>sto_imported=1</code>. See <code>README.md</code> for details.</p>
 			<h3 id="doc-nav_sections">2.2 Full <code>Sections.php</code> example (parent + children + top-level leaf)</h3><p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-nav_sections">PHP →</a></p>
 			<div class="box box--ok">
 				<strong>Register fields on the leaf</strong>
@@ -1310,14 +1313,19 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'dimension'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, <code>units</code> (ordered subset of <strong>px</strong>, <strong>%</strong>, <strong>rem</strong>, <strong>em</strong>, <strong>custom</strong>), <code>min</code> / <code>max</code> / <code>step</code>, optional <code>sides</code> (1–6 rows of <code>key</code> + <code>label</code>; default is top/right/bottom/left), <code>default</code> as partial <code>u</code>, <code>c</code>, <code>linked</code>, <code>values</code>, optional <code>unit_label</code>, <code>show_link</code> (default <strong>true</strong>), <code>html_required</code>, conditional <code>required</code>, <code>responsive</code> / <code>device</code>. Stored JSON: <code>u</code>, <code>c</code> (when unit is <strong>custom</strong>), <code>linked</code>, <code>values</code> map. Boot <code>Dimension::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_dimension_shorthand( 'option_id' )</code> for margin/padding-style shorthand. Hook <strong>19.42</strong> (after <strong>DateTimeField</strong> <strong>19.39</strong>). Admin layout: merged TRBL number strip (single outer border, dividers between slots) + link button; unit chips and custom suffix sit in a <strong>right column</strong> beside the strip (same pattern as <strong>Range</strong>). Desktop width is capped (~<strong>380px</strong>, shrink-wrapped); <strong>≤782px</strong> uses full panel width with a shrink-wrapped row; <strong>≤640px</strong> stacks matrix and rail at full width; <strong>≤480px</strong> uses a 2×2 cell grid + full-width link row. <strong>Keyboard:</strong> <strong>Tab</strong> follows values → link → units → suffix; <strong>Arrow Left/Right</strong> on value fields move between slots when the caret is at the start/end (fields use <code>type="text"</code> + <code>inputmode="decimal"</code> so caret APIs work—<code>type="number"</code> often hides <code>selectionStart</code>); arrows also move between link, units, and custom suffix.</p>
 
 			<hr class="sep" />
+			<h3 id="f-icon-select">6.10.3a IconSelect</h3>
+<p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-icon_select">PHP →</a></p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'icon_select'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, optional <code>default</code> as a full class string allowed by the merged library: Font Awesome from <strong>assets/admin/data/sto-icon-select-manifest.json</strong> (filter <code>sto_icon_select_manifest</code> on the <code>icons</code> array) or WordPress <strong>Dashicons</strong> such as <code>dashicons dashicons-admin-home</code> (parsed from core <strong>wp-includes/css/dashicons.css</strong>; filter <code>sto_icon_select_dashicons</code> on the rows), optional <code>allow_clear</code>, <code>html_required</code>, conditional <code>required</code>, <code>tooltip</code>, optional <code>responsive</code> / <code>device</code>. Stored as one class string per slice (e.g. <code>fa-light fa-house</code>) or per-breakpoint map. Boot <code>IconSelect::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_icon_select_field( 'option_id' )</code>. Hook <strong>19.442</strong> (after <strong>GoogleMapControl</strong> <strong>19.441</strong>, before <strong>Tabs</strong> <strong>19.45</strong>). Assets <code>sto-icon-select-field</code> (loads <strong>dashicons</strong>); <code>main.js</code> calls <code>stoInitIconSelectFields</code> from <code>refreshStoSelect2</code> / <code>initStoResponsiveTabs</code>. Regenerate the FA manifest with <code>tools/build-icon-manifest.php</code>. Modal sidebar includes a <strong>WordPress</strong> filter for Dashicons only.</p>
+
+			<hr class="sep" />
 			<h3 id="f-gallery">6.10.4 GalleryControl</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-gallery">PHP →</a></p>
 			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'gallery'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, optional <code>default</code> as a plain PHP list of attachment IDs, e.g. <code>array( 101, 102, 103 )</code> (image attachments only; invalid IDs dropped), optional <code>max</code> (int <strong>0</strong> = unlimited, hard cap <strong>100</strong> at save), <code>html_required</code>, conditional <code>required</code>, <code>tooltip</code>, optional <code>responsive</code> / <code>device</code>. Stored as JSON array of ID strings in a hidden <code>sto_options[id]</code> field (or per-breakpoint map). Boot <code>GalleryControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_gallery_attachment_ids( 'option_id' )</code> returns ordered integers. Hook <strong>19.43</strong> (after <strong>Dimension</strong> <strong>19.42</strong>, before <strong>AlignmentControl</strong> <strong>19.44</strong>). Assets <code>sto-gallery-field</code> (depends on <code>jquery-ui-sortable</code> + <code>media-editor</code>); <code>main.js</code> calls <code>stoInitGalleryFields</code>. Admin: <strong>wp.media</strong> multi-select, thumbnails, drag reorder, per-thumb remove, clear-all.</p>
 
 			<hr class="sep" />
-			<h3 id="f-google-map">6.10.5 GoogleMapControl</h3>
+			<h3 id="f-google-map">6.10.5 Location map (<code>google_map</code>)</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-google-map">PHP →</a></p>
-			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'google_map'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, optional <code>default</code> as a partial associative array (<code>formatted_address</code>, <code>address</code> street number, <code>street</code>, <code>city</code>, <code>state</code>, <code>zip</code>, <code>country</code>, <code>lat</code>, <code>lng</code>), optional per-field <code>google_maps_api_key</code> (otherwise use filter <code>sto_google_maps_api_key</code> — enable <strong>Maps JavaScript API</strong> and <strong>Places API</strong> on the key). Stored as one JSON object per slice in hidden <code>sto_options[id]</code> (or per-breakpoint map). Boot <code>GoogleMapControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_google_map_field( 'option_id' )</code>. Hook <strong>19.441</strong> (after <strong>AlignmentControl</strong> <strong>19.44</strong>, before <strong>Tabs</strong> <strong>19.45</strong>). Assets <code>sto-google-map-field</code>; <code>main.js</code> calls <code>stoInitGoogleMapFields</code>. Without an API key the notice explains manual-only mode; map click / drag reverse-geocodes when the API loads.</p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'google_map'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, optional <code>default</code> as a partial associative array (<code>formatted_address</code>, <code>address</code> street number, <code>street</code>, <code>city</code>, <code>state</code>, <code>zip</code>, <code>country</code>, <code>lat</code>, <code>lng</code>). Admin map uses <strong>Leaflet</strong> + <strong>OpenStreetMap</strong> tiles and <strong>Nominatim</strong> for search (Enter) and reverse geocode (click / drag marker) — <strong>no Google API key</strong>. <strong>Sync:</strong> Enter search fills the structured inputs and map; editing address fields rebuilds the search line; editing latitude/longitude (debounced) refreshes the address from Nominatim. Optional filter <code>sto_nominatim_contact_email</code> supplies an <code>email</code> query parameter per Nominatim policy. Stored as one JSON object per slice in hidden <code>sto_options[id]</code> (or per-breakpoint map). Boot <code>GoogleMapControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_google_map_field( 'option_id' )</code>. Hook <strong>19.441</strong> (after <strong>AlignmentControl</strong> <strong>19.44</strong>, before <strong>Tabs</strong> <strong>19.45</strong>). Assets <code>sto-leaflet</code> (CDN) + <code>sto-google-map-field</code>; <code>main.js</code> calls <code>stoInitGoogleMapFields</code>.</p>
 
 			<hr class="sep" />
 			<h3 id="f-alignment">6.10.6 AlignmentControl</h3>
@@ -1407,6 +1415,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 					<tr><td>19.43</td><td>GalleryControl</td></tr>
 					<tr><td>19.44</td><td>AlignmentControl</td></tr>
 					<tr><td>19.441</td><td>GoogleMapControl</td></tr>
+					<tr><td>19.442</td><td>IconSelect</td></tr>
 					<tr><td>19.45</td><td>Tabs</td></tr>
 					<tr><td>19.46</td><td>Accordion</td></tr>
 					<tr><td>19.55</td><td>CodeEditor</td></tr>
@@ -2041,6 +2050,22 @@ Input::register(
 	)
 );</code></pre>
 				</section>
+				<section class="sto-php-snippet" id="php-icon_select" aria-labelledby="php-h-icon_select">
+					<div class="sto-php-snippet__bar" id="php-h-icon_select">
+						<span class="sto-php-snippet__pill">PHP</span>
+						<span class="sto-php-snippet__label">icon_select</span>
+						<a class="sto-php-snippet__back" href="#f-icon-select">↑ Docs</a>
+					</div>
+					<pre class="sto-php-snippet__pre"><code class="language-php">IconSelect::register(
+	array(
+		'section_slug' => 'layout-inputs',
+		'id'           => 'layout_sample_icon',
+		'title'        => __( 'Sample icon', 'simple-theme-options' ),
+		'default'      => 'fa-light fa-star',
+		'allow_clear'  => true,
+	)
+);</code></pre>
+				</section>
 				<section class="sto-php-snippet" id="php-gallery" aria-labelledby="php-h-gallery">
 					<div class="sto-php-snippet__bar" id="php-h-gallery">
 						<span class="sto-php-snippet__pill">PHP</span>
@@ -2074,7 +2099,7 @@ Input::register(
 		'section_slug' => 'misc',
 		'id'             => 'store_locator',
 		'title'          => __( 'Store location', 'simple-theme-options' ),
-		'description'    => __( 'Map + Places search; add_filter( \'sto_google_maps_api_key\', fn() =&gt; \'YOUR_KEY\' );', 'simple-theme-options' ),
+		'description'    => __( 'Map + address search (no API key).', 'simple-theme-options' ),
 		'default'        => array(
 			'city'    => 'Washington',
 			'country' => 'United States',

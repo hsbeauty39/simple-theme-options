@@ -1,6 +1,7 @@
 <?php
 namespace SimpleThemeOptions\Admin\Sample;
 
+use SimpleThemeOptions\Admin\Options\ImportExport\ThemeSettingsImportExport;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
@@ -32,6 +33,8 @@ final class Sections {
 
 		$options_menu->add_section( __( 'Accordion', 'simple-theme-options' ), 'accordion', 'fa-light fa-square-caret-down' );
 
+		$options_menu->add_section( __( 'Advance', 'simple-theme-options' ), ThemeSettingsImportExport::SECTION_SLUG, 'fa-light fa-file-arrow-up', array( 'nav_locked' => true ) );
+
 		add_action( 'sto_render_section_content', array( $this, 'render_section_content' ), 30, 2 );
 	}
 
@@ -51,6 +54,7 @@ final class Sections {
 			'appearance-surfaces',
 			'appearance-links',
 			'accordion',
+			ThemeSettingsImportExport::SECTION_SLUG,
 		);
 
 		if ( in_array( $section_slug, $leaves, true ) ) {

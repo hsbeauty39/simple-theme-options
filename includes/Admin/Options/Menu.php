@@ -19,6 +19,8 @@ use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
+use SimpleThemeOptions\Admin\Options\ImportExport\ThemeSettingsImportExport;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
@@ -159,6 +161,7 @@ final class Menu {
             DateField::get_field_ids_for_section( $section_slug ),
             DateTimeField::get_field_ids_for_section( $section_slug ),
             Dimension::get_field_ids_for_section( $section_slug ),
+            IconSelect::get_field_ids_for_section( $section_slug ),
             GalleryControl::get_field_ids_for_section( $section_slug ),
             GoogleMapControl::get_field_ids_for_section( $section_slug ),
             AlignmentControl::get_field_ids_for_section( $section_slug ),
@@ -226,6 +229,9 @@ final class Menu {
         $posted_options = isset( $_POST['sto_options'] ) && is_array( $_POST['sto_options'] ) ? wp_unslash( $_POST['sto_options'] ) : array();
         if ( ! empty( $section_key_map ) ) {
             $posted_options = array_intersect_key( $posted_options, $section_key_map );
+        } else {
+            // Leaf panels with no registered keys (e.g. Advance import/export) must not treat unrelated POST keys as option updates.
+            $posted_options = array();
         }
 
         $sanitized_options = array();
@@ -332,6 +338,12 @@ final class Menu {
                 continue;
             }
 
+            if ( IconSelect::is_registered_field_id( $option_key ) ) {
+                $raw_icon = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
+                $sanitized_options[ $option_key ] = IconSelect::sanitize_posted_value( $option_key, $raw_icon );
+                continue;
+            }
+
             if ( GalleryControl::is_registered_field_id( $option_key ) ) {
                 $raw_gal = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
                 $sanitized_options[ $option_key ] = GalleryControl::sanitize_posted_value( $option_key, $raw_gal );
@@ -421,6 +433,7 @@ final class Menu {
                 DateField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 DateTimeField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 Dimension::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+                IconSelect::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 GalleryControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 GoogleMapControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 AlignmentControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options )
@@ -562,6 +575,7 @@ final class Menu {
             DateField::get_all_fields_for_search(),
             DateTimeField::get_all_fields_for_search(),
             Dimension::get_all_fields_for_search(),
+            IconSelect::get_all_fields_for_search(),
             GalleryControl::get_all_fields_for_search(),
             GoogleMapControl::get_all_fields_for_search(),
             AlignmentControl::get_all_fields_for_search(),
@@ -1092,6 +1106,9 @@ final class Menu {
                             <?php if ( isset( $_GET['sto_saved'] ) && sanitize_text_field( wp_unslash( $_GET['sto_saved'] ) ) === '1' ) { ?>
                                 <div class="sto-save-notice"><?php esc_html_e( 'Settings are successfully saved.', 'simple-theme-options' ); ?></div>
                             <?php } ?>
+                            <?php if ( isset( $_GET['sto_imported'] ) && sanitize_text_field( wp_unslash( $_GET['sto_imported'] ) ) === '1' ) { ?>
+                                <div class="sto-save-notice"><?php esc_html_e( 'Settings were imported from your backup.', 'simple-theme-options' ); ?></div>
+                            <?php } ?>
                             <?php
                             $sto_val_err = isset( $_GET['sto_validation_error'] ) ? sanitize_text_field( wp_unslash( $_GET['sto_validation_error'] ) ) : '';
                             if ( $sto_val_err === '1' ) {
@@ -1116,7 +1133,7 @@ final class Menu {
                             ?>
                             <?php
                             $sto_form_action = $this->get_theme_settings_url( $current_section_slug );
-                            $sto_form_action = remove_query_arg( array( 'sto_saved', 'sto_validation_error' ), $sto_form_action );
+                            $sto_form_action = remove_query_arg( array( 'sto_saved', 'sto_imported', 'sto_validation_error' ), $sto_form_action );
                             ?>
                             <form id="sto-theme-settings-options-form" method="post" class="sto-options-form" action="<?php echo esc_url( $sto_form_action ); ?>">
                                 <?php wp_nonce_field( 'sto_save_options_action', 'sto_save_options_nonce' ); ?>
@@ -1127,12 +1144,14 @@ final class Menu {
                                         <?php $this->render_section_panel( $section, $current_section_slug ); ?>
                                     <?php } ?>
                                 </div>
+                                <?php if ( $current_section_slug !== ThemeSettingsImportExport::SECTION_SLUG ) : ?>
                                 <div class="sto-options-form-footer sto-section-actions">
                                     <button type="submit" form="sto-theme-settings-options-form" name="sto_save_options" value="1" class="button button-primary">
                                         <i class="fa-light fa-floppy-disk" aria-hidden="true"></i>
                                         <?php esc_html_e( 'Save options', 'simple-theme-options' ); ?>
                                     </button>
                                 </div>
+                                <?php endif; ?>
                             </form>
                         </div>
                     </div>

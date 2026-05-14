@@ -250,6 +250,12 @@
                     if (typeof window.stoInitGoogleMapFields === 'function') {
                         window.stoInitGoogleMapFields($ap);
                     }
+                    if (typeof window.stoInitIconSelectFields === 'function') {
+                        window.stoInitIconSelectFields($ap);
+                    }
+                    if (typeof window.stoInitImportExport === 'function') {
+                        window.stoInitImportExport($ap);
+                    }
                     if (typeof window.stoInitAlignmentFields === 'function') {
                         window.stoInitAlignmentFields($ap);
                     }
@@ -724,6 +730,12 @@
             if (typeof window.stoInitGoogleMapFields === 'function') {
                 window.stoInitGoogleMapFields($activePanel);
             }
+            if (typeof window.stoInitIconSelectFields === 'function') {
+                window.stoInitIconSelectFields($activePanel);
+            }
+            if (typeof window.stoInitImportExport === 'function') {
+                window.stoInitImportExport($activePanel);
+            }
             if (typeof window.stoInitAlignmentFields === 'function') {
                 window.stoInitAlignmentFields($activePanel);
             }
@@ -801,17 +813,50 @@
             }, 48);
         }
 
+        var POPVIS =
+            'sto-field-help-popover--state-loading sto-field-help-popover--state-error sto-field-help-popover--state-ready';
+
+        function fieldHelpStrings() {
+            var cfg = window.simple_theme_options && window.simple_theme_options.sto_field_help;
+            return {
+                loading: (cfg && cfg.loading) || 'Loading preview…',
+                loading_hint: (cfg && cfg.loading_hint) || 'Please wait.',
+                not_found: (cfg && cfg.not_found) || 'Preview not found',
+                error_hint: (cfg && cfg.error_hint) || 'This image could not be loaded.'
+            };
+        }
+
+        function escFieldHelp(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function setPopoverVisualState(state) {
+            var $p = ensurePopover();
+            $p.removeClass(POPVIS);
+            if (state === 'loading') {
+                $p.addClass('sto-field-help-popover--state-loading');
+            } else if (state === 'error') {
+                $p.addClass('sto-field-help-popover--state-error');
+            } else if (state === 'ready') {
+                $p.addClass('sto-field-help-popover--state-ready');
+            }
+        }
+
         function isVideoUrl(url) {
             return /\.(mp4|webm|ogg)(\?|$)/i.test(String(url || ''));
         }
 
-        function fillPreloaderSlot($slot, preloadUrl) {
-            $slot.removeClass('sto-is-hidden').empty();
+        function appendLoadingCard($slot, preloadUrl) {
+            var str = fieldHelpStrings();
+            var $card = $('<div class="sto-tooltip-help-card sto-tooltip-help-card--phase-loading"></div>');
+            var $media = $('<div class="sto-tooltip-help-card__media"></div>');
             if (!preloadUrl) {
-                $slot.append($('<div class="sto-tooltip-spinner" aria-hidden="true"></div>'));
-                return;
-            }
-            if (isVideoUrl(preloadUrl)) {
+                $media.append($('<div class="sto-tooltip-spinner" aria-hidden="true"></div>'));
+            } else if (isVideoUrl(preloadUrl)) {
                 $('<video>', {
                     class: 'sto-tooltip-preloader-video',
                     src: preloadUrl,
@@ -820,10 +865,43 @@
                     loop: true,
                     autoplay: true,
                     'aria-hidden': 'true'
-                }).appendTo($slot);
-                return;
+                }).appendTo($media);
+            } else {
+                var $pimg = $('<img>', { src: preloadUrl, alt: '', class: 'sto-tooltip-preloader-img' });
+                $pimg.on('error', function() {
+                    $media.empty().append($('<div class="sto-tooltip-spinner" aria-hidden="true"></div>'));
+                });
+                $media.append($pimg);
             }
-            $('<img>', { src: preloadUrl, alt: '', class: 'sto-tooltip-preloader-img' }).appendTo($slot);
+            $card.append($media);
+            $card.append(
+                '<p class="sto-tooltip-help-card__title">' + escFieldHelp(str.loading) + '</p>' +
+                    '<p class="sto-tooltip-help-card__hint">' +
+                    escFieldHelp(str.loading_hint) +
+                    '</p>'
+            );
+            $slot.append($card);
+        }
+
+        function renderTooltipErrorIntoSlot($slot) {
+            var str = fieldHelpStrings();
+            $slot.removeClass('sto-is-hidden').empty();
+            $slot.append(
+                '<div class="sto-tooltip-help-card sto-tooltip-help-card--error" role="alert">' +
+                    '<div class="sto-tooltip-help-card__icon" aria-hidden="true">!</div>' +
+                    '<p class="sto-tooltip-help-card__title">' +
+                    escFieldHelp(str.not_found) +
+                    '</p>' +
+                    '<p class="sto-tooltip-help-card__hint">' +
+                    escFieldHelp(str.error_hint) +
+                    '</p>' +
+                '</div>'
+            );
+        }
+
+        function fillPreloaderSlot($slot, preloadUrl) {
+            $slot.removeClass('sto-is-hidden').empty();
+            appendLoadingCard($slot, preloadUrl);
         }
 
         /**
@@ -845,7 +923,7 @@
             var vh = window.innerHeight;
             var gap = 10;
             var margin = 10;
-            var minLayoutH = 168;
+            var minLayoutH = $p.hasClass('sto-field-help-popover--state-ready') ? 120 : 152;
 
             $p.removeAttr('hidden').attr('aria-hidden', 'false').addClass('sto-is-visible');
             $p.removeClass(PLACEMENT_CLASS);
@@ -943,6 +1021,7 @@
 
         function showPreloaderSlot(preloadUrl) {
             var $p = ensurePopover();
+            setPopoverVisualState('loading');
             var $slot = $p.find('[data-sto-tooltip-preloader-slot]');
             fillPreloaderSlot($slot, preloadUrl);
             $p.find('.sto-field-help-popover__img').hide().removeAttr('src');
@@ -961,6 +1040,17 @@
             var $img = $p.find('.sto-field-help-popover__img');
             $img.attr('src', url).css('display', 'block');
             hidePreloaderSlot();
+            setPopoverVisualState('ready');
+        }
+
+        function showTooltipImageError() {
+            if (!$popover || !$popover.length) {
+                return;
+            }
+            setPopoverVisualState('error');
+            var $slot = $popover.find('[data-sto-tooltip-preloader-slot]');
+            renderTooltipErrorIntoSlot($slot);
+            $popover.find('.sto-field-help-popover__img').hide().removeAttr('src');
         }
 
         function loadMainImage(url, preloadUrl, triggerEl) {
@@ -969,6 +1059,15 @@
 
             if (CACHE[url] === 'loaded') {
                 showLoadedImage(url);
+                window.requestAnimationFrame(function() {
+                    layoutPopover();
+                });
+                return;
+            }
+
+            if (CACHE[url] === 'error') {
+                ensurePopover();
+                showTooltipImageError();
                 window.requestAnimationFrame(function() {
                     layoutPopover();
                 });
@@ -998,10 +1097,7 @@
             img.onerror = function() {
                 CACHE[url] = 'error';
                 if (activeUrl === url) {
-                    $popover.find('[data-sto-tooltip-preloader-slot]').removeClass('sto-is-hidden').html(
-                        '<span class="sto-tooltip-load-error" style="padding:12px;font-size:12px;color:#646970;">Preview unavailable</span>'
-                    );
-                    $popover.find('.sto-field-help-popover__img').hide();
+                    showTooltipImageError();
                     window.requestAnimationFrame(function() {
                         layoutPopover();
                     });
@@ -1015,7 +1111,10 @@
             activeTriggerEl = null;
             stopReposTicker();
             if ($popover && $popover.length) {
-                $popover.removeClass('sto-is-visible').removeClass(PLACEMENT_CLASS)
+                $popover
+                    .removeClass('sto-is-visible')
+                    .removeClass(PLACEMENT_CLASS)
+                    .removeClass(POPVIS)
                     .attr('aria-hidden', 'true')
                     .attr('hidden', 'hidden');
                 $popover.find('.sto-field-help-popover__img').removeAttr('src').hide();
@@ -1335,6 +1434,7 @@
                             fu.searchParams.set('page', scfg.page);
                             fu.searchParams.set('section', leafForSave);
                             fu.searchParams.delete('sto_saved');
+                            fu.searchParams.delete('sto_imported');
                             fu.searchParams.delete('sto_validation_error');
                             $saveForm.attr('action', fu.toString());
                         } catch (eForm) {
