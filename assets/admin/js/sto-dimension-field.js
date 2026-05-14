@@ -131,6 +131,94 @@
         return keys;
     }
 
+    /**
+     * @param {JQuery} $wrap
+     * @returns {Array<HTMLInputElement>}
+     */
+    function orderedSideInputElements($wrap) {
+        var keys = sideKeys($wrap);
+        var els = [];
+        for (var i = 0; i < keys.length; i++) {
+            var n = $wrap.find('.sto-dimension__input[data-sto-dimension-key="' + keys[i] + '"]').get(0);
+            if (n) {
+                els.push(n);
+            }
+        }
+        return els;
+    }
+
+    /**
+     * @param {HTMLInputElement} el
+     * @param {JQuery} $wrap
+     * @param {number} delta -1 | +1
+     * @returns {boolean} true if focus moved
+     */
+    function focusAdjacentSideInput(el, $wrap, delta) {
+        var list = orderedSideInputElements($wrap);
+        var idx = list.indexOf(el);
+        if (idx < 0) {
+            return false;
+        }
+        var next = list[idx + delta];
+        if (next) {
+            next.focus();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param {JQuery} $wrap
+     * @returns {boolean}
+     */
+    function focusLinkButton($wrap) {
+        var el = $wrap.find('[data-sto-dimension-link]').get(0);
+        if (el) {
+            el.focus();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param {JQuery} $wrap
+     * @returns {boolean}
+     */
+    function focusFirstUnitButton($wrap) {
+        var el = $wrap.find('.sto-dimension__unit').get(0);
+        if (el) {
+            el.focus();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param {JQuery} $wrap
+     * @returns {boolean}
+     */
+    function focusLastSideInput($wrap) {
+        var el = orderedSideInputElements($wrap).slice(-1)[0];
+        if (el) {
+            el.focus();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param {JQuery} $wrap
+     * @returns {boolean}
+     */
+    function focusCustomSuffixIfEnabled($wrap) {
+        var el = $wrap.find('.sto-dimension__custom-suffix').get(0);
+        if (el && !el.disabled && !el.hidden) {
+            el.focus();
+            return true;
+        }
+        return false;
+    }
+
     function syncHidden($wrap, triggerChange) {
         var meta = readMeta($wrap);
         var $hidden = $wrap.find('.sto-dimension-value');
@@ -261,6 +349,97 @@
                 }
             }
             syncHidden($wrap, true);
+        });
+
+        /* ---- Keyboard navigation (Theme Settings) ---- */
+        $wrap.on('keydown', '.sto-dimension__input', function(ev) {
+            var el = this;
+            if (el.disabled || el.readOnly) {
+                return;
+            }
+            var key = ev.key;
+            if (key === 'ArrowLeft' || key === 'ArrowRight') {
+                var val = el.value != null ? String(el.value) : '';
+                var len = val.length;
+                var start = typeof el.selectionStart === 'number' ? el.selectionStart : len;
+                var end = typeof el.selectionEnd === 'number' ? el.selectionEnd : len;
+                if (start !== end) {
+                    return;
+                }
+                if (key === 'ArrowLeft' && start === 0) {
+                    if (focusAdjacentSideInput(el, $wrap, -1)) {
+                        ev.preventDefault();
+                    }
+                } else if (key === 'ArrowRight' && end >= len) {
+                    if (focusAdjacentSideInput(el, $wrap, 1)) {
+                        ev.preventDefault();
+                    } else if (focusLinkButton($wrap)) {
+                        ev.preventDefault();
+                    }
+                }
+            }
+        });
+
+        $wrap.on('keydown', '[data-sto-dimension-link]', function(ev) {
+            var key = ev.key;
+            if (key === 'ArrowLeft') {
+                if (focusLastSideInput($wrap)) {
+                    ev.preventDefault();
+                }
+            } else if (key === 'ArrowRight') {
+                if (focusFirstUnitButton($wrap) || focusCustomSuffixIfEnabled($wrap)) {
+                    ev.preventDefault();
+                }
+            }
+        });
+
+        $wrap.on('keydown', '.sto-dimension__unit', function(ev) {
+            var $units = $wrap.find('.sto-dimension__unit');
+            var idx = $units.index(this);
+            if (idx < 0) {
+                return;
+            }
+            var key = ev.key;
+            if ($units.length >= 2) {
+                var nextIdx = -1;
+                if (key === 'ArrowDown' || key === 'ArrowRight') {
+                    nextIdx = idx + 1;
+                } else if (key === 'ArrowUp' || key === 'ArrowLeft') {
+                    nextIdx = idx - 1;
+                }
+                if (nextIdx >= 0 && nextIdx < $units.length) {
+                    var el = $units.get(nextIdx);
+                    if (el) {
+                        el.focus();
+                    }
+                    ev.preventDefault();
+                    return;
+                }
+            }
+            if (key === 'ArrowLeft' && idx === 0) {
+                if (focusLinkButton($wrap) || focusLastSideInput($wrap)) {
+                    ev.preventDefault();
+                }
+            } else if ((key === 'ArrowRight' || key === 'ArrowDown') && idx === $units.length - 1) {
+                if (focusCustomSuffixIfEnabled($wrap)) {
+                    ev.preventDefault();
+                }
+            }
+        });
+
+        $wrap.on('keydown', '.sto-dimension__custom-suffix', function(ev) {
+            if (ev.key === 'ArrowLeft') {
+                var $units = $wrap.find('.sto-dimension__unit');
+                var lastU = $units.last().get(0);
+                if (lastU) {
+                    lastU.focus();
+                    ev.preventDefault();
+                } else if (focusLinkButton($wrap)) {
+                    ev.preventDefault();
+                } else if (focusLastSideInput($wrap)) {
+                    ev.preventDefault();
+                }
+            }
         });
 
         applyFromHidden($wrap);
