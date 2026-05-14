@@ -13,8 +13,8 @@ use SimpleThemeOptions\Admin\Options\Fields\ImageSelect\ImageSelect;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
+use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
-use SimpleThemeOptions\Admin\Options\Fields\DividerControl\DividerControl;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
@@ -50,7 +50,7 @@ final class AccordionDemo {
 		DateField::instance();
 		DateTimeField::instance();
 		Dimension::instance();
-		DividerControl::instance();
+		AlignmentControl::instance();
 		Switcher::instance();
 		add_action( 'sto_render_section_content', array( $this, 'render_section_intro' ), 5, 2 );
 		$this->register_fields();

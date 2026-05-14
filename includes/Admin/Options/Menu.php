@@ -19,7 +19,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
-use SimpleThemeOptions\Admin\Options\Fields\DividerControl\DividerControl;
+use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\ButtonGroup\ButtonGroup;
 use SimpleThemeOptions\Admin\ThemeSettingsCleanScreen;
@@ -157,7 +157,7 @@ final class Menu {
             DateField::get_field_ids_for_section( $section_slug ),
             DateTimeField::get_field_ids_for_section( $section_slug ),
             Dimension::get_field_ids_for_section( $section_slug ),
-            DividerControl::get_field_ids_for_section( $section_slug ),
+            AlignmentControl::get_field_ids_for_section( $section_slug ),
             Range::get_field_ids_for_section( $section_slug ),
             CodeEditor::get_field_ids_for_section( $section_slug ),
             Typography::get_field_ids_for_section( $section_slug ),
@@ -328,9 +328,9 @@ final class Menu {
                 continue;
             }
 
-            if ( DividerControl::is_registered_field_id( $option_key ) ) {
-                $raw_div = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
-                $sanitized_options[ $option_key ] = DividerControl::sanitize_posted_value( $option_key, $raw_div );
+            if ( AlignmentControl::is_registered_field_id( $option_key ) ) {
+                $raw_aln = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
+                $sanitized_options[ $option_key ] = AlignmentControl::sanitize_posted_value( $option_key, $raw_aln );
                 continue;
             }
 
@@ -405,7 +405,7 @@ final class Menu {
                 DateField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 DateTimeField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 Dimension::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                DividerControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options )
+                AlignmentControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options )
             ),
             $section_slug,
             $sanitized_options,
@@ -544,7 +544,7 @@ final class Menu {
             DateField::get_all_fields_for_search(),
             DateTimeField::get_all_fields_for_search(),
             Dimension::get_all_fields_for_search(),
-            DividerControl::get_all_fields_for_search(),
+            AlignmentControl::get_all_fields_for_search(),
             Range::get_all_fields_for_search(),
             ButtonGroup::get_all_fields_for_search(),
             Typography::get_all_fields_for_search(),

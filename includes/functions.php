@@ -8,8 +8,8 @@
 defined( 'ABSPATH' ) || exit;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
+use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
-use SimpleThemeOptions\Admin\Options\Fields\DividerControl\DividerControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\ViewportOptions;
@@ -159,12 +159,17 @@ function sto_get_dimension_shorthand( $field_id, $json_or_scalar = null ) {
 }
 
 /**
- * Sanitized divider layout for a registered **Divider** field (`style`, `align`, CSS width, raw JSON).
+ * CSS fragment from a registered **Alignment** field’s **`css_map`** for the current (or overridden) stored key.
  *
  * @param string      $field_id       Option key in `sto_options`.
- * @param string|null $json_or_scalar When non-null, decode this JSON instead of reading from options.
- * @return array{style:string,align:string,width_css:string,raw:string}
+ * @param string|null $json_or_scalar When non-null, use this scalar key instead of reading `sto_options` (preview / import).
+ * @return string e.g. `center` for `justify-content` — whatever you registered per option key.
  */
-function sto_get_divider_layout( $field_id, $json_or_scalar = null ) {
-	return DividerControl::instance()->get_theme_layout( $field_id, $json_or_scalar );
+function sto_get_alignment_css_fragment( $field_id, $json_or_scalar = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return '';
+	}
+
+	return AlignmentControl::instance()->get_css_fragment_for_value( $field_id, $json_or_scalar );
 }

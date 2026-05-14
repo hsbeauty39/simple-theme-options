@@ -8,8 +8,8 @@ use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
+use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
-use SimpleThemeOptions\Admin\Options\Fields\DividerControl\DividerControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
@@ -38,7 +38,7 @@ final class General {
 		DateField::instance();
 		DateTimeField::instance();
 		Dimension::instance();
-		DividerControl::instance();
+		AlignmentControl::instance();
 		Tabs::instance();
 		Switcher::instance();
 		// Priority 18: boot Select + DynamicObject before CheckboxControl so **layout-nav** rows render in nav order (selects → search pickers → tiles), not tiles first.
@@ -360,19 +360,30 @@ final class General {
 						),
 					),
 					array(
-						'type'        => 'divider_control',
-						'id'          => 'layout_sample_divider',
-						'title'       => __( 'Sample divider', 'simple-theme-options' ),
-						'description' => __( 'Style (Select2), width (slider + units), and alignment in one JSON value. Theme: sto_get_divider_layout().', 'simple-theme-options' ),
-						'default'     => array(
-							'style' => 'solid',
-							'width' => array( 'v' => '100', 'u' => '%', 'c' => '' ),
-							'align' => 'center',
+						'type'        => 'alignment',
+						'id'          => 'layout_sample_alignment',
+						'title'       => __( 'Sample alignment', 'simple-theme-options' ),
+						'description' => __( 'Segmented control (icons + labels). Optional css_map for themes: sto_get_alignment_css_fragment().', 'simple-theme-options' ),
+						'default'     => 'center',
+						'options'     => array(
+							'left'   => array(
+								'label' => __( 'Left', 'simple-theme-options' ),
+								'icon'  => 'fa-light fa-align-left',
+							),
+							'center' => array(
+								'label' => __( 'Center', 'simple-theme-options' ),
+								'icon'  => 'fa-light fa-align-center',
+							),
+							'right'  => array(
+								'label' => __( 'Right', 'simple-theme-options' ),
+								'icon'  => 'fa-light fa-align-right',
+							),
 						),
-						'width_units' => array( '%', 'px' ),
-						'width_min'   => 0,
-						'width_max'   => 500,
-						'width_step'  => 1,
+						'css_map'     => array(
+							'left'   => 'flex-start',
+							'center' => 'center',
+							'right'  => 'flex-end',
+						),
 					),
 					array(
 						'type'          => 'textarea',

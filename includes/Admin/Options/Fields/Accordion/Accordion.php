@@ -18,8 +18,8 @@ use SimpleThemeOptions\Admin\Options\Fields\ImageSelect\ImageSelect;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
+use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
-use SimpleThemeOptions\Admin\Options\Fields\DividerControl\DividerControl;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
@@ -577,10 +577,10 @@ final class Accordion {
 
 			return Dimension::get_field( $section, $fid ) ? 'dimension' : '';
 		}
-		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'divider_control' ) {
-			DividerControl::register( $clone_reg );
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'alignment' && ! empty( $clone_reg['options'] ) && is_array( $clone_reg['options'] ) ) {
+			AlignmentControl::register( $clone_reg );
 
-			return DividerControl::get_field( $section, $fid ) ? 'divider_control' : '';
+			return AlignmentControl::get_field( $section, $fid ) ? 'alignment' : '';
 		}
 		if ( isset( $clone_reg['type'] ) && $clone_reg['type'] === 'button_group' && ! empty( $clone_reg['options'] ) && is_array( $clone_reg['options'] ) ) {
 			ButtonGroup::register( $clone_reg );
@@ -1086,11 +1086,11 @@ final class Accordion {
 					Dimension::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
-			case 'divider_control':
-				$f = DividerControl::get_field( $section_slug, $composite_id );
+			case 'alignment':
+				$f = AlignmentControl::get_field( $section_slug, $composite_id );
 				if ( $f ) {
 					$f = $this->with_accordion_responsive_pane_bp( $f, $parent_device_bp );
-					DividerControl::instance()->render_field_markup( $f, $inner_ctx );
+					AlignmentControl::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
 			case 'select':
