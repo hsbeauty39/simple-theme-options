@@ -20,6 +20,7 @@ use SimpleThemeOptions\Admin\Options\Fields\ImageSelect\ImageSelect;
 use SimpleThemeOptions\Admin\Options\Fields\Switcher\Switcher;
 use SimpleThemeOptions\Admin\Options\Fields\CheckboxControl\CheckboxControl;
 use SimpleThemeOptions\Admin\Options\Fields\Typography\Typography;
+use SimpleThemeOptions\Admin\Sample\GalleryDemoAttachments;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
@@ -55,6 +56,8 @@ final class General {
 	}
 
 	public function register_select_fields() {
+		$sto_gallery_sample_default_ids = GalleryDemoAttachments::get_attachment_ids();
+
 		Select::register_many(
 			array(
 				array(
@@ -365,8 +368,8 @@ final class General {
 						'type'          => 'gallery',
 						'id'            => 'layout_sample_gallery',
 						'title'         => __( 'Sample gallery', 'simple-theme-options' ),
-						'description'   => __( 'Pick image attachments from the Media Library; drag to reorder, remove per thumbnail, or clear all. Optional default is an array of attachment IDs. Theme helper: sto_get_gallery_attachment_ids().', 'simple-theme-options' ),
-						'default'       => array(),
+						'description'   => __( 'Pick image attachments from the Media Library; drag to reorder, remove per thumbnail, or clear all. In your own register() code, set default to an array of attachment IDs, e.g. array( 12, 34 ). This sample pre-fills with three demo JPEGs (titles begin with “STO gallery demo”) created on first Theme Settings load when PHP GD is available. Theme helper: sto_get_gallery_attachment_ids().', 'simple-theme-options' ),
+						'default'       => $sto_gallery_sample_default_ids,
 						'max'           => 24,
 					),
 					array(

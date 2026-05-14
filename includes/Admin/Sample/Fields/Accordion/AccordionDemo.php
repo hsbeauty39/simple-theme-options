@@ -22,6 +22,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Switcher\Switcher;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
 use SimpleThemeOptions\Admin\Options\Fields\Typography\Typography;
+use SimpleThemeOptions\Admin\Sample\GalleryDemoAttachments;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
@@ -148,6 +149,8 @@ final class AccordionDemo {
 	}
 
 	public function register_fields() {
+		$sto_gallery_sample_default_ids = GalleryDemoAttachments::get_attachment_ids();
+
 		Accordion::register(
 			array(
 				'section_slug'  => 'accordion',
@@ -517,8 +520,8 @@ final class AccordionDemo {
 						'type'        => 'gallery',
 						'id'          => 'cf_gallery',
 						'title'       => __( 'Gallery', 'simple-theme-options' ),
-						'description' => __( 'Media Library images; JSON list of attachment IDs in sto_options. Theme: sto_get_gallery_attachment_ids().', 'simple-theme-options' ),
-						'default'     => array(),
+						'description' => __( 'Same storage as the Layout sample: JSON attachment IDs. Default thumbnails match the “STO gallery demo” media entries when the sample seeder has run. Theme: sto_get_gallery_attachment_ids().', 'simple-theme-options' ),
+						'default'     => $sto_gallery_sample_default_ids,
 						'max'         => 0,
 						'width'       => '1-1',
 					),
