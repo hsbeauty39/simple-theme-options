@@ -20,6 +20,7 @@ use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
+use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Accordion\Accordion;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
@@ -67,6 +68,7 @@ final class Group {
 	 * - **Range:** `type` => **`range`**, `id`, `title`, optional `description`, `default` (number, `760px`-style string, or array `v` / `u` / `c`), numeric `min` / `max` / `step`, optional **`units`** => ordered non-empty subset of **`px`**, **`%`**, **`rem`**, **`em`**, **`custom`** (default: all five; one entry = locked unit; **`custom`** alone = suffix field only), optional **`unit_label`** (UI-only text after the number, e.g. `PAGE`; with **`units` => array( 'custom' )** hides the suffix field and CUSTOM chip), conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**.
 	 * - **Date:** `type` => **`date`**, **`id`**, **`title`**, optional **`description`**, **`default`** (Y-m-d or empty), **`placeholder`**, optional **`min_date`** / **`max_date`** (inclusive Y-m-d), optional **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as **`Y-m-d`** string or per-breakpoint map. Theme: read **`sto_options['id']`** (string or array).
 	 * - **Date + time:** `type` => **`datetime`**, same keys as **date** plus optional **`time_step`** (seconds for native time input **`step`**, default **60**). Stored as **`Y-m-d H:i`** (24-hour) or per-breakpoint map. Boot **`DateTimeField::instance()`** when used inside groups.
+	 * - **Dimension:** `type` => **`dimension`**, **`id`**, **`title`**, optional **`sides`** (1–6 of **`array( 'key' => 'top', 'label' => 'TOP' )`**), **`units`** subset of **`px`**, **`%`**, **`rem`**, **`em`**, **`custom`**, **`min`**, **`max`**, **`step`**, **`default`** (partial **`u` / `c` / `linked` / `values`**), optional **`unit_label`**, **`show_link`** (default **true**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored JSON per slice. Boot **`Dimension::instance()`** when used inside groups.
 	 * - **Tabs:** `type` => **`tabs`**, **`id`**, **`title`**, **`tabs`**, **`fields`** — **`fields`** may mix **leaf** controls, **`type` => `accordion`**, **nested groups** (`id`, `title`, `fields`), and **nested `tabs`** (ids auto-prefixed per nesting level). Optional **`responsive`**, **`device`**. Stored keys: **`{tabs_id}_{tab_id}_{inner_id}`** (and scoped ids for nested blocks). **`sto-tabs.css`** stacks grid cells full-width at **960px**.
 	 * - **Accordion:** `type` => **`accordion`**, **`id`**, **`title`**, **`panels`**, **`fields`** — each **`panels[]`** row: **`id`**, **`label`**, optional **`expanded`** / **`show`** / **`open`** (first truthy row starts open; otherwise all collapsed on load). **`fields`** may mix **leaf** fields, **`tabs`**, **`accordion`**, and **nested groups** (same composition rules as **Tabs** / tree builders). Optional **`responsive`**, **`device`**, **`description`**, **`required`**, **`tooltip`**. Stored keys: **`{accordion_id}_{panel_id}_{inner_id}`**. **`sto-accordion.css`** / **`sto-accordion.js`**.
 	 * - Nested groups: array with `id`, `title`, `fields` (no top-level `options`), optional `description`, `required`, optional **`tooltip`** / **`tooltip_image`** (same shapes as **`FieldTitle::get_tooltip_config`**).
@@ -440,6 +442,21 @@ final class Group {
 				continue;
 			}
 
+			if ( $this->is_dimension_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				Dimension::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && Dimension::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'dimension',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
 			if ( $this->is_nested_group_item( $item ) ) {
 				$child_id          = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
 				$child_title       = isset( $item['title'] ) ? (string) $item['title'] : '';
@@ -576,6 +593,10 @@ final class Group {
 
 	private function is_datetime_item( $item ) {
 		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'datetime' && ! empty( $item['id'] );
+	}
+
+	private function is_dimension_item( $item ) {
+		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'dimension' && ! empty( $item['id'] );
 	}
 
 	private function is_tabs_item( $item ) {
@@ -919,6 +940,11 @@ final class Group {
 							$dtfield = DateTimeField::get_field( $section_slug, (string) $node['id'] );
 							if ( $dtfield ) {
 								DateTimeField::instance()->render_field_markup( $dtfield, 'group_inner' );
+							}
+						} elseif ( $node['kind'] === 'dimension' && ! empty( $node['id'] ) ) {
+							$dimfield = Dimension::get_field( $section_slug, (string) $node['id'] );
+							if ( $dimfield ) {
+								Dimension::instance()->render_field_markup( $dimfield, 'group_inner' );
 							}
 						} elseif ( $node['kind'] === 'tabs' && ! empty( $node['id'] ) ) {
 							$tcfg = Tabs::instance()->get_config( $section_slug, (string) $node['id'] );

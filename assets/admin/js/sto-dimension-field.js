@@ -1,0 +1,282 @@
+/**
+ * Dimension fields: N numeric slots + shared units + optional link → hidden JSON.
+ */
+(function($) {
+    'use strict';
+
+    function parseJsonObject(str) {
+        try {
+            var o = JSON.parse(str);
+            return o && typeof o === 'object' && !Array.isArray(o) ? o : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function readSides($wrap) {
+        try {
+            var raw = $wrap.attr('data-sto-dimension-sides');
+            var a = raw ? JSON.parse(raw) : [];
+            return Array.isArray(a) ? a : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function readAllowedUnits($wrap) {
+        try {
+            var raw = $wrap.attr('data-sto-dimension-units');
+            var allowed = raw ? JSON.parse(raw) : [];
+            if (Array.isArray(allowed) && allowed.length) {
+                return allowed;
+            }
+        } catch (e2) {
+            /* ignore */
+        }
+        return ['px', '%', 'rem', 'em', 'custom'];
+    }
+
+    function clamp(n, min, max) {
+        if (n < min) {
+            return min;
+        }
+        if (n > max) {
+            return max;
+        }
+        return n;
+    }
+
+    function roundStep(n, step) {
+        if (!step || step <= 0) {
+            return n;
+        }
+        var inv = Math.round(n / step);
+        return inv * step;
+    }
+
+    function formatNum(n, step) {
+        if (Math.floor(step) === step && Math.floor(n) === n) {
+            return String(Math.round(n));
+        }
+        var s = String(Math.round(n * 10000) / 10000);
+        s = s.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+        return s === '' ? '0' : s;
+    }
+
+    function readMeta($wrap) {
+        var min = parseFloat($wrap.attr('data-sto-dimension-min')) || 0;
+        var max = parseFloat($wrap.attr('data-sto-dimension-max')) || 1000;
+        var step = parseFloat($wrap.attr('data-sto-dimension-step')) || 1;
+        return { min: min, max: max, step: step };
+    }
+
+    function customSuffixUiEnabled($wrap) {
+        return $wrap.attr('data-sto-dimension-custom-suffix') !== '0';
+    }
+
+    function activeUnit($wrap) {
+        var forced = ($wrap.attr('data-sto-dimension-forced-unit') || '').toLowerCase();
+        if (forced) {
+            return forced;
+        }
+        var $a = $wrap.find('.sto-dimension__unit.sto-is-active').first();
+        var u = ($a.attr('data-sto-dimension-unit') || 'px').toLowerCase();
+        var allowed = readAllowedUnits($wrap);
+        if (allowed.indexOf(u) === -1) {
+            u = allowed[0] || 'px';
+        }
+        return u;
+    }
+
+    function isLinked($wrap) {
+        var $b = $wrap.find('[data-sto-dimension-link]');
+        return $b.length && $b.hasClass('sto-is-active');
+    }
+
+    function setLinked($wrap, on) {
+        var $b = $wrap.find('[data-sto-dimension-link]');
+        if (!$b.length) {
+            return;
+        }
+        $b.toggleClass('sto-is-active', on);
+        $b.attr('aria-pressed', on ? 'true' : 'false');
+        var $i = $b.find('i').first();
+        $i.attr('class', 'fa-light ' + (on ? 'fa-link' : 'fa-link-slash'));
+    }
+
+    function applyUnitUi($wrap, unit) {
+        $wrap.find('.sto-dimension__unit').each(function() {
+            var $btn = $(this);
+            var u = ($btn.attr('data-sto-dimension-unit') || '').toLowerCase();
+            $btn.toggleClass('sto-is-active', u === unit);
+        });
+        var $suffix = $wrap.find('.sto-dimension__custom-suffix');
+        var suffixOn = unit === 'custom' && customSuffixUiEnabled($wrap);
+        if (suffixOn) {
+            $suffix.prop('hidden', false).prop('disabled', false);
+        } else {
+            $suffix.prop('hidden', true).prop('disabled', true);
+        }
+    }
+
+    function sideKeys($wrap) {
+        var sides = readSides($wrap);
+        var keys = [];
+        for (var i = 0; i < sides.length; i++) {
+            var k = sides[i] && sides[i].key ? String(sides[i].key) : '';
+            if (k) {
+                keys.push(k);
+            }
+        }
+        return keys;
+    }
+
+    function syncHidden($wrap, triggerChange) {
+        var meta = readMeta($wrap);
+        var $hidden = $wrap.find('.sto-dimension-value');
+        var u = activeUnit($wrap);
+        var $suffix = $wrap.find('.sto-dimension__custom-suffix');
+        var c = u === 'custom' && customSuffixUiEnabled($wrap) ? String($suffix.val() || '').trim() : '';
+        var linked = isLinked($wrap);
+        var values = {};
+        var keys = sideKeys($wrap);
+        for (var j = 0; j < keys.length; j++) {
+            var $inp = $wrap.find('.sto-dimension__input[data-sto-dimension-key="' + keys[j] + '"]');
+            values[keys[j]] = String($inp.val() != null ? $inp.val() : '').trim();
+        }
+        if (linked && keys.length) {
+            var first = '';
+            for (var k = 0; k < keys.length; k++) {
+                if (values[keys[k]] !== '') {
+                    first = values[keys[k]];
+                    break;
+                }
+            }
+            if (first !== '') {
+                var num = parseFloat(first);
+                if (!isNaN(num)) {
+                    num = clamp(roundStep(num, meta.step), meta.min, meta.max);
+                    first = formatNum(num, meta.step);
+                }
+                for (var m = 0; m < keys.length; m++) {
+                    values[keys[m]] = first;
+                    $wrap.find('.sto-dimension__input[data-sto-dimension-key="' + keys[m] + '"]').val(first);
+                }
+            }
+        } else {
+            for (var n = 0; n < keys.length; n++) {
+                var kk = keys[n];
+                var raw = values[kk];
+                if (raw === '') {
+                    continue;
+                }
+                var nm = parseFloat(raw);
+                if (isNaN(nm)) {
+                    values[kk] = '';
+                    $wrap.find('.sto-dimension__input[data-sto-dimension-key="' + kk + '"]').val('');
+                    continue;
+                }
+                nm = clamp(roundStep(nm, meta.step), meta.min, meta.max);
+                var fs = formatNum(nm, meta.step);
+                values[kk] = fs;
+                $wrap.find('.sto-dimension__input[data-sto-dimension-key="' + kk + '"]').val(fs);
+            }
+        }
+        var payload = {
+            u: u,
+            c: u === 'custom' ? c : '',
+            linked: linked,
+            values: values
+        };
+        var json = JSON.stringify(payload);
+        $hidden.val(json);
+        if (triggerChange) {
+            $hidden.trigger('change');
+        }
+    }
+
+    function applyFromHidden($wrap) {
+        var $hidden = $wrap.find('.sto-dimension-value');
+        var raw = $hidden.val();
+        var o = parseJsonObject(raw);
+        var defRaw = $wrap.attr('data-sto-dimension-default');
+        var def = parseJsonObject(defRaw) || {};
+        if (!o) {
+            o = def;
+        }
+        var u = (o.u || 'px').toLowerCase();
+        applyUnitUi($wrap, u);
+        var $suffix = $wrap.find('.sto-dimension__custom-suffix');
+        $suffix.val(o.c || '');
+        setLinked($wrap, !!o.linked && $wrap.find('[data-sto-dimension-link]').length > 0);
+        var vals = o.values && typeof o.values === 'object' ? o.values : {};
+        var keys = sideKeys($wrap);
+        for (var i = 0; i < keys.length; i++) {
+            var kk = keys[i];
+            var v = vals[kk] != null ? String(vals[kk]) : '';
+            $wrap.find('.sto-dimension__input[data-sto-dimension-key="' + kk + '"]').val(v);
+        }
+    }
+
+    function bindOne($wrap) {
+        if ($wrap.data('stoDimensionBound')) {
+            applyFromHidden($wrap);
+            return;
+        }
+        $wrap.data('stoDimensionBound', 1);
+
+        $wrap.on('click', '.sto-dimension__unit', function(ev) {
+            ev.preventDefault();
+            var u = ($(this).attr('data-sto-dimension-unit') || '').toLowerCase();
+            applyUnitUi($wrap, u);
+            syncHidden($wrap, true);
+        });
+
+        $wrap.on('change input', '.sto-dimension__custom-suffix', function() {
+            syncHidden($wrap, true);
+        });
+
+        $wrap.on('input change', '.sto-dimension__input', function() {
+            if (isLinked($wrap)) {
+                var v = String($(this).val() != null ? $(this).val() : '').trim();
+                var key = $(this).attr('data-sto-dimension-key') || '';
+                var keys = sideKeys($wrap);
+                for (var i = 0; i < keys.length; i++) {
+                    $wrap.find('.sto-dimension__input[data-sto-dimension-key="' + keys[i] + '"]').val(v);
+                }
+            }
+            syncHidden($wrap, true);
+        });
+
+        $wrap.on('click', '[data-sto-dimension-link]', function(ev) {
+            ev.preventDefault();
+            var on = !$(this).hasClass('sto-is-active');
+            setLinked($wrap, on);
+            if (on) {
+                var $first = $wrap.find('.sto-dimension__input').first();
+                var v = String($first.val() != null ? $first.val() : '').trim();
+                var keys = sideKeys($wrap);
+                for (var j = 0; j < keys.length; j++) {
+                    $wrap.find('.sto-dimension__input[data-sto-dimension-key="' + keys[j] + '"]').val(v);
+                }
+            }
+            syncHidden($wrap, true);
+        });
+
+        applyFromHidden($wrap);
+        syncHidden($wrap, false);
+    }
+
+    window.stoInitDimensionFields = function($scope) {
+        var $root = $scope && $scope.length ? $scope : $(document);
+        $root.find('.sto-dimension[data-sto-dimension]').each(function() {
+            bindOne($(this));
+        });
+    };
+
+    $(function() {
+        if (typeof window.stoInitDimensionFields === 'function') {
+            window.stoInitDimensionFields($('.sto-options-form'));
+        }
+    });
+})(jQuery);

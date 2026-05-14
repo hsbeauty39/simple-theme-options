@@ -8,6 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
+use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\ViewportOptions;
@@ -125,4 +126,33 @@ function sto_get_gradient_background_image( $field_id ) {
 	}
 
 	return GradientControl::instance()->value_to_css_background_image( $field_id );
+}
+
+/**
+ * CSS spacing shorthand from a **Dimension** field (`margin` / `padding` style: four lengths).
+ *
+ * @param string      $field_id       Option key in `sto_options`.
+ * @param string|null $json_or_scalar When non-null, use this JSON string instead of reading from options (e.g. preview).
+ * @return string e.g. `10px 0 12px 0` or empty when unset / invalid.
+ */
+function sto_get_dimension_shorthand( $field_id, $json_or_scalar = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return '';
+	}
+	if ( null !== $json_or_scalar && is_string( $json_or_scalar ) ) {
+		return Dimension::value_to_css_shorthand( $json_or_scalar );
+	}
+	$opts = sto_get_options();
+	if ( ! array_key_exists( $field_id, $opts ) ) {
+		return '';
+	}
+	$stored = $opts[ $field_id ];
+	if ( is_array( $stored ) && ResponsiveConfig::is_breakpoint_value_map( $stored ) ) {
+		$slice = ResponsiveConfig::value_for_required_eval( $stored );
+
+		return is_scalar( $slice ) ? Dimension::value_to_css_shorthand( (string) $slice ) : '';
+	}
+
+	return is_scalar( $stored ) ? Dimension::value_to_css_shorthand( (string) $stored ) : '';
 }

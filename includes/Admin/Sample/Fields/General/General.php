@@ -8,6 +8,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
+use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
@@ -35,6 +36,7 @@ final class General {
 		Range::instance();
 		DateField::instance();
 		DateTimeField::instance();
+		Dimension::instance();
 		Tabs::instance();
 		Switcher::instance();
 		// Priority 18: boot Select + DynamicObject before CheckboxControl so **layout-nav** rows render in nav order (selects → search pickers → tiles), not tiles first.
@@ -312,6 +314,48 @@ final class General {
 						'min_date'      => '2000-01-01',
 						'max_date'      => '2035-12-31',
 						'time_step'     => 60,
+					),
+					array(
+						'type'          => 'dimension',
+						'id'            => 'layout_sample_dimension',
+						'title'         => __( 'Sample dimensions (TRBL)', 'simple-theme-options' ),
+						'description'   => __( 'Top / right / bottom / left with shared units, optional link, and JSON storage. Use sto_get_dimension_shorthand() in the theme for margin/padding-style CSS.', 'simple-theme-options' ),
+						'units'         => array( 'px', 'rem', '%', 'custom' ),
+						'min'           => 0,
+						'max'           => 200,
+						'step'          => 1,
+						'default'       => array(
+							'u'      => 'px',
+							'linked' => true,
+							'values' => array(
+								'top'    => '0',
+								'right'  => '0',
+								'bottom' => '0',
+								'left'   => '0',
+							),
+						),
+					),
+					array(
+						'type'          => 'dimension',
+						'id'            => 'layout_responsive_dimension',
+						'title'         => __( 'Responsive dimensions', 'simple-theme-options' ),
+						'description'   => __( 'Same control per breakpoint; units limited to px and %.', 'simple-theme-options' ),
+						'responsive'    => true,
+						'units'         => array( 'px', '%' ),
+						'min'           => 0,
+						'max'           => 120,
+						'step'          => 1,
+						'show_link'     => true,
+						'default'       => array(
+							'u'      => 'px',
+							'linked' => false,
+							'values' => array(
+								'top'    => '8',
+								'right'  => '16',
+								'bottom' => '8',
+								'left'   => '16',
+							),
+						),
 					),
 					array(
 						'type'          => 'textarea',

@@ -241,6 +241,9 @@
                     if (typeof window.stoInitDateTimeFields === 'function') {
                         window.stoInitDateTimeFields($ap);
                     }
+                    if (typeof window.stoInitDimensionFields === 'function') {
+                        window.stoInitDimensionFields($ap);
+                    }
                     if (typeof window.stoInitCheckboxControls === 'function') {
                         window.stoInitCheckboxControls($ap);
                     }
@@ -702,6 +705,9 @@
             }
             if (typeof window.stoInitDateTimeFields === 'function') {
                 window.stoInitDateTimeFields($activePanel);
+            }
+            if (typeof window.stoInitDimensionFields === 'function') {
+                window.stoInitDimensionFields($activePanel);
             }
             if (typeof window.stoInitCheckboxControls === 'function') {
                 window.stoInitCheckboxControls($activePanel);
