@@ -244,6 +244,9 @@
                     if (typeof window.stoInitDimensionFields === 'function') {
                         window.stoInitDimensionFields($ap);
                     }
+                    if (typeof window.stoInitDividerControls === 'function') {
+                        window.stoInitDividerControls($ap);
+                    }
                     if (typeof window.stoInitCheckboxControls === 'function') {
                         window.stoInitCheckboxControls($ap);
                     }
@@ -708,6 +711,9 @@
             }
             if (typeof window.stoInitDimensionFields === 'function') {
                 window.stoInitDimensionFields($activePanel);
+            }
+            if (typeof window.stoInitDividerControls === 'function') {
+                window.stoInitDividerControls($activePanel);
             }
             if (typeof window.stoInitCheckboxControls === 'function') {
                 window.stoInitCheckboxControls($activePanel);

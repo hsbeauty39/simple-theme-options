@@ -9,6 +9,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\DividerControl\DividerControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
@@ -37,6 +38,7 @@ final class General {
 		DateField::instance();
 		DateTimeField::instance();
 		Dimension::instance();
+		DividerControl::instance();
 		Tabs::instance();
 		Switcher::instance();
 		// Priority 18: boot Select + DynamicObject before CheckboxControl so **layout-nav** rows render in nav order (selects → search pickers → tiles), not tiles first.
@@ -356,6 +358,21 @@ final class General {
 								'left'   => '16',
 							),
 						),
+					),
+					array(
+						'type'        => 'divider_control',
+						'id'          => 'layout_sample_divider',
+						'title'       => __( 'Sample divider', 'simple-theme-options' ),
+						'description' => __( 'Style (Select2), width (slider + units), and alignment in one JSON value. Theme: sto_get_divider_layout().', 'simple-theme-options' ),
+						'default'     => array(
+							'style' => 'solid',
+							'width' => array( 'v' => '100', 'u' => '%', 'c' => '' ),
+							'align' => 'center',
+						),
+						'width_units' => array( '%', 'px' ),
+						'width_min'   => 0,
+						'width_max'   => 500,
+						'width_step'  => 1,
 					),
 					array(
 						'type'          => 'textarea',

@@ -9,6 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\DividerControl\DividerControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\ViewportOptions;
@@ -155,4 +156,15 @@ function sto_get_dimension_shorthand( $field_id, $json_or_scalar = null ) {
 	}
 
 	return is_scalar( $stored ) ? Dimension::value_to_css_shorthand( (string) $stored ) : '';
+}
+
+/**
+ * Sanitized divider layout for a registered **Divider** field (`style`, `align`, CSS width, raw JSON).
+ *
+ * @param string      $field_id       Option key in `sto_options`.
+ * @param string|null $json_or_scalar When non-null, decode this JSON instead of reading from options.
+ * @return array{style:string,align:string,width_css:string,raw:string}
+ */
+function sto_get_divider_layout( $field_id, $json_or_scalar = null ) {
+	return DividerControl::instance()->get_theme_layout( $field_id, $json_or_scalar );
 }

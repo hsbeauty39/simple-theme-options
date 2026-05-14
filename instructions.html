@@ -1079,6 +1079,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 						<li class="sto-docs-nav__nest"><a href="#f-date">6.10.1 Date</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-datetime">6.10.2 Date &amp; time</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-dimension">6.10.3 Dimensions</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-divider">6.10.4 Divider</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-typo">6.11 Typography</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-img">6.12 Image select</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-btng">6.13 Button group</a></li>
@@ -1307,6 +1308,11 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'dimension'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, <code>units</code> (ordered subset of <strong>px</strong>, <strong>%</strong>, <strong>rem</strong>, <strong>em</strong>, <strong>custom</strong>), <code>min</code> / <code>max</code> / <code>step</code>, optional <code>sides</code> (1–6 rows of <code>key</code> + <code>label</code>; default is top/right/bottom/left), <code>default</code> as partial <code>u</code>, <code>c</code>, <code>linked</code>, <code>values</code>, optional <code>unit_label</code>, <code>show_link</code> (default <strong>true</strong>), <code>html_required</code>, conditional <code>required</code>, <code>responsive</code> / <code>device</code>. Stored JSON: <code>u</code>, <code>c</code> (when unit is <strong>custom</strong>), <code>linked</code>, <code>values</code> map. Boot <code>Dimension::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_dimension_shorthand( 'option_id' )</code> for margin/padding-style shorthand. Hook <strong>19.42</strong> (after <strong>DateTimeField</strong> <strong>19.39</strong>). Admin layout: merged TRBL number strip (single outer border, dividers between slots) + link button; unit chips and custom suffix sit in a <strong>right column</strong> beside the strip (same pattern as <strong>Range</strong>). Desktop width is capped (~<strong>380px</strong>, shrink-wrapped); <strong>≤782px</strong> uses full panel width with a shrink-wrapped row; <strong>≤640px</strong> stacks matrix and rail at full width; <strong>≤480px</strong> uses a 2×2 cell grid + full-width link row. <strong>Keyboard:</strong> <strong>Tab</strong> follows values → link → units → suffix; <strong>Arrow Left/Right</strong> on value fields move between slots when the caret is at the start/end (fields use <code>type="text"</code> + <code>inputmode="decimal"</code> so caret APIs work—<code>type="number"</code> often hides <code>selectionStart</code>); arrows also move between link, units, and custom suffix.</p>
 
 			<hr class="sep" />
+			<h3 id="f-divider">6.10.4 DividerControl</h3>
+<p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-divider_control">PHP →</a></p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'divider_control'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, <code>default</code> (partial <code>style</code>, <code>width</code> as <code>v</code> / <code>u</code> / <code>c</code>, <code>align</code>), optional <code>styles</code> (list of <code>key</code>, <code>label</code>, optional <code>group</code> for Select2 optgroups), optional <code>alignments</code> (<code>key</code>, <code>label</code>, optional Font Awesome <code>icon</code> class), <code>width_units</code> (ordered subset of <strong>%</strong> and <strong>px</strong>, default both), <code>width_min</code> / <code>width_max</code> / <code>width_step</code>, <code>html_required</code>, conditional <code>required</code>, <code>responsive</code> / <code>device</code>. Stored JSON: <code>style</code>, <code>width</code> (same tuple as <strong>Range</strong>), <code>align</code>. Percent widths are clamped to <strong>0–100</strong> on save. Boot <code>DividerControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_divider_layout( 'option_id' )</code> returns <code>style</code>, <code>align</code>, <code>width_css</code>, and sanitized <code>raw</code>. Hook <strong>19.44</strong> (after <strong>Dimension</strong> <strong>19.42</strong>, before <strong>Tabs</strong> <strong>19.45</strong>). Admin: two-column rows (label + control); width reuses <code>sto-range</code> markup inside the row (no <code>name</code> on the inner hidden — the composite hidden <code>sto_options[id]</code> carries the JSON); <code>main.js</code> runs <code>stoInitDividerControls</code> after <code>stoInitRangeControls</code>.</p>
+
+			<hr class="sep" />
 			<h3 id="f-typo">6.11 Typography</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-typography">PHP →</a></p>
 
@@ -1386,6 +1392,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 					<tr><td>19.38</td><td>DateField</td></tr>
 					<tr><td>19.39</td><td>DateTimeField</td></tr>
 					<tr><td>19.42</td><td>Dimension</td></tr>
+					<tr><td>19.44</td><td>DividerControl</td></tr>
 					<tr><td>19.45</td><td>Tabs</td></tr>
 					<tr><td>19.46</td><td>Accordion</td></tr>
 					<tr><td>19.55</td><td>CodeEditor</td></tr>
@@ -2017,6 +2024,30 @@ Input::register(
 			),
 		),
 		'responsive'   => true,
+	)
+);</code></pre>
+				</section>
+				<section class="sto-php-snippet" id="php-divider_control" aria-labelledby="php-h-divider_control">
+					<div class="sto-php-snippet__bar" id="php-h-divider_control">
+						<span class="sto-php-snippet__pill">PHP</span>
+						<span class="sto-php-snippet__label">divider_control</span>
+						<a class="sto-php-snippet__back" href="#f-divider">↑ Docs</a>
+					</div>
+					<pre class="sto-php-snippet__pre"><code class="language-php">DividerControl::register(
+	array(
+		'section_slug' => 'misc',
+		'id'           => 'section_divider',
+		'title'        => __( 'Section divider', 'simple-theme-options' ),
+		'default'      => array(
+			'style' => 'solid',
+			'width' => array( 'v' => '100', 'u' => '%', 'c' => '' ),
+			'align' => 'center',
+		),
+		'width_units' => array( '%', 'px' ),
+		'width_min'   => 0,
+		'width_max'   => 500,
+		'width_step'  => 1,
+		'responsive'  => true,
 	)
 );</code></pre>
 				</section>

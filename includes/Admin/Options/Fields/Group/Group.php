@@ -21,6 +21,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\DividerControl\DividerControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Accordion\Accordion;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
@@ -69,6 +70,7 @@ final class Group {
 	 * - **Date:** `type` => **`date`**, **`id`**, **`title`**, optional **`description`**, **`default`** (Y-m-d or empty), **`placeholder`**, optional **`min_date`** / **`max_date`** (inclusive Y-m-d), optional **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as **`Y-m-d`** string or per-breakpoint map. Theme: read **`sto_options['id']`** (string or array).
 	 * - **Date + time:** `type` => **`datetime`**, same keys as **date** plus optional **`time_step`** (seconds for native time input **`step`**, default **60**). Stored as **`Y-m-d H:i`** (24-hour) or per-breakpoint map. Boot **`DateTimeField::instance()`** when used inside groups.
 	 * - **Dimension:** `type` => **`dimension`**, **`id`**, **`title`**, optional **`sides`** (1–6 of **`array( 'key' => 'top', 'label' => 'TOP' )`**), **`units`** subset of **`px`**, **`%`**, **`rem`**, **`em`**, **`custom`**, **`min`**, **`max`**, **`step`**, **`default`** (partial **`u` / `c` / `linked` / `values`**), optional **`unit_label`**, **`show_link`** (default **true**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored JSON per slice. Boot **`Dimension::instance()`** when used inside groups.
+	 * - **Divider:** `type` => **`divider_control`**, **`id`**, **`title`**, optional **`description`**, **`default`** (partial **`style`**, **`width`** as **`v` / `u` / `c`**, **`align`**), optional **`styles`** (list of **`key`**, **`label`**, optional **`group`** for Select2 optgroups), optional **`alignments`** (**`key`**, **`label`**, optional **`icon`**), **`width_units`** => **`%`** and/or **`px`**, **`width_min`**, **`width_max`**, **`width_step`**, **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored JSON **`{ style, width, align }`**. Boot **`DividerControl::instance()`** when used inside groups.
 	 * - **Tabs:** `type` => **`tabs`**, **`id`**, **`title`**, **`tabs`**, **`fields`** — **`fields`** may mix **leaf** controls, **`type` => `accordion`**, **nested groups** (`id`, `title`, `fields`), and **nested `tabs`** (ids auto-prefixed per nesting level). Optional **`responsive`**, **`device`**. Stored keys: **`{tabs_id}_{tab_id}_{inner_id}`** (and scoped ids for nested blocks). **`sto-tabs.css`** stacks grid cells full-width at **960px**.
 	 * - **Accordion:** `type` => **`accordion`**, **`id`**, **`title`**, **`panels`**, **`fields`** — each **`panels[]`** row: **`id`**, **`label`**, optional **`expanded`** / **`show`** / **`open`** (first truthy row starts open; otherwise all collapsed on load). **`fields`** may mix **leaf** fields, **`tabs`**, **`accordion`**, and **nested groups** (same composition rules as **Tabs** / tree builders). Optional **`responsive`**, **`device`**, **`description`**, **`required`**, **`tooltip`**. Stored keys: **`{accordion_id}_{panel_id}_{inner_id}`**. **`sto-accordion.css`** / **`sto-accordion.js`**.
 	 * - Nested groups: array with `id`, `title`, `fields` (no top-level `options`), optional `description`, `required`, optional **`tooltip`** / **`tooltip_image`** (same shapes as **`FieldTitle::get_tooltip_config`**).
@@ -457,6 +459,21 @@ final class Group {
 				continue;
 			}
 
+			if ( $this->is_divider_control_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				DividerControl::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && DividerControl::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'divider_control',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
 			if ( $this->is_nested_group_item( $item ) ) {
 				$child_id          = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
 				$child_title       = isset( $item['title'] ) ? (string) $item['title'] : '';
@@ -597,6 +614,10 @@ final class Group {
 
 	private function is_dimension_item( $item ) {
 		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'dimension' && ! empty( $item['id'] );
+	}
+
+	private function is_divider_control_item( $item ) {
+		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'divider_control' && ! empty( $item['id'] );
 	}
 
 	private function is_tabs_item( $item ) {
@@ -945,6 +966,11 @@ final class Group {
 							$dimfield = Dimension::get_field( $section_slug, (string) $node['id'] );
 							if ( $dimfield ) {
 								Dimension::instance()->render_field_markup( $dimfield, 'group_inner' );
+							}
+						} elseif ( $node['kind'] === 'divider_control' && ! empty( $node['id'] ) ) {
+							$dfield = DividerControl::get_field( $section_slug, (string) $node['id'] );
+							if ( $dfield ) {
+								DividerControl::instance()->render_field_markup( $dfield, 'group_inner' );
 							}
 						} elseif ( $node['kind'] === 'tabs' && ! empty( $node['id'] ) ) {
 							$tcfg = Tabs::instance()->get_config( $section_slug, (string) $node['id'] );

@@ -20,6 +20,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\DividerControl\DividerControl;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
@@ -556,6 +557,11 @@ final class Tabs {
 
 			return Dimension::get_field( $section, $fid ) ? 'dimension' : '';
 		}
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'divider_control' ) {
+			DividerControl::register( $clone_reg );
+
+			return DividerControl::get_field( $section, $fid ) ? 'divider_control' : '';
+		}
 		if ( isset( $clone_reg['type'] ) && $clone_reg['type'] === 'button_group' && ! empty( $clone_reg['options'] ) && is_array( $clone_reg['options'] ) ) {
 			ButtonGroup::register( $clone_reg );
 
@@ -1022,6 +1028,13 @@ final class Tabs {
 				if ( $f ) {
 					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
 					Dimension::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
+			case 'divider_control':
+				$f = DividerControl::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
+					DividerControl::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
 			case 'select':

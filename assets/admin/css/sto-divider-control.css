@@ -1,0 +1,100 @@
+/**
+ * Divider composite — label / control rows (Theme Settings).
+ */
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: min(520px, 100%);
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__row {
+	display: grid;
+	grid-template-columns: minmax(72px, 110px) minmax(0, 1fr);
+	align-items: center;
+	gap: 10px 14px;
+	width: 100%;
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__label {
+	font-size: 13px;
+	font-weight: 500;
+	color: #1d2327;
+	margin: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__control {
+	min-width: 0;
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__row--style .sto-divider__control .select2-container {
+	max-width: 100%;
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__row--width .sto-range {
+	max-width: 100%;
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__align {
+	display: inline-flex;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	padding: 3px;
+	gap: 2px;
+	border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+	border-radius: var(--sto-field-soft-radius, 5px);
+	background: #fff;
+	box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__align-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 40px;
+	height: 32px;
+	margin: 0;
+	padding: 0 10px;
+	border: 0;
+	border-radius: 4px;
+	background: transparent;
+	color: #50575e;
+	cursor: pointer;
+	font: inherit;
+	transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__align-btn:hover {
+	background: #f6f7f7;
+	color: #1d2327;
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__align-btn.sto-is-active {
+	background: #2271b1;
+	color: #fff;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__align-btn .fa-light {
+	font-size: 15px;
+	line-height: 1;
+}
+
+.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__align-text {
+	font-size: 12px;
+	font-weight: 600;
+}
+
+@media (max-width: 600px) {
+	.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__row {
+		grid-template-columns: 1fr;
+		align-items: stretch;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-divider-control .sto-divider__label {
+		margin-bottom: -6px;
+	}
+}
