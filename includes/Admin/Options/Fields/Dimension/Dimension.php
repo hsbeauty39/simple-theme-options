@@ -637,36 +637,11 @@ final class Dimension {
 				data-sto-dimension-forced-unit="<?php echo esc_attr( $forced_u ); ?>"
 			<?php endif; ?>
 		>
-			<div class="sto-dimension__unit-row">
-				<?php if ( $unit_label !== '' ) : ?>
-					<span class="sto-dimension__unit-label"><?php echo esc_html( $unit_label ); ?></span>
-				<?php endif; ?>
-				<?php if ( ! $suppress_suffix ) : ?>
-				<div class="sto-dimension__units" role="group" aria-label="<?php esc_attr_e( 'Unit', 'simple-theme-options' ); ?>">
-					<?php if ( count( $allowed ) > 1 ) : ?>
-						<?php foreach ( $allowed as $u ) : ?>
-						<button
-							type="button"
-							class="sto-dimension__unit<?php echo $u === $active_u ? ' sto-is-active' : ''; ?>"
-							data-sto-dimension-unit="<?php echo esc_attr( $u ); ?>"
-						><?php echo esc_html( $this->format_unit_label( $u ) ); ?></button>
-						<?php endforeach; ?>
-					<?php else : ?>
-						<span class="sto-dimension__unit-badge"><?php echo esc_html( $this->format_unit_label( $allowed[0] ) ); ?></span>
-					<?php endif; ?>
-				</div>
-				<input
-					type="text"
-					class="sto-dimension__custom-suffix"
-					id="<?php echo esc_attr( 'sto-dimension-c-' . $suffix ); ?>"
-					value="<?php echo esc_attr( $parsed['c'] ); ?>"
-					placeholder="<?php esc_attr_e( 'e.g. vw', 'simple-theme-options' ); ?>"
-					autocomplete="off"
-					<?php echo ( $active_u === 'custom' && ! $suppress_suffix ) ? '' : ' hidden disabled'; ?>
-				/>
-				<?php endif; ?>
-			</div>
-			<div class="sto-dimension__matrix" role="group" aria-label="<?php esc_attr_e( 'Dimension values', 'simple-theme-options' ); ?>">
+			<?php
+			$show_rail = ( $unit_label !== '' ) || ! $suppress_suffix;
+			?>
+			<div class="sto-dimension__row">
+				<div class="sto-dimension__matrix" role="group" aria-label="<?php esc_attr_e( 'Dimension values', 'simple-theme-options' ); ?>">
 				<?php
 				$vals = isset( $parsed['values'] ) && is_array( $parsed['values'] ) ? $parsed['values'] : array();
 				foreach ( $sides as $row ) :
@@ -710,6 +685,38 @@ final class Dimension {
 					<?php
 				endif;
 				?>
+				</div>
+			<?php if ( $show_rail ) : ?>
+				<div class="sto-dimension__rail">
+				<?php if ( $unit_label !== '' ) : ?>
+					<span class="sto-dimension__unit-label"><?php echo esc_html( $unit_label ); ?></span>
+				<?php endif; ?>
+				<?php if ( ! $suppress_suffix ) : ?>
+				<div class="sto-dimension__units" role="group" aria-label="<?php esc_attr_e( 'Unit', 'simple-theme-options' ); ?>">
+					<?php if ( count( $allowed ) > 1 ) : ?>
+						<?php foreach ( $allowed as $u ) : ?>
+						<button
+							type="button"
+							class="sto-dimension__unit<?php echo $u === $active_u ? ' sto-is-active' : ''; ?>"
+							data-sto-dimension-unit="<?php echo esc_attr( $u ); ?>"
+						><?php echo esc_html( $this->format_unit_label( $u ) ); ?></button>
+						<?php endforeach; ?>
+					<?php else : ?>
+						<span class="sto-dimension__unit-badge"><?php echo esc_html( $this->format_unit_label( $allowed[0] ) ); ?></span>
+					<?php endif; ?>
+				</div>
+				<input
+					type="text"
+					class="sto-dimension__custom-suffix"
+					id="<?php echo esc_attr( 'sto-dimension-c-' . $suffix ); ?>"
+					value="<?php echo esc_attr( $parsed['c'] ); ?>"
+					placeholder="<?php esc_attr_e( 'e.g. vw', 'simple-theme-options' ); ?>"
+					autocomplete="off"
+					<?php echo ( $active_u === 'custom' && ! $suppress_suffix ) ? '' : ' hidden disabled'; ?>
+				/>
+				<?php endif; ?>
+				</div>
+			<?php endif; ?>
 			</div>
 			<input type="hidden" class="sto-dimension-value" name="<?php echo esc_attr( $input_name ); ?>" value="<?php echo esc_attr( $current_json ); ?>" />
 		</div>
