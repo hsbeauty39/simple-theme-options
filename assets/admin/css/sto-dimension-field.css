@@ -1,23 +1,29 @@
 /**
- * Dimension field — merged TRBL inputs + optional link + unit rail (matches Range column pattern).
+ * Dimension field — compact merged TRBL strip + link + unit rail; width-capped + responsive.
  */
 
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension {
-	max-width: 100%;
+	box-sizing: border-box;
+	width: fit-content;
+	max-width: min(380px, 100%);
+	min-width: 0;
 }
 
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__row {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: center;
-	gap: 12px 14px;
+	align-items: flex-start;
+	gap: 8px 10px;
 	width: 100%;
+	max-width: 100%;
+	min-width: 0;
 }
 
 /* Merged value strip + slot labels + link (single outer border). */
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__matrix {
-	flex: 1 1 200px;
+	flex: 1 1 160px;
 	min-width: 0;
+	max-width: min(268px, calc(100% - 68px));
 	display: flex;
 	flex-wrap: nowrap;
 	align-items: stretch;
@@ -26,6 +32,11 @@
 	background: #fff;
 	box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
 	overflow: hidden;
+}
+
+/* Matrix alone (no unit rail): use full row width. */
+.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__row > .sto-dimension__matrix:only-child {
+	max-width: 100%;
 }
 
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__cell {
@@ -42,13 +53,12 @@
 	border-right: none;
 }
 
-/* Divider between TRBL strip and link column (last cell keeps its right border). */
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__input {
 	width: 100%;
 	min-width: 0;
 	height: 36px;
 	margin: 0;
-	padding: 0 6px;
+	padding: 0 4px;
 	box-sizing: border-box;
 	border: 0;
 	border-radius: 0;
@@ -84,22 +94,22 @@
 	text-align: center;
 	font-size: 10px;
 	font-weight: 600;
-	letter-spacing: 0.06em;
+	letter-spacing: 0.05em;
 	color: #646970;
-	padding: 4px 4px 5px;
+	padding: 3px 2px 4px;
 	background: #f6f7f7;
 	border-top: 1px solid var(--sto-field-soft-border, #e0e0e0);
-	line-height: 1.2;
+	line-height: 1.15;
 	user-select: none;
 }
 
-/* Link — compact control aligned with the value row (Range-style soft chrome). */
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__link-cell {
-	flex: 0 0 48px;
+	flex: 0 0 44px;
+	min-width: 44px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 4px 6px;
+	padding: 4px 4px;
 	background: #fafafa;
 }
 
@@ -107,8 +117,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 36px;
-	height: 36px;
+	width: 34px;
+	height: 34px;
 	margin: 0;
 	padding: 0;
 	border: 1px solid var(--sto-field-soft-border, #e0e0e0);
@@ -139,19 +149,19 @@
 }
 
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__link i {
-	font-size: 15px;
+	font-size: 14px;
 	line-height: 1;
 }
 
-/* Right rail — same interaction model as sto-range__units (underline active). */
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__rail {
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
 	align-self: center;
 	gap: 4px;
-	min-width: 52px;
+	min-width: 48px;
 	flex: 0 0 auto;
+	max-width: 100%;
 }
 
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__unit-label {
@@ -173,7 +183,7 @@
 	flex-direction: column;
 	align-items: stretch;
 	gap: 2px;
-	min-width: 52px;
+	min-width: 48px;
 }
 
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__unit {
@@ -211,13 +221,13 @@
 	color: #646970;
 	line-height: 1.2;
 	text-align: center;
-	min-width: 2.5em;
+	min-width: 2.25em;
 	padding: 2px 4px;
 }
 
 .sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__custom-suffix {
 	width: 100%;
-	min-width: 72px;
+	min-width: 0;
 	max-width: 100%;
 	height: 32px;
 	padding: 0 8px;
@@ -240,10 +250,38 @@
 	display: none !important;
 }
 
-@media (max-width: 520px) {
+/* Tablet / narrow admin: allow full panel width; row shrink-wraps so extra space does not stretch the control. */
+@media (max-width: 782px) {
+	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension {
+		max-width: 100%;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__row {
+		width: fit-content;
+		max-width: 100%;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__matrix {
+		max-width: min(320px, calc(100% - 68px));
+	}
+}
+
+@media (max-width: 640px) {
+	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension {
+		width: 100%;
+		max-width: 100%;
+	}
+
 	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__row {
 		flex-direction: column;
 		align-items: stretch;
+		width: 100%;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__matrix {
+		flex: 1 1 auto;
+		max-width: 100%;
+		width: 100%;
 	}
 
 	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__rail {
@@ -253,6 +291,7 @@
 		align-items: center;
 		justify-content: flex-start;
 		gap: 8px 12px;
+		max-width: 100%;
 	}
 
 	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__units {
@@ -262,25 +301,45 @@
 	}
 
 	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__custom-suffix {
-		flex: 1 1 120px;
-		max-width: 160px;
+		flex: 1 1 100px;
+		max-width: min(200px, 100%);
 	}
 }
 
-@media (max-width: 600px) {
+/* Small phones: 2×2 TRBL grid + full-width link row. */
+@media (max-width: 480px) {
 	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__matrix {
 		flex-wrap: wrap;
 	}
 
 	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__cell {
-		flex: 1 1 40%;
-		border-right: 1px solid var(--sto-field-soft-border, #e0e0e0);
+		flex: 1 1 42%;
+		min-width: 0;
 		border-bottom: 1px solid var(--sto-field-soft-border, #e0e0e0);
+	}
+
+	/* End-of-row in default 4-up 2×2 layout (adjust if custom `sides` count differs). */
+	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__matrix > .sto-dimension__cell:nth-child(2n) {
+		border-right: none;
 	}
 
 	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__link-cell {
 		flex: 1 1 100%;
-		border-top: 1px solid var(--sto-field-soft-border, #e0e0e0);
+		min-width: 0;
+		width: 100%;
 		padding: 8px;
+	}
+}
+
+@media (max-width: 360px) {
+	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__input {
+		height: 34px;
+		padding: 0 2px;
+		font-size: 12px;
+	}
+
+	.sto-option-panel-wrapper .sto-field-row-dimension .sto-dimension__slot-label {
+		font-size: 9px;
+		padding: 2px 1px 3px;
 	}
 }
