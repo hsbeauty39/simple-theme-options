@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
  * (or per-breakpoint map of JSON strings when **`responsive`** is set).
  *
  * Register with **`'type' => 'gallery'`** (or **`GalleryControl::register()`**). Keys: **`section_slug`**, **`id`**, **`title`**,
- * optional **`default`** => **`array( 123, 456 )`** of attachment IDs (invalid / non-image IDs dropped), optional **`max`**
+ * optional **`default`** => **`array( 101, 102, 103 )`** of **image attachment IDs** (invalid / non-image IDs dropped), optional **`max`**
  * (int **`0`** = unlimited, otherwise capped at **100**), **`description`**, conditional **`required`**, **`html_required`**,
  * **`tooltip`**, **`wrapper_class`**, optional **`responsive`** + **`device`**. Admin: **`wp.media`** multi-select, thumbnails,
  * per-item remove, optional **jQuery UI Sortable** reorder, **Clear all** in header. Boot **`GalleryControl::instance()`**
