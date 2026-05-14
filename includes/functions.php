@@ -11,6 +11,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
+use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\ViewportOptions;
@@ -189,4 +190,17 @@ function sto_get_gallery_attachment_ids( $field_id, $json_or_scalar = null ) {
 	}
 
 	return GalleryControl::instance()->get_attachment_ids_for_field( $field_id, $json_or_scalar );
+}
+
+/**
+ * Location payload from a registered **Google map** field (`sto_options[id]` JSON or per-breakpoint map).
+ *
+ * @param string      $field_id       Option key in `sto_options`.
+ * @param string|null $json_or_scalar When non-null, parse this JSON string instead of reading `sto_options` (preview / import).
+ * @return array<string, string> Keys: formatted_address, address, street, city, state, zip, country, lat, lng.
+ */
+function sto_get_google_map_field( $field_id, $json_or_scalar = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+
+	return GoogleMapControl::instance()->get_map_payload_for_field( $field_id, $json_or_scalar );
 }

@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
+use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
 use SimpleThemeOptions\ViewportOptions;
 use SimpleThemeOptions\Traits\SingletonTrait;
@@ -132,7 +133,7 @@ final class Assets {
 			),
 			'sto-select2' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-select2.css',
-				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-range', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field', 'sto-tabs', 'sto-accordion' ),
+				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-range', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field', 'sto-google-map-field', 'sto-tabs', 'sto-accordion' ),
 				'version' => STO_VERSION,
 			),
 			'sto-typography' => array(
@@ -203,6 +204,11 @@ final class Assets {
 			'sto-alignment-field' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-alignment-field.css',
 				'deps'    => array( 'sto-style', 'sto-switcher' ),
+				'version' => STO_VERSION,
+			),
+			'sto-google-map-field' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-google-map-field.css',
+				'deps'    => array( 'sto-style', 'sto-input' ),
 				'version' => STO_VERSION,
 			),
 			'sto-tabs' => array(
@@ -299,6 +305,18 @@ final class Assets {
 				),
 			)
 		);
+
+		if ( GoogleMapControl::instance()->registry_has_fields() ) {
+			wp_localize_script(
+				'sto-google-map-field',
+				'stoGoogleMapField',
+				array(
+					'i18n' => array(
+						'searchPlaceholder' => __( 'Search address…', 'simple-theme-options' ),
+					),
+				)
+			);
+		}
 	}
 
 	/**
@@ -346,7 +364,7 @@ final class Assets {
 			),
 			'display-section-on-menu' => array(
 				'src'       => STO_URL . 'assets/admin/js/main.js',
-				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field' ),
+				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field', 'sto-google-map-field' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),
@@ -418,6 +436,12 @@ final class Assets {
 			),
 			'sto-alignment-field' => array(
 				'src'       => STO_URL . 'assets/admin/js/sto-alignment-field.js',
+				'deps'      => array( 'jquery' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
+			'sto-google-map-field' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-google-map-field.js',
 				'deps'      => array( 'jquery' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,

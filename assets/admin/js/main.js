@@ -247,6 +247,9 @@
                     if (typeof window.stoInitGalleryFields === 'function') {
                         window.stoInitGalleryFields($ap);
                     }
+                    if (typeof window.stoInitGoogleMapFields === 'function') {
+                        window.stoInitGoogleMapFields($ap);
+                    }
                     if (typeof window.stoInitAlignmentFields === 'function') {
                         window.stoInitAlignmentFields($ap);
                     }
@@ -717,6 +720,9 @@
             }
             if (typeof window.stoInitGalleryFields === 'function') {
                 window.stoInitGalleryFields($activePanel);
+            }
+            if (typeof window.stoInitGoogleMapFields === 'function') {
+                window.stoInitGoogleMapFields($activePanel);
             }
             if (typeof window.stoInitAlignmentFields === 'function') {
                 window.stoInitAlignmentFields($activePanel);

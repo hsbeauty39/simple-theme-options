@@ -16,6 +16,7 @@ use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
+use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
@@ -52,6 +53,7 @@ final class AccordionDemo {
 		DateTimeField::instance();
 		Dimension::instance();
 		GalleryControl::instance();
+		GoogleMapControl::instance();
 		AlignmentControl::instance();
 		Switcher::instance();
 		add_action( 'sto_render_section_content', array( $this, 'render_section_intro' ), 5, 2 );
@@ -524,6 +526,19 @@ final class AccordionDemo {
 							103,
 						),
 						'max'         => 0,
+						'width'       => '1-1',
+					),
+					array(
+						'type'        => 'google_map',
+						'id'          => 'cf_google_map',
+						'title'       => __( 'Google map', 'simple-theme-options' ),
+						'description' => __( 'Same storage as standalone: JSON in sto_options. Theme: sto_get_google_map_field().', 'simple-theme-options' ),
+						'default'     => array(
+							'city'    => 'Washington',
+							'country' => 'United States',
+							'lat'     => '38.9072',
+							'lng'     => '-77.0369',
+						),
 						'width'       => '1-1',
 					),
 					array(

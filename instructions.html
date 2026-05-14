@@ -1080,7 +1080,8 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 						<li class="sto-docs-nav__nest"><a href="#f-datetime">6.10.2 Date &amp; time</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-dimension">6.10.3 Dimensions</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-gallery">6.10.4 Gallery</a></li>
-						<li class="sto-docs-nav__nest"><a href="#f-alignment">6.10.5 Alignment</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-google-map">6.10.5 Google map</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-alignment">6.10.6 Alignment</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-typo">6.11 Typography</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-img">6.12 Image select</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-btng">6.13 Button group</a></li>
@@ -1314,9 +1315,14 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'gallery'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, optional <code>default</code> as a plain PHP list of attachment IDs, e.g. <code>array( 101, 102, 103 )</code> (image attachments only; invalid IDs dropped), optional <code>max</code> (int <strong>0</strong> = unlimited, hard cap <strong>100</strong> at save), <code>html_required</code>, conditional <code>required</code>, <code>tooltip</code>, optional <code>responsive</code> / <code>device</code>. Stored as JSON array of ID strings in a hidden <code>sto_options[id]</code> field (or per-breakpoint map). Boot <code>GalleryControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_gallery_attachment_ids( 'option_id' )</code> returns ordered integers. Hook <strong>19.43</strong> (after <strong>Dimension</strong> <strong>19.42</strong>, before <strong>AlignmentControl</strong> <strong>19.44</strong>). Assets <code>sto-gallery-field</code> (depends on <code>jquery-ui-sortable</code> + <code>media-editor</code>); <code>main.js</code> calls <code>stoInitGalleryFields</code>. Admin: <strong>wp.media</strong> multi-select, thumbnails, drag reorder, per-thumb remove, clear-all.</p>
 
 			<hr class="sep" />
-			<h3 id="f-alignment">6.10.5 AlignmentControl</h3>
+			<h3 id="f-google-map">6.10.5 GoogleMapControl</h3>
+<p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-google-map">PHP →</a></p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'google_map'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, optional <code>default</code> as a partial associative array (<code>formatted_address</code>, <code>address</code> street number, <code>street</code>, <code>city</code>, <code>state</code>, <code>zip</code>, <code>country</code>, <code>lat</code>, <code>lng</code>), optional per-field <code>google_maps_api_key</code> (otherwise use filter <code>sto_google_maps_api_key</code> — enable <strong>Maps JavaScript API</strong> and <strong>Places API</strong> on the key). Stored as one JSON object per slice in hidden <code>sto_options[id]</code> (or per-breakpoint map). Boot <code>GoogleMapControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_google_map_field( 'option_id' )</code>. Hook <strong>19.441</strong> (after <strong>AlignmentControl</strong> <strong>19.44</strong>, before <strong>Tabs</strong> <strong>19.45</strong>). Assets <code>sto-google-map-field</code>; <code>main.js</code> calls <code>stoInitGoogleMapFields</code>. Without an API key the notice explains manual-only mode; map click / drag reverse-geocodes when the API loads.</p>
+
+			<hr class="sep" />
+			<h3 id="f-alignment">6.10.6 AlignmentControl</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-alignment">PHP →</a></p>
-			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'alignment'</code> plus <code>id</code>, <code>title</code>, required <code>options</code> (same map as <strong>ButtonGroup</strong>: value =&gt; label string or array with <code>label</code>, optional <code>tooltip</code>, <code>preview_image</code>, Font Awesome <code>icon</code>), optional <code>default</code> (sanitize_key), optional <code>orientation</code> (<strong>horizontal</strong> default or <strong>vertical</strong>), <code>density</code> (<strong>default</strong> or <strong>compact</strong>), <code>show_labels</code> (bool), <code>allow_clear</code> (bool — empty value allowed + clear control in UI), optional <code>css_map</code> (option key =&gt; CSS fragment for theme output via <code>sto_get_alignment_css_fragment()</code>), <code>html_required</code>, conditional <code>required</code>, <code>responsive</code> / <code>device</code>. Stored as a single key string or per-breakpoint map. Boot <code>AlignmentControl::instance()</code> before <code>Group::register()</code>. Hook <strong>19.44</strong> (after <strong>GalleryControl</strong> <strong>19.43</strong>, before <strong>Tabs</strong> <strong>19.45</strong>). Assets <code>sto-alignment-field</code>; <code>main.js</code> calls <code>stoInitAlignmentFields</code>.</p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'alignment'</code> plus <code>id</code>, <code>title</code>, required <code>options</code> (same map as <strong>ButtonGroup</strong>: value =&gt; label string or array with <code>label</code>, optional <code>tooltip</code>, <code>preview_image</code>, Font Awesome <code>icon</code>), optional <code>default</code> (sanitize_key), optional <code>orientation</code> (<strong>horizontal</strong> default or <strong>vertical</strong>), <code>density</code> (<strong>default</strong> or <strong>compact</strong>), <code>show_labels</code> (bool), <code>allow_clear</code> (bool — empty value allowed + clear control in UI), optional <code>css_map</code> (option key =&gt; CSS fragment for theme output via <code>sto_get_alignment_css_fragment()</code>), <code>html_required</code>, conditional <code>required</code>, <code>responsive</code> / <code>device</code>. Stored as a single key string or per-breakpoint map. Boot <code>AlignmentControl::instance()</code> before <code>Group::register()</code>. Hook <strong>19.44</strong> (after <strong>GalleryControl</strong> <strong>19.43</strong>, before <strong>GoogleMapControl</strong> <strong>19.441</strong>). Assets <code>sto-alignment-field</code>; <code>main.js</code> calls <code>stoInitAlignmentFields</code>.</p>
 
 			<hr class="sep" />
 			<h3 id="f-typo">6.11 Typography</h3>
@@ -1400,6 +1406,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 					<tr><td>19.42</td><td>Dimension</td></tr>
 					<tr><td>19.43</td><td>GalleryControl</td></tr>
 					<tr><td>19.44</td><td>AlignmentControl</td></tr>
+					<tr><td>19.441</td><td>GoogleMapControl</td></tr>
 					<tr><td>19.45</td><td>Tabs</td></tr>
 					<tr><td>19.46</td><td>Accordion</td></tr>
 					<tr><td>19.55</td><td>CodeEditor</td></tr>
@@ -2053,6 +2060,28 @@ Input::register(
 		),
 		'max'          => 12,
 		'responsive'   => true,
+	)
+);</code></pre>
+				</section>
+				<section class="sto-php-snippet" id="php-google-map" aria-labelledby="php-h-google-map">
+					<div class="sto-php-snippet__bar" id="php-h-google-map">
+						<span class="sto-php-snippet__pill">PHP</span>
+						<span class="sto-php-snippet__label">google_map</span>
+						<a class="sto-php-snippet__back" href="#f-google-map">↑ Docs</a>
+					</div>
+					<pre class="sto-php-snippet__pre"><code class="language-php">GoogleMapControl::register(
+	array(
+		'section_slug' => 'misc',
+		'id'             => 'store_locator',
+		'title'          => __( 'Store location', 'simple-theme-options' ),
+		'description'    => __( 'Map + Places search; add_filter( \'sto_google_maps_api_key\', fn() =&gt; \'YOUR_KEY\' );', 'simple-theme-options' ),
+		'default'        => array(
+			'city'    => 'Washington',
+			'country' => 'United States',
+			'lat'     => '38.9072',
+			'lng'     => '-77.0369',
+		),
+		'responsive'     => true,
 	)
 );</code></pre>
 				</section>

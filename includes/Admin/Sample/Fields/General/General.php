@@ -11,6 +11,7 @@ use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
+use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
@@ -40,6 +41,7 @@ final class General {
 		DateTimeField::instance();
 		Dimension::instance();
 		GalleryControl::instance();
+		GoogleMapControl::instance();
 		AlignmentControl::instance();
 		Tabs::instance();
 		Switcher::instance();
@@ -372,6 +374,23 @@ final class General {
 							103,
 						),
 						'max'           => 24,
+					),
+					array(
+						'type'          => 'google_map',
+						'id'            => 'layout_sample_google_map',
+						'title'         => __( 'Sample Google Map', 'simple-theme-options' ),
+						'description'   => __( 'Map, Places search, and structured address fields stored as one JSON object in sto_options. Enable the map with add_filter( \'sto_google_maps_api_key\', fn () => \'YOUR_KEY\' ); (Maps JavaScript API + Places API). Theme helper: sto_get_google_map_field().', 'simple-theme-options' ),
+						'default'       => array(
+							'formatted_address' => '1600 Pennsylvania Avenue NW, Washington, DC 20500, USA',
+							'address'           => '1600',
+							'street'            => 'Pennsylvania Avenue NW',
+							'city'              => 'Washington',
+							'state'             => 'DC',
+							'zip'               => '20500',
+							'country'           => 'United States',
+							'lat'               => '38.8976763',
+							'lng'               => '-77.0365298',
+						),
 					),
 					array(
 						'type'        => 'alignment',

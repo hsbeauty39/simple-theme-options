@@ -43,7 +43,7 @@ final class AlignmentControl {
 	private $fields_by_id = array();
 
 	protected function init() {
-		// After GalleryControl (19.43), before Tabs (19.45).
+		// After GalleryControl (19.43), before GoogleMapControl (19.441), before Tabs (19.45).
 		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 19.44, 2 );
 	}
 

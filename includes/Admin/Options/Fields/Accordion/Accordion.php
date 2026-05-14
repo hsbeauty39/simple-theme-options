@@ -21,6 +21,7 @@ use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
+use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
@@ -583,6 +584,11 @@ final class Accordion {
 
 			return GalleryControl::get_field( $section, $fid ) ? 'gallery' : '';
 		}
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'google_map' ) {
+			GoogleMapControl::register( $clone_reg );
+
+			return GoogleMapControl::get_field( $section, $fid ) ? 'google_map' : '';
+		}
 		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'alignment' && ! empty( $clone_reg['options'] ) && is_array( $clone_reg['options'] ) ) {
 			AlignmentControl::register( $clone_reg );
 
@@ -1097,6 +1103,13 @@ final class Accordion {
 				if ( $f ) {
 					$f = $this->with_accordion_responsive_pane_bp( $f, $parent_device_bp );
 					GalleryControl::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
+			case 'google_map':
+				$f = GoogleMapControl::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					$f = $this->with_accordion_responsive_pane_bp( $f, $parent_device_bp );
+					GoogleMapControl::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
 			case 'alignment':

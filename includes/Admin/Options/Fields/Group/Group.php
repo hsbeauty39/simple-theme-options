@@ -23,6 +23,7 @@ use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
+use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Accordion\Accordion;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
@@ -72,6 +73,7 @@ final class Group {
 	 * - **Date + time:** `type` => **`datetime`**, same keys as **date** plus optional **`time_step`** (seconds for native time input **`step`**, default **60**). Stored as **`Y-m-d H:i`** (24-hour) or per-breakpoint map. Boot **`DateTimeField::instance()`** when used inside groups.
 	 * - **Dimension:** `type` => **`dimension`**, **`id`**, **`title`**, optional **`sides`** (1–6 of **`array( 'key' => 'top', 'label' => 'TOP' )`**), **`units`** subset of **`px`**, **`%`**, **`rem`**, **`em`**, **`custom`**, **`min`**, **`max`**, **`step`**, **`default`** (partial **`u` / `c` / `linked` / `values`**), optional **`unit_label`**, **`show_link`** (default **true**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored JSON per slice. Boot **`Dimension::instance()`** when used inside groups.
 	 * - **Gallery:** `type` => **`gallery`**, **`id`**, **`title`**, optional **`default`** => **`array( 101, 102, 103 )`** (image attachment IDs only), optional **`max`** (int **`0`** = unlimited, capped at **100**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as JSON **`["id","id"]`** or per-breakpoint map. Boot **`GalleryControl::instance()`** when used inside groups.
+	 * - **Google map:** `type` => **`google_map`**, **`id`**, **`title`**, optional **`default`** (partial **`formatted_address`**, **`address`**, **`street`**, **`city`**, **`state`**, **`zip`**, **`country`**, **`lat`**, **`lng`**), optional **`google_maps_api_key`** (per-field Maps JavaScript API key; else use **`sto_google_maps_api_key`** filter), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as one JSON object per slice (or per-breakpoint map). Boot **`GoogleMapControl::instance()`** when used inside groups.
 	 * - **Alignment:** `type` => **`alignment`**, **`id`**, **`title`**, **`options`** (same shape as **ButtonGroup**: value => label string or array with **`label`**, optional **`tooltip`**, **`preview_image`**, **`icon`**), optional **`default`** (sanitize_key), optional **`orientation`** => **`horizontal`** | **`vertical`**, **`density`** => **`default`** | **`compact`**, **`show_labels`** (bool), **`allow_clear`** (bool), optional **`css_map`** (option key => CSS fragment for themes), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as a scalar string or per-breakpoint map. Boot **`AlignmentControl::instance()`** when used inside groups.
 	 * - **Tabs:** `type` => **`tabs`**, **`id`**, **`title`**, **`tabs`**, **`fields`** — **`fields`** may mix **leaf** controls, **`type` => `accordion`**, **nested groups** (`id`, `title`, `fields`), and **nested `tabs`** (ids auto-prefixed per nesting level). Optional **`responsive`**, **`device`**. Stored keys: **`{tabs_id}_{tab_id}_{inner_id}`** (and scoped ids for nested blocks). **`sto-tabs.css`** stacks grid cells full-width at **960px**.
 	 * - **Accordion:** `type` => **`accordion`**, **`id`**, **`title`**, **`panels`**, **`fields`** — each **`panels[]`** row: **`id`**, **`label`**, optional **`expanded`** / **`show`** / **`open`** (first truthy row starts open; otherwise all collapsed on load). **`fields`** may mix **leaf** fields, **`tabs`**, **`accordion`**, and **nested groups** (same composition rules as **Tabs** / tree builders). Optional **`responsive`**, **`device`**, **`description`**, **`required`**, **`tooltip`**. Stored keys: **`{accordion_id}_{panel_id}_{inner_id}`**. **`sto-accordion.css`** / **`sto-accordion.js`**.
@@ -476,6 +478,21 @@ final class Group {
 				continue;
 			}
 
+			if ( $this->is_google_map_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				GoogleMapControl::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && GoogleMapControl::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'google_map',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
 			if ( $this->is_alignment_item( $item ) ) {
 				$item['section_slug'] = $section_slug;
 				$item['group']        = $parent_group_id;
@@ -635,6 +652,10 @@ final class Group {
 
 	private function is_gallery_item( $item ) {
 		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'gallery' && ! empty( $item['id'] );
+	}
+
+	private function is_google_map_item( $item ) {
+		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'google_map' && ! empty( $item['id'] );
 	}
 
 	private function is_alignment_item( $item ) {
@@ -992,6 +1013,11 @@ final class Group {
 							$gfield = GalleryControl::get_field( $section_slug, (string) $node['id'] );
 							if ( $gfield ) {
 								GalleryControl::instance()->render_field_markup( $gfield, 'group_inner' );
+							}
+						} elseif ( $node['kind'] === 'google_map' && ! empty( $node['id'] ) ) {
+							$gmfield = GoogleMapControl::get_field( $section_slug, (string) $node['id'] );
+							if ( $gmfield ) {
+								GoogleMapControl::instance()->render_field_markup( $gmfield, 'group_inner' );
 							}
 						} elseif ( $node['kind'] === 'alignment' && ! empty( $node['id'] ) ) {
 							$afield = AlignmentControl::get_field( $section_slug, (string) $node['id'] );
