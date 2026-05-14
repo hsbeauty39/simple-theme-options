@@ -655,15 +655,17 @@ final class Dimension {
 					?>
 				<div class="sto-dimension__cell">
 					<input
-						type="number"
+						type="text"
 						class="sto-dimension__input"
 						id="<?php echo esc_attr( $vid ); ?>"
 						data-sto-dimension-key="<?php echo esc_attr( $k ); ?>"
-						min="<?php echo esc_attr( (string) $min ); ?>"
-						max="<?php echo esc_attr( (string) $max ); ?>"
-						step="<?php echo esc_attr( $step_attr ); ?>"
+						data-sto-dimension-min="<?php echo esc_attr( (string) $min ); ?>"
+						data-sto-dimension-max="<?php echo esc_attr( (string) $max ); ?>"
+						data-sto-dimension-step="<?php echo esc_attr( $step_attr ); ?>"
 						value="<?php echo esc_attr( $v ); ?>"
 						inputmode="decimal"
+						autocomplete="off"
+						spellcheck="false"
 						aria-label="<?php echo esc_attr( $lab ); ?>"
 					/>
 					<span class="sto-dimension__slot-label"><?php echo esc_html( $lab ); ?></span>

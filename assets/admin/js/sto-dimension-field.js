@@ -361,8 +361,10 @@
             if (key === 'ArrowLeft' || key === 'ArrowRight') {
                 var val = el.value != null ? String(el.value) : '';
                 var len = val.length;
-                var start = typeof el.selectionStart === 'number' ? el.selectionStart : len;
-                var end = typeof el.selectionEnd === 'number' ? el.selectionEnd : len;
+                var rawS = el.selectionStart;
+                var rawE = el.selectionEnd;
+                var start = typeof rawS === 'number' && rawS >= 0 ? rawS : len;
+                var end = typeof rawE === 'number' && rawE >= 0 ? rawE : len;
                 if (start !== end) {
                     return;
                 }
