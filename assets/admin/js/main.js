@@ -244,6 +244,9 @@
                     if (typeof window.stoInitDimensionFields === 'function') {
                         window.stoInitDimensionFields($ap);
                     }
+                    if (typeof window.stoInitGalleryFields === 'function') {
+                        window.stoInitGalleryFields($ap);
+                    }
                     if (typeof window.stoInitAlignmentFields === 'function') {
                         window.stoInitAlignmentFields($ap);
                     }
@@ -711,6 +714,9 @@
             }
             if (typeof window.stoInitDimensionFields === 'function') {
                 window.stoInitDimensionFields($activePanel);
+            }
+            if (typeof window.stoInitGalleryFields === 'function') {
+                window.stoInitGalleryFields($activePanel);
             }
             if (typeof window.stoInitAlignmentFields === 'function') {
                 window.stoInitAlignmentFields($activePanel);

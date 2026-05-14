@@ -10,6 +10,7 @@ defined( 'ABSPATH' ) || exit;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\ViewportOptions;
@@ -172,4 +173,20 @@ function sto_get_alignment_css_fragment( $field_id, $json_or_scalar = null ) {
 	}
 
 	return AlignmentControl::instance()->get_css_fragment_for_value( $field_id, $json_or_scalar );
+}
+
+/**
+ * Ordered list of **image attachment IDs** from a registered **Gallery** field (`sto_options[id]` JSON or per-breakpoint map).
+ *
+ * @param string      $field_id       Option key in `sto_options`.
+ * @param string|null $json_or_scalar When non-null, parse this JSON string instead of reading `sto_options` (preview / import).
+ * @return array<int, int> Attachment IDs (empty when unset or invalid).
+ */
+function sto_get_gallery_attachment_ids( $field_id, $json_or_scalar = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return array();
+	}
+
+	return GalleryControl::instance()->get_attachment_ids_for_field( $field_id, $json_or_scalar );
 }

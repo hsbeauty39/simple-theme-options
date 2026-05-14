@@ -1079,7 +1079,8 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 						<li class="sto-docs-nav__nest"><a href="#f-date">6.10.1 Date</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-datetime">6.10.2 Date &amp; time</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-dimension">6.10.3 Dimensions</a></li>
-						<li class="sto-docs-nav__nest"><a href="#f-alignment">6.10.4 Alignment</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-gallery">6.10.4 Gallery</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-alignment">6.10.5 Alignment</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-typo">6.11 Typography</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-img">6.12 Image select</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-btng">6.13 Button group</a></li>
@@ -1308,9 +1309,14 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'dimension'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, <code>units</code> (ordered subset of <strong>px</strong>, <strong>%</strong>, <strong>rem</strong>, <strong>em</strong>, <strong>custom</strong>), <code>min</code> / <code>max</code> / <code>step</code>, optional <code>sides</code> (1–6 rows of <code>key</code> + <code>label</code>; default is top/right/bottom/left), <code>default</code> as partial <code>u</code>, <code>c</code>, <code>linked</code>, <code>values</code>, optional <code>unit_label</code>, <code>show_link</code> (default <strong>true</strong>), <code>html_required</code>, conditional <code>required</code>, <code>responsive</code> / <code>device</code>. Stored JSON: <code>u</code>, <code>c</code> (when unit is <strong>custom</strong>), <code>linked</code>, <code>values</code> map. Boot <code>Dimension::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_dimension_shorthand( 'option_id' )</code> for margin/padding-style shorthand. Hook <strong>19.42</strong> (after <strong>DateTimeField</strong> <strong>19.39</strong>). Admin layout: merged TRBL number strip (single outer border, dividers between slots) + link button; unit chips and custom suffix sit in a <strong>right column</strong> beside the strip (same pattern as <strong>Range</strong>). Desktop width is capped (~<strong>380px</strong>, shrink-wrapped); <strong>≤782px</strong> uses full panel width with a shrink-wrapped row; <strong>≤640px</strong> stacks matrix and rail at full width; <strong>≤480px</strong> uses a 2×2 cell grid + full-width link row. <strong>Keyboard:</strong> <strong>Tab</strong> follows values → link → units → suffix; <strong>Arrow Left/Right</strong> on value fields move between slots when the caret is at the start/end (fields use <code>type="text"</code> + <code>inputmode="decimal"</code> so caret APIs work—<code>type="number"</code> often hides <code>selectionStart</code>); arrows also move between link, units, and custom suffix.</p>
 
 			<hr class="sep" />
-			<h3 id="f-alignment">6.10.4 AlignmentControl</h3>
+			<h3 id="f-gallery">6.10.4 GalleryControl</h3>
+<p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-gallery">PHP →</a></p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'gallery'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, optional <code>default</code> as <code>array( attachment_id, … )</code> (image attachments only; invalid IDs dropped), optional <code>max</code> (int <strong>0</strong> = unlimited, hard cap <strong>100</strong> at save), <code>html_required</code>, conditional <code>required</code>, <code>tooltip</code>, optional <code>responsive</code> / <code>device</code>. Stored as JSON array of ID strings in a hidden <code>sto_options[id]</code> field (or per-breakpoint map). Boot <code>GalleryControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_gallery_attachment_ids( 'option_id' )</code> returns ordered integers. Hook <strong>19.43</strong> (after <strong>Dimension</strong> <strong>19.42</strong>, before <strong>AlignmentControl</strong> <strong>19.44</strong>). Assets <code>sto-gallery-field</code> (depends on <code>jquery-ui-sortable</code> + <code>media-editor</code>); <code>main.js</code> calls <code>stoInitGalleryFields</code>. Admin: <strong>wp.media</strong> multi-select, thumbnails, drag reorder, per-thumb remove, clear-all.</p>
+
+			<hr class="sep" />
+			<h3 id="f-alignment">6.10.5 AlignmentControl</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-alignment">PHP →</a></p>
-			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'alignment'</code> plus <code>id</code>, <code>title</code>, required <code>options</code> (same map as <strong>ButtonGroup</strong>: value =&gt; label string or array with <code>label</code>, optional <code>tooltip</code>, <code>preview_image</code>, Font Awesome <code>icon</code>), optional <code>default</code> (sanitize_key), optional <code>orientation</code> (<strong>horizontal</strong> default or <strong>vertical</strong>), <code>density</code> (<strong>default</strong> or <strong>compact</strong>), <code>show_labels</code> (bool), <code>allow_clear</code> (bool — empty value allowed + clear control in UI), optional <code>css_map</code> (option key =&gt; CSS fragment for theme output via <code>sto_get_alignment_css_fragment()</code>), <code>html_required</code>, conditional <code>required</code>, <code>responsive</code> / <code>device</code>. Stored as a single key string or per-breakpoint map. Boot <code>AlignmentControl::instance()</code> before <code>Group::register()</code>. Hook <strong>19.44</strong> (after <strong>Dimension</strong> <strong>19.42</strong>, before <strong>Tabs</strong> <strong>19.45</strong>). Assets <code>sto-alignment-field</code>; <code>main.js</code> calls <code>stoInitAlignmentFields</code>.</p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'alignment'</code> plus <code>id</code>, <code>title</code>, required <code>options</code> (same map as <strong>ButtonGroup</strong>: value =&gt; label string or array with <code>label</code>, optional <code>tooltip</code>, <code>preview_image</code>, Font Awesome <code>icon</code>), optional <code>default</code> (sanitize_key), optional <code>orientation</code> (<strong>horizontal</strong> default or <strong>vertical</strong>), <code>density</code> (<strong>default</strong> or <strong>compact</strong>), <code>show_labels</code> (bool), <code>allow_clear</code> (bool — empty value allowed + clear control in UI), optional <code>css_map</code> (option key =&gt; CSS fragment for theme output via <code>sto_get_alignment_css_fragment()</code>), <code>html_required</code>, conditional <code>required</code>, <code>responsive</code> / <code>device</code>. Stored as a single key string or per-breakpoint map. Boot <code>AlignmentControl::instance()</code> before <code>Group::register()</code>. Hook <strong>19.44</strong> (after <strong>GalleryControl</strong> <strong>19.43</strong>, before <strong>Tabs</strong> <strong>19.45</strong>). Assets <code>sto-alignment-field</code>; <code>main.js</code> calls <code>stoInitAlignmentFields</code>.</p>
 
 			<hr class="sep" />
 			<h3 id="f-typo">6.11 Typography</h3>
@@ -1392,6 +1398,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 					<tr><td>19.38</td><td>DateField</td></tr>
 					<tr><td>19.39</td><td>DateTimeField</td></tr>
 					<tr><td>19.42</td><td>Dimension</td></tr>
+					<tr><td>19.43</td><td>GalleryControl</td></tr>
 					<tr><td>19.44</td><td>AlignmentControl</td></tr>
 					<tr><td>19.45</td><td>Tabs</td></tr>
 					<tr><td>19.46</td><td>Accordion</td></tr>
@@ -2023,6 +2030,24 @@ Input::register(
 				'left'   => '16',
 			),
 		),
+		'responsive'   => true,
+	)
+);</code></pre>
+				</section>
+				<section class="sto-php-snippet" id="php-gallery" aria-labelledby="php-h-gallery">
+					<div class="sto-php-snippet__bar" id="php-h-gallery">
+						<span class="sto-php-snippet__pill">PHP</span>
+						<span class="sto-php-snippet__label">gallery</span>
+						<a class="sto-php-snippet__back" href="#f-gallery">↑ Docs</a>
+					</div>
+					<pre class="sto-php-snippet__pre"><code class="language-php">GalleryControl::register(
+	array(
+		'section_slug' => 'misc',
+		'id'           => 'hero_gallery',
+		'title'        => __( 'Hero gallery', 'simple-theme-options' ),
+		'description'  => __( 'Pick image attachments; order is preserved.', 'simple-theme-options' ),
+		'default'      => array(),
+		'max'          => 12,
 		'responsive'   => true,
 	)
 );</code></pre>

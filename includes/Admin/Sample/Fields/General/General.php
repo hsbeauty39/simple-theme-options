@@ -10,6 +10,7 @@ use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\Tabs\Tabs;
@@ -38,6 +39,7 @@ final class General {
 		DateField::instance();
 		DateTimeField::instance();
 		Dimension::instance();
+		GalleryControl::instance();
 		AlignmentControl::instance();
 		Tabs::instance();
 		Switcher::instance();
@@ -358,6 +360,14 @@ final class General {
 								'left'   => '16',
 							),
 						),
+					),
+					array(
+						'type'          => 'gallery',
+						'id'            => 'layout_sample_gallery',
+						'title'         => __( 'Sample gallery', 'simple-theme-options' ),
+						'description'   => __( 'Pick image attachments from the Media Library; drag to reorder, remove per thumbnail, or clear all. Optional default is an array of attachment IDs. Theme helper: sto_get_gallery_attachment_ids().', 'simple-theme-options' ),
+						'default'       => array(),
+						'max'           => 24,
 					),
 					array(
 						'type'        => 'alignment',

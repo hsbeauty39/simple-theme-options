@@ -15,6 +15,7 @@ use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
@@ -50,6 +51,7 @@ final class AccordionDemo {
 		DateField::instance();
 		DateTimeField::instance();
 		Dimension::instance();
+		GalleryControl::instance();
 		AlignmentControl::instance();
 		Switcher::instance();
 		add_action( 'sto_render_section_content', array( $this, 'render_section_intro' ), 5, 2 );
@@ -509,6 +511,15 @@ final class AccordionDemo {
 							'color'       => '#dcdcde',
 						),
 						'radius_units' => array( 'px' ),
+						'width'       => '1-1',
+					),
+					array(
+						'type'        => 'gallery',
+						'id'          => 'cf_gallery',
+						'title'       => __( 'Gallery', 'simple-theme-options' ),
+						'description' => __( 'Media Library images; JSON list of attachment IDs in sto_options. Theme: sto_get_gallery_attachment_ids().', 'simple-theme-options' ),
+						'default'     => array(),
+						'max'         => 0,
 						'width'       => '1-1',
 					),
 					array(

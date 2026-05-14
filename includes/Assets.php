@@ -132,7 +132,7 @@ final class Assets {
 			),
 			'sto-select2' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-select2.css',
-				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-range', 'sto-dimension-field', 'sto-alignment-field', 'sto-tabs', 'sto-accordion' ),
+				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-range', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field', 'sto-tabs', 'sto-accordion' ),
 				'version' => STO_VERSION,
 			),
 			'sto-typography' => array(
@@ -193,6 +193,11 @@ final class Assets {
 			'sto-dimension-field' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-dimension-field.css',
 				'deps'    => array( 'sto-style', 'sto-input' ),
+				'version' => STO_VERSION,
+			),
+			'sto-gallery-field' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-gallery-field.css',
+				'deps'    => array( 'sto-style', 'sto-switcher' ),
 				'version' => STO_VERSION,
 			),
 			'sto-alignment-field' => array(
@@ -341,7 +346,7 @@ final class Assets {
 			),
 			'display-section-on-menu' => array(
 				'src'       => STO_URL . 'assets/admin/js/main.js',
-				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-dimension-field', 'sto-alignment-field' ),
+				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),
@@ -402,6 +407,12 @@ final class Assets {
 			'sto-dimension-field' => array(
 				'src'       => STO_URL . 'assets/admin/js/sto-dimension-field.js',
 				'deps'      => array( 'jquery' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
+			'sto-gallery-field' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-gallery-field.js',
+				'deps'      => array( 'jquery', 'jquery-ui-sortable', 'media-editor' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),
