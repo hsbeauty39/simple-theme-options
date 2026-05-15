@@ -1085,6 +1085,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 						<li class="sto-docs-nav__nest"><a href="#f-gallery">6.10.4 Gallery</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-multi-text">6.10.4a Multi text list</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-radio-lists">6.10.4b Radio lists</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-advanced-repeater">6.10.4c Advanced repeater</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-google-map">6.10.5 Google map</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-alignment">6.10.6 Alignment</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-typo">6.11 Typography</a></li>
@@ -1338,7 +1339,12 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 			<hr class="sep" />
 			<h3 id="f-radio-lists">6.10.4b Radio lists (<code>radio_lists</code>)</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-radio_lists">PHP →</a></p>
-			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'radio_lists'</code> plus <code>id</code>, <code>title</code>, required <code>options</code> (same map as <strong>ButtonGroup</strong>: value =&gt; label string or array with <code>label</code>, optional <code>tooltip</code>, <code>preview_image</code>), optional <code>default</code> as <code>array( array( 'title' =&gt; '…', 'value' =&gt; 'key' ), … )</code> (seeds rows before first save), optional <code>max</code> (int <strong>0</strong> = unlimited, hard cap <strong>50</strong> at save), optional <code>show_row_titles</code> (bool, default true), optional <code>radio_layout</code> (<strong>stack</strong> or <strong>inline</strong>), <code>html_required</code>, conditional <code>required</code>, <code>tooltip</code>. Stored as JSON array of <code>{ title, value }</code> in hidden <code>sto_options[id]</code> (no per-breakpoint map — same carve-out as <code>multi_text</code> in project rules). Boot <code>RadioListsControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_radio_lists_rows( 'option_id' )</code>. Standalone hook <strong>17.55</strong> (after <strong>ButtonGroup</strong> <strong>17.5</strong>, before <strong>Select</strong> <strong>18</strong>). Assets <code>sto-radio-lists-field</code> (depends on <code>jquery-ui-sortable</code>); <code>main.js</code> calls <code>stoInitRadioListsFields</code>. Admin: <strong>Add list</strong>, drag reorder (Sortable <code>cancel: 'input,textarea,select,option'</code> so the grip button works), per-row delete; custom tile radios (not native OS controls).</p>
+			<p>Group / Tabs / Accordion inner item or standalone <code>RadioListsControl::register()</code> (omit <code>group</code> so the row prints on the section at hook <strong>17.55</strong>, before groups at <strong>21</strong>): <code>'type' =&gt; 'radio_lists'</code> plus <code>id</code>, <code>title</code>, required <code>options</code> (same map as <strong>ButtonGroup</strong>: value =&gt; label string or array with <code>label</code>, optional <code>tooltip</code>, <code>preview_image</code>), optional <code>default</code> as <code>array( array( 'title' =&gt; '…', 'value' =&gt; 'key' ), … )</code> (seeds rows before first save; capped to one row when <code>repeatable</code> is false), optional <code>max</code> (int <strong>0</strong> = unlimited, hard cap <strong>50</strong> at save; single-row mode still stores one object), optional <code>show_row_titles</code> (bool, default true), optional <code>repeatable</code> (bool, default true — when false: one row, no Add list / drag / delete), optional <code>radio_layout</code> (<strong>stack</strong> = vertical column of option tiles per list; <strong>inline</strong> = horizontal row with wrap), <code>html_required</code>, conditional <code>required</code>, <code>tooltip</code>. Stored as JSON array of <code>{ title, value }</code> in hidden <code>sto_options[id]</code> (no per-breakpoint map — same carve-out as <code>multi_text</code> in project rules). Boot <code>RadioListsControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_radio_lists_rows( 'option_id' )</code> (for <code>repeatable</code> false, read <code>[0]['value']</code>). Standalone hook <strong>17.55</strong> (after <strong>ButtonGroup</strong> <strong>17.5</strong>, before <strong>Select</strong> <strong>18</strong>). Assets <code>sto-radio-lists-field</code> (depends on <code>jquery-ui-sortable</code> for repeatable lists only; JS skips Sortable when <code>data-sto-radio-lists-repeatable="0"</code>); <code>main.js</code> calls <code>stoInitRadioListsFields</code>. Admin (repeatable): <strong>Add list</strong>, drag reorder (Sortable <code>cancel: 'input,textarea,select,option'</code> so the grip button works), per-row delete; custom tile radios (not native OS controls).</p>
+
+			<hr class="sep" />
+			<h3 id="f-advanced-repeater">6.10.4c Advanced repeater (<code>advanced_repeater</code>)</h3>
+<p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-advanced_repeater">PHP →</a></p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'advanced_repeater'</code> plus <code>id</code>, <code>title</code>, required <code>fields</code> schema. Supported schema nodes: <strong>fieldset</strong> (<code>id</code>, <code>title</code>, nested <code>fields</code>), nested <strong>advanced_repeater</strong> (<code>id</code>, <code>title</code>, <code>fields</code>, optional <code>max</code>, optional <code>default</code> rows), <strong>text</strong>, <strong>number</strong>, <strong>textarea</strong>, <strong>select</strong> (with <code>options</code>), <strong>switcher</strong>. Stored as JSON array of associative objects in <code>sto_options[id]</code>. <strong>No per-breakpoint <code>responsive</code> on inner leaves</strong> in this version (same carve-out family as <code>multi_text</code> / <code>radio_lists</code> for breakpoint maps). Boot <code>AdvancedRepeaterControl::instance()</code> before <code>Group::register()</code> when used inside groups. Hook <strong>19.432</strong> for standalone rows (before <strong>multi_text</strong> <strong>19.435</strong>). Assets <code>sto-advanced-repeater-field</code> (depends on <code>jquery-ui-sortable</code>); <code>main.js</code> calls <code>stoInitAdvancedRepeaterFields</code>. Admin: <strong>Add item</strong>, drag reorder, collapse/expand per item, remove row. Theme: <code>sto_get_advanced_repeater_items( 'option_id' )</code>. <strong>Roadmap:</strong> typography, color, tabs-inside-row, and full <code>required</code> parity for inner cells are follow-up work.</p>
 
 			<hr class="sep" />
 			<h3 id="f-google-map">6.10.5 Location map (<code>google_map</code>)</h3>
@@ -2149,7 +2155,7 @@ Input::register(
 		'id'             => 'density_sets',
 		'title'          => __( 'Density presets', 'simple-theme-options' ),
 		'description'    => __( 'Each row: optional label + one choice.', 'simple-theme-options' ),
-		'radio_layout'   => 'inline',
+		'radio_layout'   => 'stack', // 'inline' = row of tiles; 'stack' = column (default).
 		'default'        => array(
 			array( 'title' => __( 'Header', 'simple-theme-options' ), 'value' => 'compact' ),
 		),
@@ -2159,6 +2165,46 @@ Input::register(
 			'comfortable' => array(
 				'label'   => __( 'Comfortable', 'simple-theme-options' ),
 				'tooltip' => __( 'More padding.', 'simple-theme-options' ),
+			),
+		),
+	)
+);</code></pre>
+				</section>
+				<section class="sto-php-snippet" id="php-advanced_repeater" aria-labelledby="php-h-advanced_repeater">
+					<div class="sto-php-snippet__bar" id="php-h-advanced_repeater">
+						<span class="sto-php-snippet__pill">PHP</span>
+						<span class="sto-php-snippet__label">advanced_repeater</span>
+						<a class="sto-php-snippet__back" href="#f-advanced-repeater">↑ Docs</a>
+					</div>
+					<pre class="sto-php-snippet__pre"><code class="language-php">AdvancedRepeaterControl::register(
+	array(
+		'section_slug' => 'misc',
+		'id'             => 'content_blocks',
+		'title'          => __( 'Blocks', 'simple-theme-options' ),
+		'max'            => 20,
+		'default'        => array(
+			array(
+				'hero' => array( 'heading' => __( 'Welcome', 'simple-theme-options' ) ),
+				'lines' => array( array( 'note' => '' ) ),
+			),
+		),
+		'fields'         => array(
+			array(
+				'type'   => 'fieldset',
+				'id'     => 'hero',
+				'title'  => __( 'Hero', 'simple-theme-options' ),
+				'fields' => array(
+					array( 'type' => 'text', 'id' => 'heading', 'title' => __( 'Heading', 'simple-theme-options' ), 'default' => '' ),
+				),
+			),
+			array(
+				'type'    => 'advanced_repeater',
+				'id'      => 'lines',
+				'title'   => __( 'Lines', 'simple-theme-options' ),
+				'max'     => 10,
+				'fields'  => array(
+					array( 'type' => 'textarea', 'id' => 'note', 'title' => __( 'Note', 'simple-theme-options' ), 'default' => '' ),
+				),
 			),
 		),
 	)
