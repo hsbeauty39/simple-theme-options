@@ -1426,6 +1426,23 @@
     align-items: flex-start;
 }
 
+/*
+ * Metabox: vertical scroll stays usable; scrollbars hidden to reclaim gutter width
+ * (especially beside the main column in the block editor).
+ */
+.sto-theme-settings-metabox-inner .sto-option-panel-nav-layout,
+.sto-theme-settings-metabox-inner .sto-option-panel-sidebar-wrap {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE / legacy Edge */
+}
+
+.sto-theme-settings-metabox-inner .sto-option-panel-nav-layout::-webkit-scrollbar,
+.sto-theme-settings-metabox-inner .sto-option-panel-sidebar-wrap::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
+}
+
 .postbox .sto-theme-settings-metabox-inner .sto-option-panel-sidebar-wrap {
     max-height: none;
     flex: 0 0 min(232px, 34%);
