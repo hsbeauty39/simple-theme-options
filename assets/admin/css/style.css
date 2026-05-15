@@ -26,7 +26,7 @@
     padding: 0;
 }
 
-.spo-option-panel-head {
+.sto-option-panel-head {
     padding: 17px 20px;
     padding-top: 20px;
     border-bottom: 1px solid #ddd;
@@ -36,22 +36,25 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 16px 24px;
+    justify-content: space-between;
+    gap: 12px 20px;
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
 }
 
 .sto-panel-head-with-search .sto-option-panel-title {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    min-width: 0;
     margin: 0;
 }
 
 .sto-quick-search {
     position: relative;
-    flex: 1 1 280px;
+    flex: 0 1 520px;
     max-width: 520px;
-    min-width: 220px;
+    min-width: 200px;
+    margin-left: auto;
 }
 
 /* Flex shell: icon column + input avoids WP admin padding overrides and overlap. */
@@ -478,6 +481,7 @@
         min-width: 0;
         max-width: 100%;
         width: 100%;
+        margin-left: 0;
     }
 
     .sto-option-panel-content-head {
@@ -492,7 +496,7 @@
         word-wrap: break-word;
     }
 
-    .spo-option-panel-head {
+    .sto-option-panel-head {
         padding: 14px 14px;
         padding-top: 16px;
     }
@@ -714,7 +718,8 @@
     display: flex;
     align-items: center;
     gap: 0;
-    padding: 2px 4px;
+    padding: 2px 4px 10px;
+    margin-bottom: 2px;
     min-width: 0;
     box-sizing: border-box;
 }
