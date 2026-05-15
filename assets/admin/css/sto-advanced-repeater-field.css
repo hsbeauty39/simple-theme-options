@@ -1,0 +1,180 @@
+/**
+ * Advanced repeater — Theme Settings (nested JSON in sto_options).
+ */
+
+.sto-field-row-advanced-repeater .sto-adv-rep {
+	max-width: min(920px, 100%);
+}
+
+.sto-adv-rep__value {
+	display: none;
+}
+
+.sto-adv-rep__list {
+	list-style: none;
+	margin: 0 0 12px;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.sto-adv-rep__item {
+	margin: 0;
+	padding: 0;
+	background: var(--sto-field-soft-bg, #fff);
+	border: 1px solid var(--sto-field-soft-border, #dcdcde);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	box-shadow: var(--sto-field-soft-shadow, 0 1px 1px rgba(0, 0, 0, 0.04));
+}
+
+.sto-adv-rep__item--placeholder {
+	min-height: 56px;
+	border-style: dashed;
+	opacity: 0.75;
+}
+
+.sto-adv-rep__head {
+	display: flex;
+	align-items: stretch;
+	gap: 0;
+	border-bottom: 1px solid var(--sto-field-soft-border, #e6e8eb);
+}
+
+.sto-adv-rep__drag,
+.sto-adv-rep__remove {
+	flex: 0 0 40px;
+	width: 40px;
+	min-width: 40px;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: #646970;
+	cursor: grab;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.sto-adv-rep__remove {
+	cursor: pointer;
+	border-left: 1px solid var(--sto-field-soft-border, #e6e8eb);
+}
+
+.sto-adv-rep__drag:hover,
+.sto-adv-rep__remove:hover {
+	color: #2271b1;
+	background: rgba(34, 113, 177, 0.06);
+}
+
+.sto-adv-rep__toggle {
+	flex: 1 1 auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin: 0;
+	padding: 10px 12px;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	text-align: left;
+	font: inherit;
+	color: #1d2327;
+}
+
+.sto-adv-rep__toggle:hover {
+	background: rgba(0, 0, 0, 0.02);
+}
+
+.sto-adv-rep__chev {
+	color: #646970;
+	font-size: 12px;
+}
+
+.sto-adv-rep__body {
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.sto-adv-rep__fieldset {
+	padding: 10px;
+	border: 1px dashed var(--sto-field-soft-border, #dcdcde);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: rgba(0, 0, 0, 0.015);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.sto-adv-rep__fieldset-title {
+	font-weight: 600;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: #646970;
+}
+
+.sto-adv-rep__field .sto-adv-rep__label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: 500;
+}
+
+.sto-adv-rep__input,
+.sto-adv-rep__select {
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-adv-rep__hint {
+	margin: 4px 0 0;
+}
+
+.sto-adv-rep--nested {
+	margin-top: 12px;
+	padding-top: 10px;
+	border-top: 1px solid var(--sto-field-soft-border, #e6e8eb);
+}
+
+.sto-adv-rep__nested-label {
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.sto-adv-rep__item--nested {
+	background: #fafafa;
+}
+
+.sto-adv-rep__field--switcher {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.sto-adv-rep__field--switcher .sto-adv-rep__label {
+	margin-bottom: 0;
+}
+
+/* Checkbox-backed switcher: same pill chrome as `sto-switcher.css`; native input is visually hidden. */
+.sto-adv-rep__switcher-input {
+	border: 0;
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	width: 1px;
+	word-wrap: normal !important;
+}
+
+.sto-adv-rep__add.button {
+	margin-top: 0;
+}

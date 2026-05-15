@@ -1,5 +1,11 @@
 /**
  * Advanced repeater: nested lists, hidden JSON (sto_options), sortable, collapse.
+ *
+ * UI events are delegated once per `.sto-field-row-advanced-repeater` so every nesting level
+ * shares one handler path (avoids per-wrap bind gaps and duplicate toggle handling).
+ * After a row body is expanded or a new item is appended, calls `window.stoInitSelect2ForScope`
+ * (from main.js) so selects inside formerly hidden bodies get Select2 — `initStoSelect2` skips
+ * `:hidden` controls on first paint when `default_collapsed` is true.
  */
 (function ($) {
     'use strict';
@@ -48,10 +54,25 @@
         return o;
     }
 
+    /**
+     * Body element for one repeater row (direct child of li[data-sto-adv-rep-item]).
+     *
+     * @param {JQuery} $li
+     * @return {JQuery}
+     */
+    function rowBody($li) {
+        var $b = $li.children('[data-sto-adv-rep-body]').first();
+        if ($b.length) {
+            return $b;
+        }
+        var $head = $li.children('.sto-adv-rep__head').first();
+        return $head.nextAll('[data-sto-adv-rep-body]').first();
+    }
+
     function collectRepItems($nest) {
         var out = [];
         $nest.find('> ul[data-sto-adv-rep-list] > li[data-sto-adv-rep-item]').each(function () {
-            var $b = $(this).find('[data-sto-adv-rep-body]').first();
+            var $b = rowBody($(this));
             out.push(collectItemBody($b));
         });
         return out;
@@ -92,7 +113,7 @@
         var $list = $wrap.find('> ul[data-sto-adv-rep-list]').first();
         var rows = [];
         $list.children('li[data-sto-adv-rep-item]').each(function () {
-            var $b = $(this).find('[data-sto-adv-rep-body]').first();
+            var $b = rowBody($(this));
             rows.push(collectItemBody($b));
         });
         return rows;
@@ -115,7 +136,9 @@
     function clearLeaf($leaf) {
         var k = $leaf.attr('data-sto-adv-rep-kind') || '';
         if (k === 'switcher') {
-            $leaf.find('[data-sto-adv-rep-switcher]').prop('checked', false);
+            var $cb = $leaf.find('[data-sto-adv-rep-switcher]');
+            $cb.prop('checked', false);
+            $cb.closest('.sto-switcher').removeClass('sto-switcher--on');
         } else if (k === 'select') {
             $leaf.find('[data-sto-adv-rep-select]').prop('selectedIndex', 0);
         } else {
@@ -166,9 +189,33 @@
             }
             $l.removeData('stoAdvRepSortable');
         });
-        $root.find('.sto-adv-rep').each(function () {
-            $(this).removeData('stoAdvRepBound');
+    }
+
+    /**
+     * Remove Select2 from a cloned subtree so new repeater rows start from native selects.
+     */
+    function stripSelect2FromRepSubtree($root) {
+        if (typeof $.fn.select2 !== 'function') {
+            return;
+        }
+        $root.find('select.sto-input-select').each(function () {
+            var $s = $(this);
+            if ($s.data('select2')) {
+                try {
+                    $s.select2('destroy');
+                } catch (err) {
+                    /* ignore */
+                }
+            }
         });
+    }
+
+    function refreshSelect2ForFieldRow($fromEl) {
+        var $fr = $fromEl.closest('.sto-field-row-advanced-repeater');
+        if (!$fr.length || typeof window.stoInitSelect2ForScope !== 'function') {
+            return;
+        }
+        window.stoInitSelect2ForScope($fr);
     }
 
     function maxRows($wrap) {
@@ -224,34 +271,67 @@
         });
     }
 
-    function bindOne($wrap) {
-        if ($wrap.data('stoAdvRepBound')) {
-            return;
+    /**
+     * Resolve the body block for the row whose toggle was clicked (all nesting depths).
+     *
+     * @param {JQuery} $btn
+     * @return {JQuery}
+     */
+    function toggleRowBody($btn) {
+        var $head = $btn.closest('.sto-adv-rep__head');
+        var $body = $head.next('[data-sto-adv-rep-body]');
+        if ($body.length && $body.is('[data-sto-adv-rep-body]')) {
+            return $body;
         }
-        $wrap.data('stoAdvRepBound', 1);
+        var $li = $btn.closest('li[data-sto-adv-rep-item]');
+        return $li.length ? rowBody($li) : $();
+    }
 
-        bindSortable($wrap);
+    function bindSortablesUnderFieldRow($fieldRow) {
+        $fieldRow.find('.sto-adv-rep').each(function () {
+            bindSortable($(this));
+        });
+    }
 
-        $wrap.on('click', '[data-sto-adv-rep-toggle]', function (e) {
+    /**
+     * One delegated listener tree per advanced-repeater field row (covers root + unlimited nesting).
+     *
+     * @param {JQuery} $fieldRow `.sto-field-row-advanced-repeater`
+     */
+    function bindDelegatedToFieldRow($fieldRow) {
+        $fieldRow.on('click.stoAdvRep', '[data-sto-adv-rep-toggle]', function (e) {
             e.preventDefault();
             e.stopPropagation();
             var $btn = $(this);
-            var $li = $btn.closest('li[data-sto-adv-rep-item]');
-            var $body = $li.find('[data-sto-adv-rep-body]').first();
-            var open = $btn.attr('aria-expanded') !== 'false';
+            var $body = toggleRowBody($btn);
+            if (!$body.length) {
+                return;
+            }
+            var isExpanded = String($btn.attr('aria-expanded') || '').toLowerCase() === 'true';
             $body.stop(true, true);
-            if (open) {
+            if (isExpanded) {
                 $body.slideUp(120);
                 $btn.attr('aria-expanded', 'false');
                 $btn.find('.sto-adv-rep__chev').removeClass('fa-chevron-up').addClass('fa-chevron-down');
             } else {
-                $body.slideDown(120);
+                $body.slideDown(120, function () {
+                    $body.css({
+                        display: '',
+                        height: '',
+                        overflow: '',
+                        paddingTop: '',
+                        paddingBottom: '',
+                        marginTop: '',
+                        marginBottom: ''
+                    });
+                    refreshSelect2ForFieldRow($btn);
+                });
                 $btn.attr('aria-expanded', 'true');
                 $btn.find('.sto-adv-rep__chev').removeClass('fa-chevron-down').addClass('fa-chevron-up');
             }
         });
 
-        $wrap.on('click', '[data-sto-adv-rep-add]', function (e) {
+        $fieldRow.on('click.stoAdvRep', '[data-sto-adv-rep-add]', function (e) {
             e.preventDefault();
             e.stopPropagation();
             var $w = $(this).closest('.sto-adv-rep');
@@ -263,18 +343,19 @@
             }
             var $proto = $list.children('li[data-sto-adv-rep-item]').first().clone(true, true);
             stripRepData($proto);
+            stripSelect2FromRepSubtree($proto);
             clearItem($proto);
             $list.append($proto);
             renumberItems($list);
             bindSortable($w);
-            $proto.find('.sto-adv-rep--nested').each(function () {
+            $proto.find('.sto-adv-rep').each(function () {
                 bindSortable($(this));
-                bindOne($(this));
             });
             syncFromAny($w);
+            refreshSelect2ForFieldRow($w);
         });
 
-        $wrap.on('click', '[data-sto-adv-rep-remove]', function (e) {
+        $fieldRow.on('click.stoAdvRep', '[data-sto-adv-rep-remove]', function (e) {
             e.preventDefault();
             e.stopPropagation();
             var $li = $(this).closest('li[data-sto-adv-rep-item]');
@@ -289,27 +370,31 @@
             syncFromAny($list);
         });
 
-        $wrap.on('input change', '[data-sto-adv-rep-input], [data-sto-adv-rep-select], [data-sto-adv-rep-switcher]', function () {
-            syncFromAny($wrap);
-            if (typeof window.stoApplyDependentFieldVisibility === 'function') {
-                window.stoApplyDependentFieldVisibility();
+        $fieldRow.on(
+            'input.stoAdvRep change.stoAdvRep',
+            '[data-sto-adv-rep-input], [data-sto-adv-rep-select], [data-sto-adv-rep-switcher]',
+            function () {
+                var $t = $(this);
+                if ($t.is('[data-sto-adv-rep-switcher]')) {
+                    $t.closest('.sto-switcher').toggleClass('sto-switcher--on', !!$t.prop('checked'));
+                }
+                syncFromAny($(this));
+                if (typeof window.stoApplyDependentFieldVisibility === 'function') {
+                    window.stoApplyDependentFieldVisibility();
+                }
             }
-        });
-
-        $wrap.find('.sto-adv-rep--nested').each(function () {
-            bindSortable($(this));
-            bindOne($(this));
-        });
+        );
     }
 
     window.stoInitAdvancedRepeaterFields = function ($scope) {
         var $ctx = $scope && $scope.length ? $scope : $(document);
-        $ctx.find('.sto-field-row-advanced-repeater .sto-adv-rep').each(function () {
-            var $w = $(this);
-            if ($w.attr('data-sto-adv-rep-nested') === '1') {
-                return;
+        $ctx.find('.sto-field-row-advanced-repeater').each(function () {
+            var $fieldRow = $(this);
+            if (!$fieldRow.data('stoAdvRepUiBound')) {
+                $fieldRow.data('stoAdvRepUiBound', 1);
+                bindDelegatedToFieldRow($fieldRow);
             }
-            bindOne($w);
+            bindSortablesUnderFieldRow($fieldRow);
         });
     };
 })(jQuery);

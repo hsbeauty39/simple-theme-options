@@ -242,6 +242,9 @@
                 });
                 var $ap = $row.closest('.sto-option-panel-section.sto-is-active');
                 if ($ap.length) {
+                    if (typeof window.stoInitAdvancedRepeaterFields === 'function') {
+                        window.stoInitAdvancedRepeaterFields($ap);
+                    }
                     initStoSelect2($ap);
                     initStoImageSelectRadios($ap);
                     initStoButtonGroups($ap);
@@ -669,6 +672,12 @@
         });
     }
 
+    /**
+     * Re-run Select2 inside a DOM subtree (e.g. advanced repeater field row) after rows become visible.
+     * Used by `sto-advanced-repeater-field.js` when collapsed bodies open or new items are appended.
+     */
+    window.stoInitSelect2ForScope = initStoSelect2;
+
     function initStoImageSelectRadios($panel) {
         var $scope = ($panel && $panel.length) ? $panel : $('.sto-option-panel-section.sto-is-active');
         if (!$scope.length) {
@@ -735,6 +744,10 @@
         window.setTimeout(function() {
             var $activePanel = $('.sto-option-panel-section.sto-is-active');
             initStoResponsiveTabs($activePanel);
+            /* Advanced repeater: bind delegated UI + sortables before Select2 so expanded rows enhance on first paint. */
+            if (typeof window.stoInitAdvancedRepeaterFields === 'function') {
+                window.stoInitAdvancedRepeaterFields($activePanel);
+            }
             initStoSelect2($activePanel);
             initStoImageSelectRadios($activePanel);
             initStoButtonGroups($activePanel);
