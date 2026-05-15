@@ -15,14 +15,21 @@ final class Menu {
 
 	private function register_menu() {
 		$options_menu = OptionsMenu::instance();
-		// Set 'demo' => false to forbid sample sections and hide the Advance Demo mode switch.
-		// When true (or omitted), samples stay off until the Advance toggle enables sto_theme_settings_ui_demo_enabled.
+		// Set 'demo' => false to forbid sample sections. Use 'packaged_demo' => true only for this plugin sample menu
+		// (no Advance; top-level menu hidden when demo is off — use Tools → Simple Backup to toggle demo.)
+		// Theme code should call Options\Menu::register() without packaged_demo to get Advance + client export keys.
 		$options_menu->register(
 			__( 'Theme Settings', 'simple-theme-options' ),
 			'theme-settings',
 			'dashicons-admin-customizer',
 			array(
-				'demo' => true,
+				'demo'           => true,
+				'packaged_demo'  => true,
+				'metabox'        => array(
+					'post_types' => array( 'post', 'page' ),
+					'context'    => 'normal',
+					'priority'   => 'low',
+				),
 			)
 		);
 	}

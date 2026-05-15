@@ -3,42 +3,212 @@ namespace SimpleThemeOptions\Admin\Options\ImportExport;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
+use SimpleThemeOptions\Admin\ThemeSettingsMetabox;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * **Advance** section: export / import the full **`sto_options`** map (JSON file or clipboard),
- * optional **Demo mode** UI toggle, and a log of keys from the last import.
- * No option rows are registered for this leaf — updates run via **`admin-ajax.php`** only.
+ * **Advance** section: export / import **`sto_options`**, optional **Demo mode** toggle, **post editor Theme Settings metabox** preference, and per-file import history.
+ * The **Advance** leaf is auto-registered on **`init`** (priority 100) for every **non‑packaged** top-level menu root (hidden from side navigation by default; use **`sto_theme_settings_advance_section_args`** to show it in the menu). The same tools are available under **Tools → Simple Backup** (`tools.php?page=sto-simple-backup`) with **export scope** (client menus only; packaged demo roots omitted) and packaged-demo toggle support.
+ * **AJAX export** ensures **`sto_include_option_fields`** runs when needed so the field registry is populated like a Theme Settings screen load.
+ * **Import** merges keys from the JSON file into **`sto_options`** by default; optional full replace removes keys not present in the file.
  */
 final class ThemeSettingsImportExport {
 	use SingletonTrait;
 
 	public const SECTION_SLUG = 'advance';
 
+	/** `tools.php?page=` slug for **Tools → Simple Backup** (export scope, import, demo). */
+	public const SETTINGS_ADVANCE_PAGE = 'sto-simple-backup';
+
+	/** Prior **`tools.php?page=`** slug; {@see Menu::redirect_legacy_tools_backup_page_slug()} redirects here. */
+	public const LEGACY_TOOLS_BACKUP_PAGE_SLUG = 'sto-theme-options-backup';
+
+	/**
+	 * Whether a section slug is the Advance import/export leaf (`advance` or `advance-{page}`).
+	 */
+	public static function is_advance_leaf_slug( $slug ): bool {
+		$slug = sanitize_key( (string) $slug );
+		if ( $slug === self::SECTION_SLUG ) {
+			return true;
+		}
+		if ( strpos( $slug, 'advance-' ) !== 0 ) {
+			return false;
+		}
+		$rest = substr( $slug, strlen( 'advance-' ) );
+
+		return $rest !== '' && preg_match( '/^[a-z0-9-]+$/', $rest ) === 1;
+	}
+
+	/**
+	 * Advance leaf slug for a given top-level `admin.php?page=` (after sections are registered).
+	 */
+	public static function get_advance_section_slug_for_menu_page( OptionsMenu $menu, $menu_page_slug ): string {
+		$menu_page_slug = sanitize_key( (string) $menu_page_slug );
+		if ( $menu_page_slug === '' ) {
+			return self::SECTION_SLUG;
+		}
+		foreach ( $menu->get_sections() as $sec ) {
+			if ( ! isset( $sec['slug'], $sec['sto_menu_page'] ) ) {
+				continue;
+			}
+			if ( sanitize_key( (string) $sec['sto_menu_page'] ) !== $menu_page_slug ) {
+				continue;
+			}
+			$cand = sanitize_key( (string) $sec['slug'] );
+			if ( self::is_advance_leaf_slug( $cand ) ) {
+				return $cand;
+			}
+		}
+		$primary = $menu->get_parent_menu_slug();
+		if ( $menu_page_slug === $primary && ! $menu->is_menu_root_packaged_demo( $primary ) ) {
+			return self::SECTION_SLUG;
+		}
+
+		return 'advance-' . $menu_page_slug;
+	}
+
+	/**
+	 * @param string $menu_page_slug Sanitized `admin.php?page=` slug.
+	 */
+	private static function advance_section_exists_for_menu_page( OptionsMenu $menu, $menu_page_slug ): bool {
+		$menu_page_slug = sanitize_key( (string) $menu_page_slug );
+		foreach ( $menu->get_sections() as $sec ) {
+			if ( ! isset( $sec['slug'], $sec['sto_menu_page'] ) ) {
+				continue;
+			}
+			if ( sanitize_key( (string) $sec['sto_menu_page'] ) !== $menu_page_slug ) {
+				continue;
+			}
+			if ( self::is_advance_leaf_slug( sanitize_key( (string) $sec['slug'] ) ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public const EXPORT_FORMAT_VERSION = 1;
 
-	/** Stored boolean (WP coerces); when true with {@see OptionsMenu::is_demo_capability_allowed()}, sample sections load. */
+	/** Stored boolean; with {@see OptionsMenu::is_demo_capability_allowed()}, gates sample sections. */
 	public const OPTION_UI_DEMO_ENABLED = 'sto_theme_settings_ui_demo_enabled';
 
-	/** @var string Last successful import: top-level `sto_options` keys + timestamp. */
+	/**
+	 * Stored boolean: show post editor Theme Settings metaboxes when at least one menu root registered them.
+	 *
+	 * @see OptionsMenu::should_show_theme_settings_metaboxes()
+	 */
+	public const OPTION_UI_METABOX_ENABLED = 'sto_theme_settings_ui_metabox_enabled';
+
+	/** List of imports: each row `id`, `filename`, `keys`, `imported_at`. */
+	public const OPTION_IMPORT_HISTORY = 'sto_theme_settings_import_history';
+
+	/** @deprecated Legacy single blob — migrated into {@see OPTION_IMPORT_HISTORY} when read. */
 	public const OPTION_LAST_IMPORT = 'sto_theme_settings_last_import';
 
-	public const MAX_IMPORT_TABLE_ROWS = 250;
+	public const MAX_IMPORT_HISTORY = 40;
+
+	public const MAX_IMPORT_HISTORY_UI = 20;
 
 	/** @var int Raw JSON body max length (bytes). */
 	private const MAX_IMPORT_BYTES = 5242880;
 
 	protected function init() {
+		add_action( 'init', array( $this, 'maybe_register_advance_section' ), 100 );
+		add_action( 'admin_menu', array( $this, 'register_wp_settings_backup_page' ), 25 );
 		add_action( 'sto_render_section_content', array( $this, 'render_section_content' ), 5, 3 );
 		add_action( 'wp_ajax_sto_theme_settings_export', array( $this, 'ajax_export' ) );
 		add_action( 'wp_ajax_sto_theme_settings_import', array( $this, 'ajax_import' ) );
 		add_action( 'wp_ajax_sto_theme_settings_set_ui_demo', array( $this, 'ajax_set_ui_demo' ) );
-		add_action( 'wp_ajax_sto_theme_settings_import_key_remove', array( $this, 'ajax_import_key_remove' ) );
-		add_action( 'wp_ajax_sto_theme_settings_import_keys_remove_all', array( $this, 'ajax_import_keys_remove_all' ) );
-		add_action( 'wp_ajax_sto_theme_settings_import_subset_export', array( $this, 'ajax_import_subset_export' ) );
-		add_action( 'wp_ajax_sto_theme_settings_import_log_dismiss', array( $this, 'ajax_import_log_dismiss' ) );
+		add_action( 'wp_ajax_sto_theme_settings_set_ui_metabox', array( $this, 'ajax_set_ui_metabox' ) );
+		add_action( 'wp_ajax_sto_theme_settings_import_entry_remove', array( $this, 'ajax_import_entry_remove' ) );
+		add_action( 'wp_ajax_sto_theme_settings_import_entry_export', array( $this, 'ajax_import_entry_export' ) );
+		add_action( 'wp_ajax_sto_theme_settings_import_entries_remove', array( $this, 'ajax_import_entries_remove' ) );
+	}
+
+	/**
+	 * Ensures every **client** top-level menu root has an **Advance** leaf. Packaged demo roots are skipped per-slug (see {@see OptionsMenu::is_menu_root_packaged_demo()}). Idempotent per root.
+	 */
+	public static function ensure_advance_registered(): void {
+		$menu = OptionsMenu::instance();
+		if ( $menu->get_parent_menu_slug() === '' ) {
+			return;
+		}
+
+		foreach ( $menu->get_registered_menu_slugs() as $page_slug ) {
+			if ( $menu->is_menu_root_packaged_demo( $page_slug ) ) {
+				continue;
+			}
+			if ( self::advance_section_exists_for_menu_page( $menu, $page_slug ) ) {
+				continue;
+			}
+
+			$primary  = $menu->get_parent_menu_slug();
+			$adv_slug = ( $page_slug === $primary && ! $menu->is_menu_root_packaged_demo( $primary ) )
+				? self::SECTION_SLUG
+				: ( 'advance-' . $page_slug );
+
+			$args = apply_filters(
+				'sto_theme_settings_advance_section_args',
+				array(
+					'nav_locked'   => true,
+					'show_in_menu' => false,
+				),
+				$page_slug
+			);
+			if ( ! is_array( $args ) ) {
+				$args = array();
+			}
+			$merged = array_merge(
+				array(
+					'nav_locked'   => true,
+					'show_in_menu' => false,
+				),
+				$args
+			);
+			$merged['sto_menu_page'] = $page_slug;
+			$menu->add_section(
+				__( 'Advance', 'simple-theme-options' ),
+				$adv_slug,
+				'fa-light fa-file-arrow-up',
+				$merged
+			);
+		}
+	}
+
+	public function maybe_register_advance_section(): void {
+		if ( ! is_admin() ) {
+			return;
+		}
+		self::ensure_advance_registered();
+	}
+
+	/**
+	 * **Tools → Simple Backup** — import, export (scoped), demo toggle without opening Theme Settings.
+	 */
+	public function register_wp_settings_backup_page(): void {
+		if ( ! is_admin() ) {
+			return;
+		}
+		add_management_page(
+			__( 'Simple Backup', 'simple-theme-options' ),
+			__( 'Simple Backup', 'simple-theme-options' ),
+			'manage_options',
+			self::SETTINGS_ADVANCE_PAGE,
+			array( $this, 'render_wp_settings_backup_page' )
+		);
+	}
+
+	public function render_wp_settings_backup_page(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		echo '<div class="wrap sto-simple-backup-wrap">';
+		echo '<h1>' . esc_html__( 'Simple Backup', 'simple-theme-options' ) . '</h1>';
+		echo '<div class="sto-option-panel-wrapper">';
+		$this->render_advance_panel( 'settings' );
+		echo '</div></div>';
 	}
 
 	/**
@@ -48,56 +218,120 @@ final class ThemeSettingsImportExport {
 	 */
 	public function render_section_content( $section_slug, $section, $menu = null ) {
 		unset( $menu );
-		if ( sanitize_key( (string) $section_slug ) !== self::SECTION_SLUG ) {
+		if ( ! self::is_advance_leaf_slug( sanitize_key( (string) $section_slug ) ) ) {
 			return;
 		}
+		$this->render_advance_panel( 'section' );
+	}
 
-		$intro_id     = 'sto-advance-intro';
+	/**
+	 * Renders the Advance import/export UI (in-panel **section** or **Settings** screen).
+	 *
+	 * @param 'section'|'settings' $context
+	 */
+	public function render_advance_panel( string $context = 'section' ): void {
+		if ( 'section' !== $context && 'settings' !== $context ) {
+			$context = 'section';
+		}
+
+		$idsuf        = 'settings' === $context ? '-settings' : '';
+		$intro_id     = 'sto-advance-intro' . $idsuf;
 		$options_menu = OptionsMenu::instance();
 		$demo_cap     = $options_menu->is_demo_capability_allowed();
-		$demo_on = wp_validate_boolean( get_option( self::OPTION_UI_DEMO_ENABLED, false ) );
-		$import_log   = $this->get_last_import_log();
-		$log_keys     = isset( $import_log['keys'] ) && is_array( $import_log['keys'] ) ? $import_log['keys'] : array();
-		$log_keys     = array_values(
-			array_filter(
-				array_map(
-					static function ( $k ) {
-						return is_string( $k ) ? sanitize_key( $k ) : '';
-					},
-					$log_keys
-				)
-			)
-		);
-		$imported_at = isset( $import_log['imported_at'] ) ? (string) $import_log['imported_at'] : '';
-		$total_keys  = count( $log_keys );
-		$table_keys  = $log_keys;
-		$truncated   = false;
-		if ( $total_keys > self::MAX_IMPORT_TABLE_ROWS ) {
-			$table_keys = array_slice( $table_keys, 0, self::MAX_IMPORT_TABLE_ROWS );
-			$truncated  = true;
-		}
+		$demo_on      = wp_validate_boolean( get_option( self::OPTION_UI_DEMO_ENABLED, false ) );
+		$metabox_roots = ThemeSettingsMetabox::instance()->get_roots();
+		$metabox_on    = wp_validate_boolean( get_option( self::OPTION_UI_METABOX_ENABLED, true ) );
+		$metabox_prefs_visible = $metabox_roots !== array()
+			&& ( ! $options_menu->is_packaged_demo_menu() || $options_menu->is_demo_mode_enabled() );
+		$history      = $this->get_import_history();
+		$history_ui   = array_slice( array_reverse( $history ), 0, self::MAX_IMPORT_HISTORY_UI );
+		$total_rows   = count( $history );
 		?>
-		<div class="sto-advance-import-export" data-sto-advance-import-export="1">
+		<div class="sto-advance-import-export" data-sto-advance-import-export="1" data-sto-advance-import-export-from="<?php echo esc_attr( $context ); ?>">
+			<input type="hidden" value="" data-sto-advance-source-name autocomplete="off" />
+			<?php if ( 'settings' === $context ) : ?>
+			<?php
+			$scope_slugs = array();
+			foreach ( $options_menu->get_registered_menu_slugs() as $mslug ) {
+				if ( $options_menu->is_menu_root_packaged_demo( $mslug ) ) {
+					continue;
+				}
+				$scope_slugs[] = $mslug;
+			}
+			/**
+			 * Top-level `admin.php?page=` slugs listed as Export scope checkboxes (Tools → Simple Backup).
+			 * Default excludes {@see OptionsMenu::is_menu_root_packaged_demo()} roots.
+			 *
+			 * @param array<int, string> $scope_slugs
+			 * @param OptionsMenu        $options_menu
+			 */
+			$scope_slugs = apply_filters( 'sto_theme_settings_backup_export_scope_menu_slugs', $scope_slugs, $options_menu );
+			if ( ! is_array( $scope_slugs ) ) {
+				$scope_slugs = array();
+			}
+			?>
+			<?php if ( $scope_slugs !== array() ) : ?>
+			<div class="sto-advance-card sto-advance-card--export-scope">
+				<?php
+				FieldTitle::render_heading(
+					__( 'Export scope', 'simple-theme-options' ),
+					'default',
+					null,
+					'sto-advance-export-scope',
+					false,
+					'',
+					''
+				);
+				?>
+				<p class="sto-advance-card__desc">
+					<?php esc_html_e( 'Choose which Theme Settings screens to include in the backup (you can select several). Packaged demo menus are not listed. Unchecked screens are omitted from the JSON.', 'simple-theme-options' ); ?>
+				</p>
+				<fieldset class="sto-advance-export-menus">
+					<?php foreach ( $scope_slugs as $mslug ) : ?>
+						<?php
+						$mslug = sanitize_key( (string) $mslug );
+						if ( $mslug === '' ) {
+							continue;
+						}
+						?>
+						<label class="sto-advance-export-menu-label">
+							<input type="checkbox" class="sto-advance-export-menu-cb" value="<?php echo esc_attr( $mslug ); ?>" data-sto-export-menu-slug checked />
+							<span class="sto-advance-export-menu-label__text"><?php echo esc_html( $options_menu->get_registered_menu_page_title( $mslug ) ); ?></span>
+							<code class="sto-advance-export-menu-label__slug"><?php echo esc_html( $mslug ); ?></code>
+						</label>
+					<?php endforeach; ?>
+				</fieldset>
+			</div>
+			<?php endif; ?>
+			<?php endif; ?>
+
 			<p class="sto-advance-import-export__intro" id="<?php echo esc_attr( $intro_id ); ?>">
-				<?php esc_html_e( 'Download or copy a backup of all Theme Settings, or restore a backup from a file or the clipboard. Import replaces the entire saved options map for this site.', 'simple-theme-options' ); ?>
+				<?php
+				if ( 'settings' === $context ) {
+					esc_html_e( 'Back up or restore Theme Settings from here without opening each options screen. Import merges into your saved options by default; use “Replace entire option store” on import only when you want the file to be the whole map.', 'simple-theme-options' );
+				} else {
+					esc_html_e( 'Download or copy a backup of all Theme Settings, or restore a backup from a file or the clipboard. Import merges into your saved options by default; use “Replace entire option store” only when you want the file to be the whole map.', 'simple-theme-options' );
+				}
+				?>
 			</p>
 
 			<?php if ( $demo_cap ) : ?>
+				<?php if ( 'settings' === $context && $options_menu->is_packaged_demo_menu() ) : ?>
 			<div class="sto-advance-card sto-advance-card--demo">
 				<?php
 				FieldTitle::render_heading(
 					__( 'Demo mode', 'simple-theme-options' ),
 					'default',
 					null,
-					'sto-advance-demo',
+					'sto-advance-demo-settings',
 					false,
 					'',
 					''
 				);
 				?>
-				<p class="sto-advance-card__desc"><?php esc_html_e( 'Show or hide the packaged sample sections (Field samples, Colors & surfaces, Accordion). Off by default; the page reloads when you change this.', 'simple-theme-options' ); ?></p>
+				<p class="sto-advance-card__desc"><?php esc_html_e( 'For packaged sample sites, use this toggle to show or hide the built-in Theme Settings demo sections.', 'simple-theme-options' ); ?></p>
 				<div class="sto-advance-demo-toggle" data-sto-advance-demo-wrap>
-					<input type="hidden" id="sto-advance-demo-input" data-sto-advance-demo-input value="<?php echo $demo_on ? '1' : '0'; ?>" />
+					<input type="hidden" id="sto-advance-demo-input<?php echo esc_attr( $idsuf ); ?>" data-sto-advance-demo-input value="<?php echo $demo_on ? '1' : '0'; ?>" />
 					<button
 						type="button"
 						class="sto-switcher<?php echo $demo_on ? ' sto-switcher--on' : ''; ?>"
@@ -114,17 +348,83 @@ final class ThemeSettingsImportExport {
 					<span class="sto-advance-demo-toggle__hint" data-sto-advance-demo-status role="status" aria-live="polite"></span>
 				</div>
 			</div>
-			<?php else : ?>
+				<?php elseif ( ! $options_menu->is_packaged_demo_menu() ) : ?>
+			<div class="sto-advance-card sto-advance-card--demo">
+				<?php
+				FieldTitle::render_heading(
+					__( 'Demo mode', 'simple-theme-options' ),
+					'default',
+					null,
+					'sto-advance-demo',
+					false,
+					'',
+					''
+				);
+				?>
+				<div class="sto-advance-demo-toggle" data-sto-advance-demo-wrap>
+					<input type="hidden" id="sto-advance-demo-input<?php echo esc_attr( $idsuf ); ?>" data-sto-advance-demo-input value="<?php echo $demo_on ? '1' : '0'; ?>" />
+					<button
+						type="button"
+						class="sto-switcher<?php echo $demo_on ? ' sto-switcher--on' : ''; ?>"
+						data-sto-advance-demo-switch
+						aria-pressed="<?php echo $demo_on ? 'true' : 'false'; ?>"
+						aria-label="<?php esc_attr_e( 'Toggle demo mode for sample Theme Settings sections', 'simple-theme-options' ); ?>"
+					>
+						<span class="sto-switcher__track" aria-hidden="true">
+							<span class="sto-switcher__knob"></span>
+							<span class="sto-switcher__label sto-switcher__label--on"><?php esc_html_e( 'ON', 'simple-theme-options' ); ?></span>
+							<span class="sto-switcher__label sto-switcher__label--off"><?php esc_html_e( 'OFF', 'simple-theme-options' ); ?></span>
+						</span>
+					</button>
+					<span class="sto-advance-demo-toggle__hint" data-sto-advance-demo-status role="status" aria-live="polite"></span>
+				</div>
+			</div>
+				<?php else : ?>
 			<div class="sto-advance-card sto-advance-card--muted">
-				<p class="sto-advance-card__desc"><?php esc_html_e( 'Demo samples are turned off for this menu registration (code passed demo => false).', 'simple-theme-options' ); ?></p>
+				<p class="sto-advance-card__desc"><?php esc_html_e( 'Demo samples are packaged for this site. Use Tools → Simple Backup to turn demo mode on or off.', 'simple-theme-options' ); ?></p>
+			</div>
+				<?php endif; ?>
+			<?php endif; ?>
+
+			<?php if ( $metabox_prefs_visible ) : ?>
+			<div class="sto-advance-card sto-advance-card--metabox">
+				<?php
+				FieldTitle::render_heading(
+					__( 'Post editor Theme Settings', 'simple-theme-options' ),
+					'default',
+					null,
+					'sto-advance-metabox',
+					false,
+					'',
+					''
+				);
+				?>
+				<p class="sto-advance-card__desc"><?php esc_html_e( 'When enabled, the full Theme Settings panel appears as a meta box on the post types your theme registered. Values are stored per post (over global defaults for those keys). Use Save options inside the box.', 'simple-theme-options' ); ?></p>
+				<div class="sto-advance-demo-toggle" data-sto-advance-metabox-wrap>
+					<input type="hidden" id="sto-advance-metabox-input<?php echo esc_attr( $idsuf ); ?>" data-sto-advance-metabox-input value="<?php echo $metabox_on ? '1' : '0'; ?>" />
+					<button
+						type="button"
+						class="sto-switcher<?php echo $metabox_on ? ' sto-switcher--on' : ''; ?>"
+						data-sto-advance-metabox-switch
+						aria-pressed="<?php echo $metabox_on ? 'true' : 'false'; ?>"
+						aria-label="<?php esc_attr_e( 'Toggle Theme Settings meta box on post and page editors', 'simple-theme-options' ); ?>"
+					>
+						<span class="sto-switcher__track" aria-hidden="true">
+							<span class="sto-switcher__knob"></span>
+							<span class="sto-switcher__label sto-switcher__label--on"><?php esc_html_e( 'ON', 'simple-theme-options' ); ?></span>
+							<span class="sto-switcher__label sto-switcher__label--off"><?php esc_html_e( 'OFF', 'simple-theme-options' ); ?></span>
+						</span>
+					</button>
+					<span class="sto-advance-demo-toggle__hint" data-sto-advance-metabox-status role="status" aria-live="polite"></span>
+				</div>
 			</div>
 			<?php endif; ?>
 
-			<?php if ( $total_keys > 0 ) : ?>
+			<?php if ( $total_rows > 0 ) : ?>
 			<div class="sto-advance-card sto-advance-card--import-log" data-sto-advance-import-log="1">
 				<?php
 				FieldTitle::render_heading(
-					__( 'Last import', 'simple-theme-options' ),
+					__( 'Imports', 'simple-theme-options' ),
 					'default',
 					null,
 					'sto-advance-import-log',
@@ -133,69 +433,64 @@ final class ThemeSettingsImportExport {
 					''
 				);
 				?>
-				<p class="sto-advance-card__desc">
-					<?php
-					if ( $imported_at !== '' ) {
-						/* translators: %1$d: number of option keys, %2$s: ISO datetime */
-						echo esc_html( sprintf( __( '%1$d option keys were applied (%2$s). You can remove keys from the database or download a subset as JSON.', 'simple-theme-options' ), $total_keys, $imported_at ) );
-					} else {
-						echo esc_html( sprintf( /* translators: %d: number of keys */ __( '%d option keys were applied. You can remove keys from the database or download a subset as JSON.', 'simple-theme-options' ), $total_keys ) );
-					}
-					?>
-				</p>
-				<?php if ( $truncated ) : ?>
+				<?php if ( $total_rows > self::MAX_IMPORT_HISTORY_UI ) : ?>
 					<p class="sto-advance-import-log__note">
 						<?php
 						echo esc_html(
 							sprintf(
-								/* translators: %1$d: shown rows, %2$d: total keys */
-								__( 'Showing the first %1$d of %2$d keys.', 'simple-theme-options' ),
-								self::MAX_IMPORT_TABLE_ROWS,
-								$total_keys
+								/* translators: %1$d: shown rows, %2$d: total imports */
+								__( 'Showing the %1$d most recent imports (%2$d total).', 'simple-theme-options' ),
+								self::MAX_IMPORT_HISTORY_UI,
+								$total_rows
 							)
 						);
 						?>
 					</p>
 				<?php endif; ?>
+				<p class="sto-advance-import-log__bulk">
+					<button type="button" class="button sto-advance-import-bulk-remove" data-sto-advance-import-bulk-remove disabled>
+						<?php esc_html_e( 'Delete selected', 'simple-theme-options' ); ?>
+					</button>
+				</p>
 				<div class="sto-advance-table-wrap">
 					<table class="sto-advance-table widefat striped">
 						<thead>
 							<tr>
-								<th scope="col"><?php esc_html_e( 'Option key', 'simple-theme-options' ); ?></th>
+								<th scope="col" class="sto-advance-table__check">
+									<input type="checkbox" data-sto-advance-import-select-all aria-label="<?php esc_attr_e( 'Select all imports', 'simple-theme-options' ); ?>" />
+								</th>
+								<th scope="col"><?php esc_html_e( 'File', 'simple-theme-options' ); ?></th>
 								<th scope="col" class="sto-advance-table__actions"><?php esc_html_e( 'Actions', 'simple-theme-options' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
-							<?php foreach ( $table_keys as $row_key ) : ?>
-								<tr data-sto-advance-import-row="<?php echo esc_attr( $row_key ); ?>">
-									<td><code><?php echo esc_html( $row_key ); ?></code></td>
+							<?php foreach ( $history_ui as $row ) : ?>
+								<?php
+								$rid   = isset( $row['id'] ) ? sanitize_text_field( (string) $row['id'] ) : '';
+								$fname = isset( $row['filename'] ) ? (string) $row['filename'] : '';
+								if ( $rid === '' ) {
+									continue;
+								}
+								?>
+								<tr data-sto-advance-import-row="<?php echo esc_attr( $rid ); ?>">
+									<td class="sto-advance-table__check">
+										<input type="checkbox" data-sto-advance-import-cb value="<?php echo esc_attr( $rid ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Select import %s', 'simple-theme-options' ), $fname !== '' ? $fname : $rid ) ); ?>" />
+									</td>
+									<td><code class="sto-advance-table__filename"><?php echo esc_html( $fname !== '' ? $fname : __( '(untitled import)', 'simple-theme-options' ) ); ?></code></td>
 									<td class="sto-advance-table__actions">
-										<button type="button" class="button button-small sto-advance-table-btn" data-sto-advance-import-download-key="<?php echo esc_attr( $row_key ); ?>">
+										<button type="button" class="button button-small sto-advance-table-btn" data-sto-advance-import-download-entry="<?php echo esc_attr( $rid ); ?>">
 											<i class="fa-light fa-download" aria-hidden="true"></i>
 											<?php esc_html_e( 'Download', 'simple-theme-options' ); ?>
 										</button>
-										<button type="button" class="button button-small sto-advance-table-btn" data-sto-advance-import-remove-key="<?php echo esc_attr( $row_key ); ?>">
+										<button type="button" class="button button-small sto-advance-table-btn" data-sto-advance-import-remove-entry="<?php echo esc_attr( $rid ); ?>">
 											<i class="fa-light fa-trash" aria-hidden="true"></i>
-											<?php esc_html_e( 'Remove', 'simple-theme-options' ); ?>
+											<?php esc_html_e( 'Delete', 'simple-theme-options' ); ?>
 										</button>
 									</td>
 								</tr>
 							<?php endforeach; ?>
 						</tbody>
 					</table>
-				</div>
-				<div class="sto-advance-card__actions sto-advance-import-log__bulk">
-					<button type="button" class="button sto-advance-btn" data-sto-advance-import-download-all>
-						<i class="fa-light fa-download" aria-hidden="true"></i>
-						<?php esc_html_e( 'Download all listed keys', 'simple-theme-options' ); ?>
-					</button>
-					<button type="button" class="button sto-advance-btn" data-sto-advance-import-remove-all>
-						<i class="fa-light fa-trash" aria-hidden="true"></i>
-						<?php esc_html_e( 'Remove all listed keys', 'simple-theme-options' ); ?>
-					</button>
-					<button type="button" class="button sto-advance-btn" data-sto-advance-import-dismiss-log>
-						<?php esc_html_e( 'Dismiss log', 'simple-theme-options' ); ?>
-					</button>
 				</div>
 				<p class="sto-advance-status sto-advance-status--error" data-sto-advance-import-log-status role="alert" hidden></p>
 			</div>
@@ -213,7 +508,15 @@ final class ThemeSettingsImportExport {
 					''
 				);
 				?>
-				<p class="sto-advance-card__desc"><?php esc_html_e( 'Includes every option key stored under Theme Settings.', 'simple-theme-options' ); ?></p>
+				<p class="sto-advance-card__desc">
+					<?php
+					if ( 'settings' === $context ) {
+						esc_html_e( 'Includes every option key registered on the leaves you checked under Export scope (field samples included).', 'simple-theme-options' );
+					} else {
+						esc_html_e( 'Includes every option key registered on all Theme Settings leaves (field samples and extra menus included).', 'simple-theme-options' );
+					}
+					?>
+				</p>
 				<div class="sto-advance-card__actions">
 					<button type="button" class="button button-primary sto-advance-btn" data-sto-advance-export-copy>
 						<i class="fa-light fa-copy" aria-hidden="true"></i>
@@ -239,7 +542,14 @@ final class ThemeSettingsImportExport {
 					''
 				);
 				?>
-				<p class="sto-advance-card__desc"><?php esc_html_e( 'Use a JSON file from a previous export, or paste JSON and apply. This cannot be undone.', 'simple-theme-options' ); ?></p>
+				<p class="sto-advance-card__desc"><?php esc_html_e( 'Use a JSON file from a previous export, or paste JSON and apply. By default this merges keys from the file into your existing option store (other keys stay). Turn on “replace entire store” only if this backup should be the only contents of sto_options. Fields appear in Theme Settings only while the plugin or theme that registered them is active — stored values remain for when you activate it again.', 'simple-theme-options' ); ?></p>
+
+				<p class="sto-advance-import-merge">
+					<label class="sto-advance-import-merge__label">
+						<input type="checkbox" data-sto-advance-import-replace-all value="1" />
+						<?php esc_html_e( 'Replace entire option store (remove every key not listed in this file)', 'simple-theme-options' ); ?>
+					</label>
+				</p>
 
 				<label class="sto-advance-dropzone" data-sto-advance-dropzone>
 					<input type="file" class="sto-advance-file-input" data-sto-advance-file accept=".json,application/json" />
@@ -250,8 +560,9 @@ final class ThemeSettingsImportExport {
 					</span>
 				</label>
 
+				<?php $paste_id = 'sto-advance-paste' . $idsuf; ?>
 				<div class="sto-advance-paste-row">
-					<label class="sto-advance-label" for="sto-advance-paste"><?php esc_html_e( 'Or paste exported JSON', 'simple-theme-options' ); ?></label>
+					<label class="sto-advance-label" for="<?php echo esc_attr( $paste_id ); ?>"><?php esc_html_e( 'Or paste exported JSON', 'simple-theme-options' ); ?></label>
 					<div class="sto-advance-paste-actions">
 						<button type="button" class="button sto-advance-btn" data-sto-advance-paste-clipboard>
 							<i class="fa-light fa-paste" aria-hidden="true"></i>
@@ -259,7 +570,7 @@ final class ThemeSettingsImportExport {
 						</button>
 					</div>
 					<textarea
-						id="sto-advance-paste"
+						id="<?php echo esc_attr( $paste_id ); ?>"
 						class="sto-advance-textarea"
 						data-sto-advance-textarea
 						rows="8"
@@ -295,7 +606,51 @@ final class ThemeSettingsImportExport {
 			$options = array();
 		}
 
-		$payload = $this->build_export_payload_for_options( $options );
+		$menu = OptionsMenu::instance();
+		$this->ensure_option_fields_registry_ready( $menu );
+
+		$allowed_pages = $menu->get_registered_menu_slugs();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked above.
+		if ( isset( $_POST['export_menu_slugs'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$raw_json = wp_unslash( (string) $_POST['export_menu_slugs'] );
+			$decoded  = json_decode( $raw_json, true );
+			if ( ! is_array( $decoded ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid export scope. Refresh the page and try again.', 'simple-theme-options' ) ), 400 );
+			}
+			$slugs = array();
+			foreach ( $decoded as $item ) {
+				$s = sanitize_key( (string) $item );
+				if ( $s !== '' && in_array( $s, $allowed_pages, true ) ) {
+					$slugs[] = $s;
+				}
+			}
+			$slugs = array_values( array_unique( $slugs ) );
+			if ( $slugs === array() ) {
+				wp_send_json_error( array( 'message' => __( 'Select at least one options screen to export.', 'simple-theme-options' ) ), 400 );
+			}
+			$export_keys = $menu->get_exportable_registered_option_keys_for_menu_pages( $slugs );
+		} else {
+			$export_keys = $menu->get_exportable_registered_option_keys();
+		}
+
+		if ( $export_keys === array() && $options !== array() ) {
+			$export_keys = $this->collect_sanitized_option_keys_from_map( $options );
+		}
+
+		if ( $export_keys === array() ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'No option keys were found to export. If a filter removes all keys, adjust it or register fields on your Theme Settings leaves.', 'simple-theme-options' ),
+				),
+				400
+			);
+		}
+
+		$subset = $this->build_export_subset_including_missing( $export_keys, $options );
+
+		$payload = $this->build_export_payload_for_options( $subset );
 
 		$json = wp_json_encode( $payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 		if ( ! is_string( $json ) ) {
@@ -329,6 +684,10 @@ final class ThemeSettingsImportExport {
 			wp_send_json_error( array( 'message' => __( 'That file is too large to import.', 'simple-theme-options' ) ), 400 );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$source_name = isset( $_POST['import_source_name'] ) ? wp_unslash( (string) $_POST['import_source_name'] ) : '';
+		$source_name = $this->sanitize_import_filename( $source_name );
+
 		$decoded = json_decode( $raw_body, true );
 		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $decoded ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid JSON. Use an export from this screen or the same plugin version.', 'simple-theme-options' ) ), 400 );
@@ -339,23 +698,61 @@ final class ThemeSettingsImportExport {
 			wp_send_json_error( array( 'message' => __( 'The JSON must contain an options object (use a full export file).', 'simple-theme-options' ) ), 400 );
 		}
 
+		if ( $options === array() ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'This backup contains no option keys. Import was cancelled so your current settings were not erased.', 'simple-theme-options' ),
+				),
+				400
+			);
+		}
+
 		if ( ! $this->is_safe_options_tree( $options ) ) {
 			wp_send_json_error( array( 'message' => __( 'That backup uses unsupported data types or structure.', 'simple-theme-options' ) ), 400 );
 		}
 
 		/**
-		 * Filter the options map immediately before it replaces `sto_options`.
+		 * Filter the options map immediately before it is merged into or replaces `sto_options` (see POST `import_replace_all`).
 		 *
-		 * @param array<string, mixed> $options
+		 * @param array<string, mixed> $options Keys from the import file only.
 		 */
 		$options = apply_filters( 'sto_theme_settings_import_options_before_save', $options );
 		if ( ! is_array( $options ) ) {
 			wp_send_json_error( array( 'message' => __( 'Import was blocked by a filter.', 'simple-theme-options' ) ), 400 );
 		}
 
-		$import_keys = array_keys( $options );
+		$keys_from_file = $this->sanitize_key_list( array_keys( $options ) );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked above.
+		$replace_all = isset( $_POST['import_replace_all'] ) && wp_validate_boolean( wp_unslash( $_POST['import_replace_all'] ) );
+
+		if ( ! $replace_all ) {
+			$current = function_exists( 'sto_get_options' ) ? sto_get_options() : array();
+			if ( ! is_array( $current ) ) {
+				$current = array();
+			}
+			foreach ( $options as $k => $v ) {
+				if ( ! is_string( $k ) ) {
+					continue;
+				}
+				$sk = sanitize_key( $k );
+				if ( $sk === '' || ! preg_match( '/^[a-zA-Z0-9_-]+$/', $sk ) ) {
+					continue;
+				}
+				$current[ $sk ] = $v;
+			}
+			$options = $current;
+		}
+
 		update_option( 'sto_options', $options );
-		$this->persist_last_import_log( $import_keys );
+		$this->append_import_history_entry(
+			array(
+				'id'          => wp_generate_password( 12, false, false ),
+				'filename'    => $source_name,
+				'keys'        => $keys_from_file,
+				'imported_at' => gmdate( 'c' ),
+			)
+		);
 
 		wp_send_json_success(
 			array(
@@ -376,6 +773,13 @@ final class ThemeSettingsImportExport {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$from_settings = isset( $_POST['from_settings'] ) && wp_validate_boolean( wp_unslash( $_POST['from_settings'] ) );
+
+		if ( OptionsMenu::instance()->is_packaged_demo_menu() && ! $from_settings ) {
+			wp_send_json_error( array( 'message' => __( 'Demo mode for packaged sample sites is toggled from Tools → Simple Backup.', 'simple-theme-options' ) ), 400 );
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$raw = isset( $_POST['ui_demo'] ) ? wp_unslash( (string) $_POST['ui_demo'] ) : '0';
 		$on  = in_array( $raw, array( '1', 'true', 'yes', 'on' ), true );
 
@@ -388,7 +792,31 @@ final class ThemeSettingsImportExport {
 		);
 	}
 
-	public function ajax_import_key_remove() {
+	public function ajax_set_ui_metabox(): void {
+		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to change this setting.', 'simple-theme-options' ) ), 403 );
+		}
+
+		if ( ThemeSettingsMetabox::instance()->get_roots() === array() ) {
+			wp_send_json_error( array( 'message' => __( 'No Theme Settings meta box is registered for this site.', 'simple-theme-options' ) ), 400 );
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$raw = isset( $_POST['ui_metabox'] ) ? wp_unslash( (string) $_POST['ui_metabox'] ) : '0';
+		$on  = in_array( $raw, array( '1', 'true', 'yes', 'on' ), true );
+
+		update_option( self::OPTION_UI_METABOX_ENABLED, $on );
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Preference saved. Reloading…', 'simple-theme-options' ),
+			)
+		);
+	}
+
+	public function ajax_import_entry_remove() {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -396,58 +824,94 @@ final class ThemeSettingsImportExport {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$key = isset( $_POST['option_key'] ) ? sanitize_key( wp_unslash( (string) $_POST['option_key'] ) ) : '';
-		if ( $key === '' ) {
-			wp_send_json_error( array( 'message' => __( 'Missing option key.', 'simple-theme-options' ) ), 400 );
+		$import_id = isset( $_POST['import_id'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['import_id'] ) ) : '';
+		if ( $import_id === '' || ! preg_match( '/^[a-zA-Z0-9]+$/', $import_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid import reference.', 'simple-theme-options' ) ), 400 );
 		}
 
-		$log = $this->get_last_import_log();
-		if ( ! $this->last_import_contains_key( $log, $key ) ) {
-			wp_send_json_error( array( 'message' => __( 'That key is not part of the current import log.', 'simple-theme-options' ) ), 400 );
+		$entry = $this->find_import_entry_by_id( $import_id );
+		if ( $entry === null ) {
+			wp_send_json_error( array( 'message' => __( 'That import was not found.', 'simple-theme-options' ) ), 404 );
 		}
 
-		$this->remove_option_key_from_sto_options( $key );
-		$this->remove_key_from_last_import_log( $key );
+		$keys = isset( $entry['keys'] ) && is_array( $entry['keys'] ) ? $this->sanitize_key_list( $entry['keys'] ) : array();
+		$opts = function_exists( 'sto_get_options' ) ? sto_get_options() : array();
+		if ( ! is_array( $opts ) ) {
+			$opts = array();
+		}
+		foreach ( $keys as $k ) {
+			unset( $opts[ $k ] );
+		}
+		update_option( 'sto_options', $opts );
+		$this->remove_import_entry_by_id( $import_id );
 
-		wp_send_json_success( array( 'message' => __( 'Key removed.', 'simple-theme-options' ) ) );
+		wp_send_json_success( array( 'message' => __( 'Import removed from the database.', 'simple-theme-options' ) ) );
 	}
 
-	public function ajax_import_keys_remove_all() {
+	/**
+	 * Remove several import log rows and delete every `sto_options` key that belonged to any of them.
+	 */
+	public function ajax_import_entries_remove(): void {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'You do not have permission to change settings.', 'simple-theme-options' ) ), 403 );
 		}
 
-		$log = $this->get_last_import_log();
-		$keys = isset( $log['keys'] ) && is_array( $log['keys'] ) ? $log['keys'] : array();
-		if ( $keys === array() ) {
-			wp_send_json_error( array( 'message' => __( 'Nothing to remove.', 'simple-theme-options' ) ), 400 );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$raw = isset( $_POST['import_ids'] ) ? wp_unslash( $_POST['import_ids'] ) : array();
+		if ( ! is_array( $raw ) ) {
+			wp_send_json_error( array( 'message' => __( 'No imports were selected.', 'simple-theme-options' ) ), 400 );
+		}
+
+		$ids = array();
+		foreach ( array_slice( $raw, 0, 40 ) as $item ) {
+			$id = sanitize_text_field( (string) $item );
+			if ( $id === '' || ! preg_match( '/^[a-zA-Z0-9]+$/', $id ) ) {
+				continue;
+			}
+			$ids[ $id ] = true;
+		}
+		$ids = array_keys( $ids );
+		if ( $ids === array() ) {
+			wp_send_json_error( array( 'message' => __( 'No valid import references.', 'simple-theme-options' ) ), 400 );
+		}
+
+		$union_keys = array();
+		$found_ids  = array();
+		foreach ( $ids as $import_id ) {
+			$entry = $this->find_import_entry_by_id( $import_id );
+			if ( $entry === null ) {
+				continue;
+			}
+			$found_ids[] = $import_id;
+			$keys        = isset( $entry['keys'] ) && is_array( $entry['keys'] ) ? $this->sanitize_key_list( $entry['keys'] ) : array();
+			foreach ( $keys as $k ) {
+				$union_keys[ $k ] = true;
+			}
+		}
+
+		if ( $found_ids === array() ) {
+			wp_send_json_error( array( 'message' => __( 'Those imports were not found.', 'simple-theme-options' ) ), 404 );
 		}
 
 		$opts = function_exists( 'sto_get_options' ) ? sto_get_options() : array();
 		if ( ! is_array( $opts ) ) {
 			$opts = array();
 		}
-
-		foreach ( $keys as $k ) {
-			if ( ! is_string( $k ) ) {
-				continue;
-			}
-			$k = sanitize_key( $k );
-			if ( $k === '' ) {
-				continue;
-			}
+		foreach ( array_keys( $union_keys ) as $k ) {
 			unset( $opts[ $k ] );
 		}
-
 		update_option( 'sto_options', $opts );
-		delete_option( self::OPTION_LAST_IMPORT );
 
-		wp_send_json_success( array( 'message' => __( 'Keys removed.', 'simple-theme-options' ) ) );
+		foreach ( $found_ids as $import_id ) {
+			$this->remove_import_entry_by_id( $import_id );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Selected imports were removed from the database.', 'simple-theme-options' ) ) );
 	}
 
-	public function ajax_import_subset_export() {
+	public function ajax_import_entry_export() {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -455,21 +919,17 @@ final class ThemeSettingsImportExport {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$scope = isset( $_POST['export_scope'] ) ? sanitize_key( wp_unslash( (string) $_POST['export_scope'] ) ) : 'single';
-		$log   = $this->get_last_import_log();
-		$keys  = array();
-
-		if ( 'all' === $scope ) {
-			$keys = isset( $log['keys'] ) && is_array( $log['keys'] ) ? $log['keys'] : array();
-		} else {
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$one = isset( $_POST['option_key'] ) ? sanitize_key( wp_unslash( (string) $_POST['option_key'] ) ) : '';
-			if ( $one !== '' && $this->last_import_contains_key( $log, $one ) ) {
-				$keys = array( $one );
-			}
+		$import_id = isset( $_POST['import_id'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['import_id'] ) ) : '';
+		if ( $import_id === '' || ! preg_match( '/^[a-zA-Z0-9]+$/', $import_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid import reference.', 'simple-theme-options' ) ), 400 );
 		}
 
-		$keys = $this->sanitize_key_list( $keys );
+		$entry = $this->find_import_entry_by_id( $import_id );
+		if ( $entry === null ) {
+			wp_send_json_error( array( 'message' => __( 'That import was not found.', 'simple-theme-options' ) ), 404 );
+		}
+
+		$keys = isset( $entry['keys'] ) && is_array( $entry['keys'] ) ? $this->sanitize_key_list( $entry['keys'] ) : array();
 		if ( $keys === array() ) {
 			wp_send_json_error( array( 'message' => __( 'No keys to export.', 'simple-theme-options' ) ), 400 );
 		}
@@ -481,19 +941,18 @@ final class ThemeSettingsImportExport {
 
 		$subset = array();
 		foreach ( $keys as $k ) {
-			if ( array_key_exists( $k, $opts ) ) {
-				$subset[ $k ] = $opts[ $k ];
-			}
+			$subset[ $k ] = array_key_exists( $k, $opts ) ? $opts[ $k ] : null;
 		}
 
-		$payload = $this->build_export_payload_for_options( $subset );
-		$json    = wp_json_encode( $payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+		$payload  = $this->build_export_payload_for_options( $subset );
+		$json     = wp_json_encode( $payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 		if ( ! is_string( $json ) ) {
 			wp_send_json_error( array( 'message' => __( 'Could not build export data.', 'simple-theme-options' ) ), 500 );
 		}
 
-		$suffix  = 'all' === $scope ? 'subset-' . count( $keys ) . '-keys' : $keys[0];
-		$filename = 'theme-settings-export-' . $suffix . '-' . gmdate( 'Y-m-d-His' ) . '.json';
+		$basefile = isset( $entry['filename'] ) ? $this->sanitize_import_filename( (string) $entry['filename'] ) : 'import';
+		$basefile = preg_replace( '/\.json$/i', '', $basefile );
+		$filename = 'theme-settings-' . $basefile . '-' . gmdate( 'Y-m-d-His' ) . '.json';
 
 		wp_send_json_success(
 			array(
@@ -503,16 +962,96 @@ final class ThemeSettingsImportExport {
 		);
 	}
 
-	public function ajax_import_log_dismiss() {
-		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to change settings.', 'simple-theme-options' ) ), 403 );
+	private function sanitize_import_filename( string $raw ): string {
+		$s = basename( str_replace( '\\', '/', $raw ) );
+		$s = preg_replace( '/[^a-zA-Z0-9._ -]+/', '-', $s );
+		$s = trim( preg_replace( '/\s+/', ' ', (string) $s ) );
+		if ( $s === '' || $s === '.' || $s === '..' ) {
+			return 'theme-settings-import.json';
 		}
 
+		return substr( $s, 0, 180 );
+	}
+
+	/**
+	 * @param array{id: string, filename: string, keys: array<int, string>, imported_at: string} $entry
+	 */
+	private function append_import_history_entry( array $entry ): void {
+		$list = $this->get_import_history_raw();
+		array_unshift( $list, $entry );
+		if ( count( $list ) > self::MAX_IMPORT_HISTORY ) {
+			$list = array_slice( $list, 0, self::MAX_IMPORT_HISTORY );
+		}
+		update_option( self::OPTION_IMPORT_HISTORY, $list );
+	}
+
+	/**
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function get_import_history_raw(): array {
+		$raw = get_option( self::OPTION_IMPORT_HISTORY, null );
+		if ( is_array( $raw ) ) {
+			return $raw;
+		}
+
+		return array();
+	}
+
+	/**
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function get_import_history(): array {
+		$list = $this->get_import_history_raw();
+		if ( $list !== array() ) {
+			return $list;
+		}
+
+		$legacy = get_option( self::OPTION_LAST_IMPORT, null );
+		if ( ! is_array( $legacy ) || empty( $legacy['keys'] ) || ! is_array( $legacy['keys'] ) ) {
+			return array();
+		}
+
+		$migrated = array(
+			array(
+				'id'          => wp_generate_password( 12, false, false ),
+				'filename'    => __( 'Previous import', 'simple-theme-options' ),
+				'keys'        => $this->sanitize_key_list( $legacy['keys'] ),
+				'imported_at' => isset( $legacy['imported_at'] ) ? (string) $legacy['imported_at'] : gmdate( 'c' ),
+			),
+		);
+		update_option( self::OPTION_IMPORT_HISTORY, $migrated );
 		delete_option( self::OPTION_LAST_IMPORT );
 
-		wp_send_json_success( array( 'message' => __( 'Log dismissed.', 'simple-theme-options' ) ) );
+		return $migrated;
+	}
+
+	/**
+	 * @return array<string, mixed>|null
+	 */
+	private function find_import_entry_by_id( string $id ): ?array {
+		foreach ( $this->get_import_history() as $row ) {
+			if ( isset( $row['id'] ) && (string) $row['id'] === $id ) {
+				return is_array( $row ) ? $row : null;
+			}
+		}
+
+		return null;
+	}
+
+	private function remove_import_entry_by_id( string $id ): void {
+		$list = $this->get_import_history_raw();
+		$next = array();
+		foreach ( $list as $row ) {
+			if ( ! is_array( $row ) || ( isset( $row['id'] ) && (string) $row['id'] === $id ) ) {
+				continue;
+			}
+			$next[] = $row;
+		}
+		if ( $next === array() ) {
+			delete_option( self::OPTION_IMPORT_HISTORY );
+		} else {
+			update_option( self::OPTION_IMPORT_HISTORY, $next );
+		}
 	}
 
 	/**
@@ -539,82 +1078,64 @@ final class ThemeSettingsImportExport {
 	}
 
 	/**
-	 * @param array<string, mixed> $log
+	 * Fires `sto_include_option_fields` when it has not run in this request so deferred `Field::register()`
+	 * work is applied before reading the registry (e.g. `admin-ajax.php` export without a Theme Settings screen load).
 	 */
-	private function last_import_contains_key( array $log, string $key ): bool {
-		$keys = isset( $log['keys'] ) && is_array( $log['keys'] ) ? $log['keys'] : array();
-		foreach ( $keys as $k ) {
-			if ( is_string( $k ) && sanitize_key( $k ) === $key ) {
-				return true;
+	private function ensure_option_fields_registry_ready( OptionsMenu $menu ): void {
+		if ( did_action( 'sto_include_option_fields' ) ) {
+			return;
+		}
+
+		/**
+		 * Same signature as {@see OptionsMenu::include_fields()} (private); third-party code may listen here.
+		 *
+		 * @param OptionsMenu $menu
+		 */
+		do_action( 'sto_include_option_fields', $menu );
+	}
+
+	/**
+	 * Sanitized keys from an `sto_options` map (for export fallback when the registry yields none).
+	 *
+	 * @param array<string, mixed> $options
+	 * @return array<int, string>
+	 */
+	private function collect_sanitized_option_keys_from_map( array $options ): array {
+		$out = array();
+		foreach ( array_keys( $options ) as $raw_k ) {
+			if ( ! is_string( $raw_k ) ) {
+				continue;
+			}
+			$k = sanitize_key( $raw_k );
+			if ( $k !== '' && preg_match( '/^[a-zA-Z0-9_-]+$/', $k ) ) {
+				$out[] = $k;
 			}
 		}
 
-		return false;
+		return array_values( array_unique( $out ) );
 	}
 
-	private function remove_option_key_from_sto_options( string $key ): void {
-		$opts = function_exists( 'sto_get_options' ) ? sto_get_options() : array();
-		if ( ! is_array( $opts ) ) {
-			$opts = array();
-		}
-		unset( $opts[ $key ] );
-		update_option( 'sto_options', $opts );
-	}
-
-	private function remove_key_from_last_import_log( string $key ): void {
-		$log = $this->get_last_import_log();
-		if ( $log === array() ) {
-			return;
-		}
-		$keys = isset( $log['keys'] ) && is_array( $log['keys'] ) ? $log['keys'] : array();
-		$next = array();
-		foreach ( $keys as $k ) {
+	/**
+	 * One entry per export key; missing keys become null so JSON is never an empty object when keys exist.
+	 *
+	 * @param array<int, string>   $export_keys
+	 * @param array<string, mixed> $options
+	 * @return array<string, mixed>
+	 */
+	private function build_export_subset_including_missing( array $export_keys, array $options ): array {
+		$subset = array();
+		foreach ( $export_keys as $k ) {
 			if ( ! is_string( $k ) ) {
 				continue;
 			}
-			if ( sanitize_key( $k ) === $key ) {
+			$k = sanitize_key( $k );
+			if ( $k === '' ) {
 				continue;
 			}
-			$next[] = sanitize_key( $k );
-		}
-		if ( $next === array() ) {
-			delete_option( self::OPTION_LAST_IMPORT );
-
-			return;
-		}
-		$log['keys'] = array_values( array_unique( $next ) );
-		update_option( self::OPTION_LAST_IMPORT, $log );
-	}
-
-	/**
-	 * @param array<int, string> $import_keys
-	 */
-	private function persist_last_import_log( array $import_keys ): void {
-		$keys = $this->sanitize_key_list( $import_keys );
-		if ( $keys === array() ) {
-			delete_option( self::OPTION_LAST_IMPORT );
-
-			return;
-		}
-		update_option(
-			self::OPTION_LAST_IMPORT,
-			array(
-				'keys'         => $keys,
-				'imported_at'  => gmdate( 'c' ),
-			)
-		);
-	}
-
-	/**
-	 * @return array{keys?: array<int, string>, imported_at?: string}
-	 */
-	private function get_last_import_log(): array {
-		$raw = get_option( self::OPTION_LAST_IMPORT, null );
-		if ( ! is_array( $raw ) ) {
-			return array();
+			$subset[ $k ] = array_key_exists( $k, $options ) ? $options[ $k ] : null;
 		}
 
-		return $raw;
+		return $subset;
 	}
 
 	/**
@@ -651,13 +1172,10 @@ final class ThemeSettingsImportExport {
 			return null;
 		}
 
-		// Plain map of option keys (e.g. raw `sto_options` JSON from code or another tool).
 		return $decoded;
 	}
 
 	/**
-	 * Reject resource, object, and absurdly deep structures.
-	 *
 	 * @param mixed $node
 	 * @param int   $depth
 	 */
