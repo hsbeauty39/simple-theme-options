@@ -16,7 +16,10 @@
             }
             var $inner = $s.closest('.sto-theme-settings-metabox-inner');
             if ($inner.length) {
-                return $inner;
+                // Block editor (WP 6.7+ split view): the meta box region clips overflow — Select2 must
+                // portal to body or dropdowns / AJAX results are clipped and controls look "broken".
+                // Classic postbox can clip too; body parent matches WP dev-note guidance for popovers.
+                return $(document.body);
             }
             var $sidebar = $s.closest('.edit-post-sidebar, .interface-interface-skeleton__sidebar');
             if ($sidebar.length) {
@@ -2101,6 +2104,44 @@
             stoTryMetaboxBlockSubscribe();
         }
         initStoMetaboxSaveOnPostSave();
+
+        /**
+         * Block editor: Theme Settings may start off-screen or inside a clipped panel; `:visible`
+         * skips Select2 init until the user scrolls/opens Meta boxes. Re-init when the shell enters view.
+         */
+        function initStoMetaboxIntersectionRefresh() {
+            var mbx = window.simple_theme_options && window.simple_theme_options.sto_metabox;
+            if (!mbx || !mbx.active || typeof window.IntersectionObserver !== 'function') {
+                return;
+            }
+            var el = document.querySelector('.sto-theme-settings-metabox-inner');
+            if (!el) {
+                return;
+            }
+            var deb = null;
+            var obs = new window.IntersectionObserver(
+                function(entries) {
+                    var hit = false;
+                    for (var i = 0; i < entries.length; i++) {
+                        if (entries[i] && entries[i].isIntersecting) {
+                            hit = true;
+                            break;
+                        }
+                    }
+                    if (!hit) {
+                        return;
+                    }
+                    window.clearTimeout(deb);
+                    deb = window.setTimeout(function() {
+                        deb = null;
+                        refreshStoSelect2();
+                    }, 100);
+                },
+                { root: null, rootMargin: '80px 0px 80px 0px', threshold: 0 }
+            );
+            obs.observe(el);
+        }
+        initStoMetaboxIntersectionRefresh();
 
         window.addEventListener('popstate', function() {
             syncActiveState(window.location.href);

@@ -562,6 +562,13 @@
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* When Advance (or another nav_locked row) is the only top-level item, skip the separator gap above it. */
+.sto-option-panel-sidebar > .sto-option-panel-sidebar-item--nav-locked:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
 .sto-option-panel-sidebar-item--nav-locked > .sto-option-panel-sidebar-item-link {
     opacity: 0.92;
 }
@@ -1295,4 +1302,110 @@
         animation-duration: 0.6s;
         box-shadow: none;
     }
+}
+
+/* -------------------------------------------------------------------------------------------- */
+/* Post editor metabox — same Theme Settings chrome, constrained inside `.postbox`.              */
+/* -------------------------------------------------------------------------------------------- */
+
+.sto-theme-settings-metabox-inner .sto-metabox-hint {
+    margin: 0 0 12px;
+}
+
+.sto-theme-settings-metabox-inner .sto-metabox-inline-notice {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.sto-theme-settings-metabox-inner .sto-metabox-inline-notice--success {
+    background: #edfaef;
+    border: 1px solid #46b450;
+    color: #1e4620;
+}
+
+.sto-theme-settings-metabox-inner .sto-metabox-inline-notice--error {
+    background: #fcf0f1;
+    border: 1px solid #d63638;
+    color: #3c434a;
+}
+
+.sto-theme-settings-metabox-inner .sto-option-panel-title--metabox {
+    font-size: 18px;
+    margin: 0 0 8px;
+}
+
+/* Narrow post editor column: kill horizontal overflow from fixed rail widths + wide field rows. */
+.postbox .sto-theme-settings-metabox-inner,
+.postbox .sto-theme-settings-metabox-inner .sto-option-panel-wrapper--metabox {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.postbox .sto-theme-settings-metabox-inner .sto-option-panel-body {
+    overflow-x: hidden;
+    min-width: 0;
+}
+
+.postbox .sto-theme-settings-metabox-inner .sto-option-panel-nav-layout {
+    max-height: min(70vh, 900px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+}
+
+.postbox .sto-theme-settings-metabox-inner .sto-option-panel-sidebar-wrap {
+    max-height: none;
+    flex: 0 0 min(232px, 34%);
+    width: min(232px, 34%);
+    max-width: min(232px, 40%);
+    min-width: 0;
+}
+
+.postbox .sto-theme-settings-metabox-inner .sto-option-panel-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.postbox .sto-theme-settings-metabox-inner .sto-option-panel-content-body {
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+@media (max-width: 782px) {
+    .postbox .sto-theme-settings-metabox-inner .sto-option-panel-nav-layout {
+        flex-wrap: wrap;
+    }
+
+    .postbox .sto-theme-settings-metabox-inner .sto-option-panel-sidebar-wrap {
+        flex: 1 1 100%;
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+/*
+ * Block editor (WP 6.7+): meta boxes live in a split-view region that clips overflow.
+ * Select2 dropdowns portal to document.body — keep them above editor chrome / modals.
+ * @see https://make.wordpress.org/core/2024/10/18/post-editor-iframing-with-meta-boxes-in-wordpress-6-7/
+ */
+body.block-editor-page .select2-dropdown.sto-select2-dropdown-wrap {
+    z-index: 1000001;
+}
+
+/* Block editor meta box column: same flex shrink contract when .postbox is absent or nested differently */
+body.block-editor-page .edit-post-meta-boxes-area .sto-theme-settings-metabox-inner,
+body.block-editor-page .interface-interface-skeleton__footer .sto-theme-settings-metabox-inner {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
