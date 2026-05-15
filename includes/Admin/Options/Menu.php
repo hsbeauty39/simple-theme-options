@@ -22,6 +22,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
 use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\ImportExport\ThemeSettingsImportExport;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
+use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
@@ -378,7 +379,7 @@ final class Menu {
 	 * @param string               $name Admin menu page title.
 	 * @param string               $slug Top-level `page` slug (e.g. `theme-settings`).
 	 * @param string               $icon Dashicon class or URL.
-	 * @param array<string, mixed> $args Optional. **`demo`** (bool) — default **true** (samples may show when {@see is_demo_mode_enabled()}). **`packaged_demo`** (bool) — when **true** (plugin sample menu only): no **Advance**; top-level menu hidden while demo is off; use **Tools → Simple Backup** (Demo mode) to turn the panel on or off. Omit or **false** for a theme‑registered client menu (**Advance** + export of registered keys on all leaves). **Read on first call only** for **`demo`** / **`packaged_demo`**. **`metabox`** => array( **post_types** => array( 'post', 'page' ), optional **title**, **context**, **priority** ) registers the same Theme Settings UI as a post editor metabox on those types (saves that post’s overrides in meta **`_sto_theme_settings_post`** via AJAX, merged over global `sto_options` while editing; do not stack duplicate `#sto-theme-settings-options-form` ids on one screen). Shorthand: **`enable_metabox`** => true with optional **`metabox_post_types`** (defaults to post + page when enabled). Visibility is also gated by option **`sto_theme_settings_ui_metabox_enabled`** (default **on**), toggled from **Advance** or **Tools → Simple Backup** when any metabox root exists; see {@see should_show_theme_settings_metaboxes()}.
+	 * @param array<string, mixed> $args Optional. **`demo`** (bool) — default **true** (samples may show when {@see is_demo_mode_enabled()}). **`packaged_demo`** (bool) — when **true** (plugin sample menu only): no **Advance**; top-level menu hidden while demo is off; use **Tools → Simple Backup** (Demo mode) to turn the panel on or off. Omit or **false** for a theme‑registered client menu (**Advance** + export of registered keys on all leaves). **Read on first call only** for **`demo`** / **`packaged_demo`**. **`metabox`** => array( **post_types** => array( 'post', 'page' ), optional **title**, **context**, **priority** ) registers the same Theme Settings UI as a post editor metabox on those types (writes that post’s overrides to meta **`_sto_theme_settings_post`** via AJAX when the post is saved — no separate **Save options** button; merged over global `sto_options` while editing; do not stack duplicate `#sto-theme-settings-options-form` ids on one screen). Shorthand: **`enable_metabox`** => true with optional **`metabox_post_types`** (defaults to post + page when enabled). Visibility is also gated by option **`sto_theme_settings_ui_metabox_enabled`** (default **on**), toggled from **Advance** or **Tools → Simple Backup** when any metabox root exists; see {@see should_show_theme_settings_metaboxes()}.
 	 */
 	public function register( $name, $slug, $icon, $args = array() ) {
 		$args   = is_array( $args ) ? $args : array();
@@ -755,6 +756,7 @@ final class Menu {
             Dimension::get_field_ids_for_section( $section_slug ),
             IconSelect::get_field_ids_for_section( $section_slug ),
             GalleryControl::get_field_ids_for_section( $section_slug ),
+            MultiTextControl::get_field_ids_for_section( $section_slug ),
             GoogleMapControl::get_field_ids_for_section( $section_slug ),
             AlignmentControl::get_field_ids_for_section( $section_slug ),
             Range::get_field_ids_for_section( $section_slug ),
@@ -929,6 +931,12 @@ final class Menu {
                 continue;
             }
 
+            if ( MultiTextControl::is_registered_field_id( $option_key ) ) {
+                $raw_mt = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
+                $sanitized_options[ $option_key ] = MultiTextControl::sanitize_posted_value( $option_key, $raw_mt );
+                continue;
+            }
+
             if ( GoogleMapControl::is_registered_field_id( $option_key ) ) {
                 $raw_map = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
                 $sanitized_options[ $option_key ] = GoogleMapControl::sanitize_posted_value( $option_key, $raw_map );
@@ -1016,6 +1024,7 @@ final class Menu {
                 Dimension::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 IconSelect::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 GalleryControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+                MultiTextControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 GoogleMapControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 AlignmentControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options )
             ),
@@ -1250,6 +1259,7 @@ final class Menu {
             Dimension::get_all_fields_for_search(),
             IconSelect::get_all_fields_for_search(),
             GalleryControl::get_all_fields_for_search(),
+            MultiTextControl::get_all_fields_for_search(),
             GoogleMapControl::get_all_fields_for_search(),
             AlignmentControl::get_all_fields_for_search(),
             Range::get_all_fields_for_search(),
@@ -1901,7 +1911,7 @@ final class Menu {
         ?>
         <div class="wrap sto-section-content">
             <div class="sto-option-panel-wrapper" data-sto-default-leaf="<?php echo esc_attr( $default_leaf ); ?>">
-                <div class="spo-option-panel-head sto-panel-head-with-search">
+                <div class="sto-option-panel-head sto-panel-head-with-search">
                     <h1 class="sto-option-panel-title"><?php echo esc_html( $panel_heading ); ?></h1>
                     <div class="sto-quick-search" data-sto-quick-search>
                         <div class="sto-quick-search-field">
@@ -1961,7 +1971,7 @@ final class Menu {
                                     ?>
                                     <div class="sto-validation-notice" role="alert">
                                         <p class="sto-validation-notice-title"><?php esc_html_e( 'This section could not be saved yet', 'simple-theme-options' ); ?></p>
-                                        <p class="sto-validation-notice-lead"><?php esc_html_e( 'Fix the following, then try Save again:', 'simple-theme-options' ); ?></p>
+                                        <p class="sto-validation-notice-lead"><?php esc_html_e( 'Fix the following, then publish or update the post again:', 'simple-theme-options' ); ?></p>
                                         <ul class="sto-validation-notice-list">
                                             <?php foreach ( $vmsgs as $one ) { ?>
                                                 <li><?php echo esc_html( (string) $one ); ?></li>
@@ -2005,17 +2015,43 @@ final class Menu {
 
     /**
      * Base post editor URL for metabox deep links (strip known query noise).
+     *
+     * @param int                 $post_id     Post ID (0 on a blank **post-new** screen before first save).
+     * @param \WP_Post|mixed|null $editor_post Optional post object for resolving **post_type** when ID is 0.
      */
-    private function get_metabox_post_editor_base_url( int $post_id ): string {
-        $url = get_edit_post_link( $post_id, 'raw' );
-        if ( ! is_string( $url ) || $url === '' ) {
+    private function get_metabox_post_editor_base_url( int $post_id, $editor_post = null ): string {
+        $noise = array( 'sto_saved', 'sto_imported', 'sto_validation_error', 'sto-metabox-saved', 'message' );
+
+        if ( $post_id > 0 ) {
+            $url = get_edit_post_link( $post_id, 'raw' );
+            if ( ! is_string( $url ) || $url === '' ) {
+                $url = add_query_arg(
+                    array(
+                        'post'   => $post_id,
+                        'action' => 'edit',
+                    ),
+                    admin_url( 'post.php' )
+                );
+            }
+
+            return remove_query_arg( $noise, $url );
+        }
+
+        $pt = '';
+        if ( $editor_post instanceof \WP_Post && $editor_post->post_type ) {
+            $pt = sanitize_key( (string) $editor_post->post_type );
+        }
+        if ( $pt === '' && function_exists( 'get_current_screen' ) ) {
+            $screen = get_current_screen();
+            if ( $screen && ! empty( $screen->post_type ) ) {
+                $pt = sanitize_key( (string) $screen->post_type );
+            }
+        }
+        if ( $pt === '' ) {
             return '';
         }
 
-        return remove_query_arg(
-            array( 'sto_saved', 'sto_imported', 'sto_validation_error', 'sto-metabox-saved', 'message' ),
-            $url
-        );
+        return remove_query_arg( $noise, add_query_arg( array( 'post_type' => $pt ), admin_url( 'post-new.php' ) ) );
     }
 
     /**
@@ -2030,13 +2066,14 @@ final class Menu {
     }
 
     /**
-     * Full Theme Settings panel for a post metabox (same fields + SPA as the admin page; saves via AJAX).
+     * Full Theme Settings panel for a post metabox (same fields + SPA as the admin page; persists with the post via AJAX).
      *
      * Only one metabox should use `#sto-theme-settings-options-form` on the same screen (duplicate ids are invalid HTML).
      *
-     * @param int $post_id Post being edited.
+     * @param int                 $post_id     Post being edited (may be **0** on **post-new** before first save).
+     * @param \WP_Post|mixed|null $editor_post Optional; used to resolve **post_type** when building URLs for ID **0**.
      */
-    public function get_metabox_panel_markup( string $menu_page_slug, int $post_id ): string {
+    public function get_metabox_panel_markup( string $menu_page_slug, int $post_id, $editor_post = null ): string {
         $req = sanitize_key( $menu_page_slug );
         if ( $req === '' || ! in_array( $req, $this->registered_menu_slugs, true ) ) {
             return '';
@@ -2073,7 +2110,7 @@ final class Menu {
         $leaf_sections = $this->get_leaf_sections_for_navigation_for_menu_page( $req );
         $default_leaf  = $this->get_default_leaf_section_slug_for_menu_page( $req );
 
-        $sidebar_base = $this->get_metabox_post_editor_base_url( $post_id );
+        $sidebar_base = $this->get_metabox_post_editor_base_url( $post_id, $editor_post );
         if ( $sidebar_base === '' ) {
             return '';
         }
@@ -2094,11 +2131,11 @@ final class Menu {
                 data-sto-post-id="<?php echo esc_attr( (string) $post_id ); ?>"
             >
                 <p class="sto-metabox-hint description">
-                    <?php esc_html_e( 'These fields save for this post only (they override the same keys from global Theme Settings while you edit this post). Use Save options — the post Update button does not persist them.', 'simple-theme-options' ); ?>
+                    <?php esc_html_e( 'These fields apply to this post only (they override the same keys from global Theme Settings on the front). They are stored when you publish or update the post.', 'simple-theme-options' ); ?>
                 </p>
                 <div class="sto-metabox-inline-notice sto-metabox-inline-notice--success" role="status" hidden></div>
                 <div class="sto-metabox-inline-notice sto-metabox-inline-notice--error" role="alert" hidden></div>
-                <div class="spo-option-panel-head sto-panel-head-with-search">
+                <div class="sto-option-panel-head sto-panel-head-with-search">
                     <h2 class="sto-option-panel-title sto-option-panel-title--metabox"><?php echo esc_html( $panel_heading ); ?></h2>
                     <div class="sto-quick-search" data-sto-quick-search>
                         <div class="sto-quick-search-field">
@@ -2155,7 +2192,7 @@ final class Menu {
                                     ?>
                                     <div class="sto-validation-notice" role="alert">
                                         <p class="sto-validation-notice-title"><?php esc_html_e( 'This section could not be saved yet', 'simple-theme-options' ); ?></p>
-                                        <p class="sto-validation-notice-lead"><?php esc_html_e( 'Fix the following, then try Save again:', 'simple-theme-options' ); ?></p>
+                                        <p class="sto-validation-notice-lead"><?php esc_html_e( 'Fix the following, then publish or update the post again:', 'simple-theme-options' ); ?></p>
                                         <ul class="sto-validation-notice-list">
                                             <?php foreach ( $vmsgs as $one ) { ?>
                                                 <li><?php echo esc_html( (string) $one ); ?></li>
@@ -2175,14 +2212,6 @@ final class Menu {
                                         <?php $this->render_section_panel( $section, $current_section_slug ); ?>
                                     <?php } ?>
                                 </div>
-                                <?php if ( ! ThemeSettingsImportExport::is_advance_leaf_slug( $current_section_slug ) ) : ?>
-                                <div class="sto-options-form-footer sto-section-actions">
-                                    <button type="submit" name="sto_save_options" value="1" class="button button-primary">
-                                        <i class="fa-light fa-floppy-disk" aria-hidden="true"></i>
-                                        <?php esc_html_e( 'Save options', 'simple-theme-options' ); ?>
-                                    </button>
-                                </div>
-                                <?php endif; ?>
                             </form>
                         </div>
                     </div>

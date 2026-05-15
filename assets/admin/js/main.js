@@ -1955,6 +1955,153 @@
         syncActiveState(window.location.href);
         applyRequiredVisibility($('.sto-option-panel-section.sto-is-active'));
 
+        /**
+         * Persist Theme Settings metabox fields to post meta (AJAX to sto_save_theme_options_metabox).
+         *
+         * @param {Object} [options]
+         * @param {boolean} [options.silent] When true, success notices are suppressed (post save path); errors still show.
+         * @return {Promise}
+         */
+        function stoRunMetaboxThemeSettingsAjaxSave(options) {
+            options = options || {};
+            var silent = !!options.silent;
+            var mbx = window.simple_theme_options && window.simple_theme_options.sto_metabox;
+            if (!mbx || !mbx.active || !mbx.ajax_save_nonce || !mbx.ajax_action || !mbx.post_id) {
+                return Promise.resolve({ skipped: true });
+            }
+            var $form = $('form#sto-theme-settings-options-form.sto-options-form--metabox');
+            if (!$form.length) {
+                return Promise.resolve({ skipped: true });
+            }
+            var formEl = $form[0];
+            $(formEl).trigger('submit');
+            var $inner = $form.closest('.sto-theme-settings-metabox-inner');
+            var $ok = $inner.find('.sto-metabox-inline-notice--success');
+            var $err = $inner.find('.sto-metabox-inline-notice--error');
+            return new Promise(function(resolve, reject) {
+                window.setTimeout(function() {
+                    var fd = new window.FormData(formEl);
+                    fd.append('action', mbx.ajax_action);
+                    fd.append('nonce', mbx.ajax_save_nonce);
+                    fd.append('post_id', String(mbx.post_id || ''));
+                    var ajaxUrl = (window.simple_theme_options && window.simple_theme_options.ajax_url) || '';
+                    window
+                        .fetch(ajaxUrl, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            body: fd
+                        })
+                        .then(function(r) {
+                            return r.json();
+                        })
+                        .then(function(json) {
+                            if (json && json.success) {
+                                if (!silent) {
+                                    if ($ok.length) {
+                                        $ok
+                                            .text((mbx.i18n && mbx.i18n.saved) || (json.data && json.data.message) || '')
+                                            .prop('hidden', false);
+                                    }
+                                    if ($err.length) {
+                                        $err.text('').prop('hidden', true);
+                                    }
+                                }
+                                resolve(json);
+                            } else {
+                                var msg =
+                                    (json && json.data && json.data.message) || (mbx.i18n && mbx.i18n.save_failed) || '';
+                                if ($err.length) {
+                                    $err.text(msg).prop('hidden', false);
+                                }
+                                if ($ok.length) {
+                                    $ok.text('').prop('hidden', true);
+                                }
+                                reject(new Error(msg || 'sto_metabox_save_failed'));
+                            }
+                        })
+                        .catch(function() {
+                            if ($err.length) {
+                                $err.text((mbx.i18n && mbx.i18n.save_failed) || '').prop('hidden', false);
+                            }
+                            reject(new Error('sto_metabox_save_network'));
+                        });
+                }, 60);
+            });
+        }
+
+        function initStoMetaboxSaveOnPostSave() {
+            var mbx = window.simple_theme_options && window.simple_theme_options.sto_metabox;
+            if (!mbx || !mbx.active || !mbx.post_id) {
+                return;
+            }
+            var $body = $('body');
+            if (!$body.hasClass('block-editor-page')) {
+                var $postForm = $('#post');
+                if ($postForm.length) {
+                    var stoClassicResubmitting = false;
+                    $postForm.on('submit.stoMetaboxPersist', function(ev) {
+                        if (stoClassicResubmitting) {
+                            stoClassicResubmitting = false;
+                            return;
+                        }
+                        if (!$('form#sto-theme-settings-options-form.sto-options-form--metabox').length) {
+                            return;
+                        }
+                        ev.preventDefault();
+                        stoRunMetaboxThemeSettingsAjaxSave({ silent: true })
+                            .then(function() {
+                                stoClassicResubmitting = true;
+                                if ($postForm[0]) {
+                                    window.HTMLFormElement.prototype.submit.call($postForm[0]);
+                                }
+                            })
+                            .catch(function() {
+                                stoClassicResubmitting = true;
+                                if ($postForm[0]) {
+                                    window.HTMLFormElement.prototype.submit.call($postForm[0]);
+                                }
+                            });
+                    });
+                }
+                return;
+            }
+            if (!window.wp || !window.wp.data || typeof window.wp.data.subscribe !== 'function') {
+                return;
+            }
+            var tries = 0;
+            function stoTryMetaboxBlockSubscribe() {
+                tries += 1;
+                if (!window.wp || !window.wp.data || typeof window.wp.data.subscribe !== 'function' || tries > 50) {
+                    return;
+                }
+                if (!window.wp.data.select('core/editor')) {
+                    window.setTimeout(stoTryMetaboxBlockSubscribe, 120);
+                    return;
+                }
+                var prevSaving = false;
+                window.wp.data.subscribe(function() {
+                    var sel = window.wp.data.select('core/editor');
+                    if (!sel || typeof sel.isSavingPost !== 'function') {
+                        return;
+                    }
+                    var nowSaving = !!sel.isSavingPost();
+                    var auto = typeof sel.isAutosavingPost === 'function' ? !!sel.isAutosavingPost() : false;
+                    if (prevSaving && !nowSaving && !auto) {
+                        var failed = false;
+                        if (typeof sel.didPostSaveRequestFail === 'function') {
+                            failed = !!sel.didPostSaveRequestFail();
+                        }
+                        if (!failed && $('form#sto-theme-settings-options-form.sto-options-form--metabox').length) {
+                            stoRunMetaboxThemeSettingsAjaxSave({ silent: true });
+                        }
+                    }
+                    prevSaving = nowSaving;
+                });
+            }
+            stoTryMetaboxBlockSubscribe();
+        }
+        initStoMetaboxSaveOnPostSave();
+
         window.addEventListener('popstate', function() {
             syncActiveState(window.location.href);
         });
@@ -1992,59 +2139,5 @@
                 window.setTimeout(onStoOptionsFormControlChanged, 0);
             }
         );
-
-        $(document).on('click', 'form.sto-options-form--metabox button[name="sto_save_options"]', function(ev) {
-            ev.preventDefault();
-            var $form = $(this).closest('form');
-            if (!$form.length) {
-                return;
-            }
-            $form.trigger('submit');
-            var mbx = window.simple_theme_options && window.simple_theme_options.sto_metabox;
-            if (!mbx || !mbx.active || !mbx.ajax_save_nonce || !mbx.ajax_action) {
-                return;
-            }
-            var $inner = $form.closest('.sto-theme-settings-metabox-inner');
-            var $ok = $inner.find('.sto-metabox-inline-notice--success');
-            var $err = $inner.find('.sto-metabox-inline-notice--error');
-            window.setTimeout(function() {
-                var fd = new window.FormData($form[0]);
-                fd.append('action', mbx.ajax_action);
-                fd.append('nonce', mbx.ajax_save_nonce);
-                fd.append('post_id', String(mbx.post_id || ''));
-                var ajaxUrl = (window.simple_theme_options && window.simple_theme_options.ajax_url) || '';
-                window.fetch(ajaxUrl, {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    body: fd
-                })
-                    .then(function(r) {
-                        return r.json();
-                    })
-                    .then(function(json) {
-                        if (json && json.success) {
-                            if ($ok.length) {
-                                $ok.text((mbx.i18n && mbx.i18n.saved) || (json.data && json.data.message) || '').prop('hidden', false);
-                            }
-                            if ($err.length) {
-                                $err.text('').prop('hidden', true);
-                            }
-                        } else {
-                            var msg = (json && json.data && json.data.message) || ((mbx.i18n && mbx.i18n.save_failed) || '');
-                            if ($err.length) {
-                                $err.text(msg).prop('hidden', false);
-                            }
-                            if ($ok.length) {
-                                $ok.text('').prop('hidden', true);
-                            }
-                        }
-                    })
-                    .catch(function() {
-                        if ($err.length) {
-                            $err.text((mbx.i18n && mbx.i18n.save_failed) || '').prop('hidden', false);
-                        }
-                    });
-            }, 60);
-        });
     });
 })(jQuery);
