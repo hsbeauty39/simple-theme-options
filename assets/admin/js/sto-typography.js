@@ -198,15 +198,18 @@
         if (typeof $.fn.select2 !== 'function' || !$el || !$el.length) {
             return;
         }
-        var $dropdownParent = $('#wpbody-content');
-        if (!$dropdownParent.length) {
-            $dropdownParent = $(document.body);
-        }
         if ($el.data('select2')) {
             return;
         }
         if (!$el.is(':visible')) {
             return;
+        }
+        var $dropdownParent =
+            typeof window.stoGetSelect2DropdownParent === 'function'
+                ? window.stoGetSelect2DropdownParent($el)
+                : $('#wpbody-content');
+        if (!$dropdownParent.length) {
+            $dropdownParent = $(document.body);
         }
         var $ph = $el.find('option[value=""]').first();
         var phText = $.trim($ph.text() || '');

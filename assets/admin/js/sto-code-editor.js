@@ -212,10 +212,10 @@
             return;
         }
 
-        // Pick a dropdown parent — for fullscreen-capable editors we want the dropdown to
-        // live in `<body>` so it floats above the overlay; otherwise default to the section
-        // wrapper (matches `refreshStoSelect2`).
-        var $dropdownParent = $('#wpbody-content');
+        var $dropdownParent =
+            typeof window.stoGetSelect2DropdownParent === 'function'
+                ? window.stoGetSelect2DropdownParent($select)
+                : $('#wpbody-content');
         if (!$dropdownParent.length) {
             $dropdownParent = $(document.body);
         }
@@ -604,6 +604,14 @@
         var nowFs = !$wrap.hasClass('sto-code-editor--is-fullscreen');
         $wrap.toggleClass('sto-code-editor--is-fullscreen', nowFs);
         $('body').toggleClass('sto-code-editor-fullscreen-lock', nowFs);
+
+        var $langSel = $wrap.find('[data-sto-code-lang-select]').first();
+        if ($langSel.length && $langSel.data('select2')) {
+            try {
+                $langSel.select2('destroy');
+            } catch (errFs) { /* non-fatal */ }
+            initLangSelect2($wrap, $langSel);
+        }
 
         if (cm && typeof cm.refresh === 'function') {
             window.setTimeout(function () {
