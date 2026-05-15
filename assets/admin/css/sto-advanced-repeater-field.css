@@ -98,6 +98,18 @@
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
+	min-width: 0;
+}
+
+.sto-adv-rep__field {
+	min-width: 0;
+}
+
+.sto-adv-rep__field .sto-select-wrap {
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
 }
 
 .sto-adv-rep__fieldset {

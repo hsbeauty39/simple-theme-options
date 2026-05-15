@@ -822,6 +822,8 @@
         }, 0);
     }
 
+    window.refreshStoSelect2 = refreshStoSelect2;
+
     /**
      * Image help tooltips: one floating popover, in-memory load cache per image URL,
      * optional preloader image/video URL or CSS spinner.

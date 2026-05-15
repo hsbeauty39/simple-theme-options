@@ -1,9 +1,11 @@
 <?php
 namespace SimpleThemeOptions\Admin\Sample\Fields\Appearance;
 
+use SimpleThemeOptions\Admin\Options\Fields\Accordion\Accordion;
 use SimpleThemeOptions\Admin\Options\Fields\BackgroundControl\BackgroundControl;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
+use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
@@ -16,6 +18,8 @@ final class Appearance {
 	use SingletonTrait;
 
 	protected function init() {
+		Group::instance();
+		Accordion::instance();
 		Color::instance();
 		GradientControl::instance();
 		BackgroundControl::instance();
@@ -24,6 +28,135 @@ final class Appearance {
 	}
 
 	public function register_fields() {
+		Group::register(
+			array(
+				'section_slug'  => 'appearance-color',
+				'id'            => 'ap_scheme_demo',
+				'title'         => __( 'Color scheme layout (demo)', 'simple-theme-options' ),
+				'description'   => __( 'Uses the same Theme Settings components as everywhere else: **Group** toolbar row (**Select** + **text**), then an **Accordion** with **one** panel of **Color** pickers on the shared 12-column grid (several colors per row via **`width`**). (*Accordion repeats the same inner `fields` for every panel — use one panel for a token grid, or use **nested groups** without `type` for separate Header / Body / Widget cards.*) Add **Export / Import** with custom buttons + AJAX if you need dynamic scheme lists.', 'simple-theme-options' ),
+				'fields'        => array(
+					array(
+						'type'          => 'select',
+						'id'            => 'preset',
+						'title'         => __( 'Scheme', 'simple-theme-options' ),
+						'description'   => __( 'Illustrative preset label (stored as a string).', 'simple-theme-options' ),
+						'default'       => 'default',
+						'width'         => '1-3',
+						'options'       => array(
+							'default' => __( 'Default', 'simple-theme-options' ),
+							'dark'    => __( 'Dark', 'simple-theme-options' ),
+							'high'    => __( 'High contrast', 'simple-theme-options' ),
+						),
+					),
+					array(
+						'type'          => 'text',
+						'id'            => 'preset_name',
+						'title'         => __( 'Name', 'simple-theme-options' ),
+						'description'   => __( 'Editable label for the active scheme (plain text).', 'simple-theme-options' ),
+						'default'       => __( 'Default', 'simple-theme-options' ),
+						'width'         => '1-3',
+					),
+					array(
+						'type'          => 'accordion',
+						'id'            => 'zones',
+						'title'         => __( 'Color groups', 'simple-theme-options' ),
+						'description'   => __( 'Single accordion section (standard Color field + Iris). Add more **`panels`** rows only when each panel should repeat the **same** inner field list with different storage keys.', 'simple-theme-options' ),
+						'width'         => '1-1',
+						'panels'        => array(
+							array(
+								'id'       => 'tokens',
+								'label'    => __( 'Header & global tokens', 'simple-theme-options' ),
+								'expanded' => true,
+							),
+						),
+						'fields'        => array(
+							array(
+								'type'        => 'color',
+								'id'          => 'h_bg',
+								'title'       => __( 'Site header', 'simple-theme-options' ),
+								'default'     => '#1d2327',
+								'alpha'       => true,
+								'width'       => '1-3',
+								'palettes'    => array( '#1d2327', '#2271b1', '#ffffff', '#000000' ),
+							),
+							array(
+								'type'     => 'color',
+								'id'       => 'h_border',
+								'title'    => __( 'Site header border', 'simple-theme-options' ),
+								'default'  => '#dcdcde',
+								'alpha'    => true,
+								'width'    => '1-3',
+								'palettes' => array( '#dcdcde', '#c3c4c7', '#8c8f94', '#1d2327' ),
+							),
+							array(
+								'type'     => 'color',
+								'id'       => 'h_link',
+								'title'    => __( 'Home link', 'simple-theme-options' ),
+								'default'  => '#2271b1',
+								'alpha'    => true,
+								'width'    => '1-3',
+								'palettes' => array( '#2271b1', '#135e96', '#72aee6', '#ffffff' ),
+							),
+							array(
+								'type'     => 'color',
+								'id'       => 'h_desc',
+								'title'    => __( 'Site description', 'simple-theme-options' ),
+								'default'  => '#787c82',
+								'alpha'    => true,
+								'width'    => '1-3',
+								'palettes' => array( '#787c82', '#50575e', '#2c3338', '#ffffff' ),
+							),
+							array(
+								'type'     => 'color',
+								'id'       => 'h_nav',
+								'title'    => __( 'Navbar', 'simple-theme-options' ),
+								'default'  => '#1d2327',
+								'alpha'    => true,
+								'width'    => '1-3',
+								'palettes' => array( '#1d2327', '#50575e', '#ffffff', '#2271b1' ),
+							),
+							array(
+								'type'     => 'color',
+								'id'       => 'b_bg',
+								'title'    => __( 'Body background', 'simple-theme-options' ),
+								'default'  => '#ffffff',
+								'alpha'    => true,
+								'width'    => '1-2',
+								'palettes' => array( '#ffffff', '#f6f7f7', '#f0f0f1', '#e0e0e0' ),
+							),
+							array(
+								'type'     => 'color',
+								'id'       => 'b_text',
+								'title'    => __( 'Body text', 'simple-theme-options' ),
+								'default'  => '#2c3338',
+								'alpha'    => true,
+								'width'    => '1-2',
+								'palettes' => array( '#2c3338', '#1d2327', '#50575e', '#ffffff' ),
+							),
+							array(
+								'type'     => 'color',
+								'id'       => 'w_title',
+								'title'    => __( 'Widget title', 'simple-theme-options' ),
+								'default'  => '#1d2327',
+								'alpha'    => true,
+								'width'    => '1-2',
+								'palettes' => array( '#1d2327', '#2271b1', '#50575e', '#ffffff' ),
+							),
+							array(
+								'type'     => 'color',
+								'id'       => 'w_text',
+								'title'    => __( 'Widget text', 'simple-theme-options' ),
+								'default'  => '#50575e',
+								'alpha'    => true,
+								'width'    => '1-2',
+								'palettes' => array( '#50575e', '#787c82', '#2c3338', '#ffffff' ),
+							),
+						),
+					),
+				),
+			)
+		);
+
 		Color::register(
 			array(
 				'section_slug' => 'appearance-color',

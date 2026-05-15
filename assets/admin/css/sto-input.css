@@ -8,10 +8,15 @@
     max-width: 100%;
 }
 
-.sto-field-row-input .sto-input-control {
+.sto-adv-rep__field .sto-input-wrap {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.sto-field-row-input .sto-input-control,
+.sto-adv-rep__field .sto-input-control {
     box-sizing: border-box;
     width: 100%;
-    max-width: min(640px, 100%);
     margin: 0;
     padding: 8px 12px;
     font-size: 14px;
@@ -24,13 +29,68 @@
     transition: border-color 0.12s ease-in-out, box-shadow 0.12s ease-in-out;
 }
 
-.sto-field-row-input .sto-input-control:focus {
+.sto-field-row-input .sto-input-control {
+    max-width: min(640px, 100%);
+}
+
+.sto-adv-rep__field .sto-input-control {
+    max-width: 100%;
+}
+
+.sto-field-row-input .sto-input-control:focus,
+.sto-adv-rep__field .sto-input-control:focus {
     border-color: #2271b1;
     box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
     outline: 2px solid transparent;
 }
 
-.sto-field-row-input--textarea .sto-input-control--textarea {
+/* Password + visibility toggle (Dashicons) */
+.sto-field-row-input .sto-input-wrap--password {
+    position: relative;
+    max-width: min(640px, 100%);
+}
+
+.sto-field-row-input .sto-input-wrap--password .sto-input-control--password {
+    width: 100%;
+    max-width: 100%;
+    padding-right: 44px;
+}
+
+.sto-field-row-input .sto-input-password-toggle {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-sizing: border-box;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: var(--sto-field-soft-radius, 5px);
+    background: transparent;
+    color: #646970;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sto-field-row-input .sto-input-password-toggle:hover,
+.sto-field-row-input .sto-input-password-toggle:focus-visible {
+    color: #2271b1;
+    background: rgba(34, 113, 177, 0.08);
+    outline: none;
+}
+
+.sto-field-row-input .sto-input-password-toggle .dashicons {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}
+
+.sto-field-row-input--textarea .sto-input-control--textarea,
+.sto-adv-rep__field--textarea .sto-input-control--textarea {
     min-height: 100px;
     resize: vertical;
 }

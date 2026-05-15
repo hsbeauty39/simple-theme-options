@@ -1344,7 +1344,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 			<hr class="sep" />
 			<h3 id="f-advanced-repeater">6.10.4c Advanced repeater (<code>advanced_repeater</code>)</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-advanced_repeater">PHP →</a></p>
-			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'advanced_repeater'</code> plus <code>id</code>, <code>title</code>, required <code>fields</code> schema. Supported schema nodes: <strong>fieldset</strong> (<code>id</code>, <code>title</code>, nested <code>fields</code>), nested <strong>advanced_repeater</strong> (<code>id</code>, <code>title</code>, <code>fields</code>, optional <code>max</code>, optional <code>default</code> rows), <strong>text</strong>, <strong>number</strong>, <strong>textarea</strong>, <strong>select</strong> (with <code>options</code>), <strong>switcher</strong>. Stored as JSON array of associative objects in <code>sto_options[id]</code>. <strong>No per-breakpoint <code>responsive</code> on inner leaves</strong> in this version (same carve-out family as <code>multi_text</code> / <code>radio_lists</code> for breakpoint maps). Boot <code>AdvancedRepeaterControl::instance()</code> before <code>Group::register()</code> when used inside groups. Hook <strong>19.432</strong> for standalone rows (before <strong>multi_text</strong> <strong>19.435</strong>). Assets <code>sto-advanced-repeater-field</code> (depends on <code>jquery-ui-sortable</code>); <code>main.js</code> calls <code>stoInitAdvancedRepeaterFields</code>. Admin: <strong>Add item</strong>, drag reorder, collapse/expand per item, remove row. Theme: <code>sto_get_advanced_repeater_items( 'option_id' )</code>. <strong>Roadmap:</strong> typography, color, tabs-inside-row, and full <code>required</code> parity for inner cells are follow-up work.</p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'advanced_repeater'</code> plus <code>id</code>, <code>title</code>, required <code>fields</code> schema. Supported schema nodes: <strong>fieldset</strong> (<code>id</code>, <code>title</code>, nested <code>fields</code>), nested <strong>advanced_repeater</strong> (multiple levels within the plugin limit, each with <code>id</code>, <code>title</code>, <code>fields</code>, optional <code>max</code>, optional <code>default</code> rows), <strong>text</strong>, <strong>number</strong>, <strong>textarea</strong>, <strong>select</strong> (with <code>options</code>), <strong>switcher</strong>. Optional <strong><code>default_collapsed</code></strong> (bool): <strong><code>true</code></strong> (default) renders every root and nested row <strong>collapsed</strong> until expanded; <strong><code>false</code></strong> keeps rows open like earlier builds. Stored as JSON array of associative objects in <code>sto_options[id]</code>. <strong>No per-breakpoint <code>responsive</code> on inner leaves</strong> in this version (same carve-out family as <code>multi_text</code> / <code>radio_lists</code> for breakpoint maps). Boot <code>AdvancedRepeaterControl::instance()</code> before <code>Group::register()</code> when used inside groups. Hook <strong>19.432</strong> for standalone rows (before <strong>multi_text</strong> <strong>19.435</strong>). Assets <code>sto-advanced-repeater-field</code> (depends on <code>jquery-ui-sortable</code>); <code>main.js</code> calls <code>stoInitAdvancedRepeaterFields</code>. Admin: <strong>Add item</strong>, drag reorder, collapse/expand per item, remove row. Theme: <code>sto_get_advanced_repeater_items( 'option_id' )</code>. Packaged sample <strong><code>layout_sample_advanced_repeater</code></strong> demonstrates fieldset + all leaf types + <strong>two</strong> nested repeater levels. <strong>Roadmap:</strong> typography, color, tabs-inside-row, and full <code>required</code> parity for inner cells are follow-up work.</p>
 
 			<hr class="sep" />
 			<h3 id="f-google-map">6.10.5 Location map (<code>google_map</code>)</h3>
@@ -1379,6 +1379,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 			<hr class="sep" />
 			<h3 id="f-acc">6.16 Accordion (standalone)</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-accordion">PHP →</a></p>
+			<p><strong>Panels vs. inner <code>fields</code>:</strong> the same <code>fields</code> tree is registered <em>once per</em> <code>panels[]</code> row (storage keys use <code>{accordion_id}_{panel_id}_{inner_id}</code>). Use several panels when each section should expose the <strong>same</strong> control template; use <strong>one</strong> panel for a single token grid, or use <strong>Group</strong> nested blocks (no <code>type</code> — only <code>id</code>, <code>title</code>, <code>fields</code>) for separate titled cards (e.g. Header / Body / Widget). Sample “scheme” toolbar + color grid: <code>Sample/Fields/Appearance/Appearance.php</code> group <code>ap_scheme_demo</code> on <code>appearance-color</code>.</p>
 
 			<hr class="sep" />
 			<h3 id="f-group">6.17 Group (nested inner fields + subgroup + width grid)</h3>
@@ -2178,17 +2179,19 @@ Input::register(
 					</div>
 					<pre class="sto-php-snippet__pre"><code class="language-php">AdvancedRepeaterControl::register(
 	array(
-		'section_slug' => 'misc',
-		'id'             => 'content_blocks',
-		'title'          => __( 'Blocks', 'simple-theme-options' ),
-		'max'            => 20,
-		'default'        => array(
+		'section_slug'        => 'misc',
+		'id'                  => 'content_blocks',
+		'title'               => __( 'Blocks', 'simple-theme-options' ),
+		'max'                 => 20,
+		// Optional: default true — root + nested rows start collapsed.
+		'default_collapsed'   => true,
+		'default'             => array(
 			array(
-				'hero' => array( 'heading' => __( 'Welcome', 'simple-theme-options' ) ),
+				'hero'  => array( 'heading' => __( 'Welcome', 'simple-theme-options' ) ),
 				'lines' => array( array( 'note' => '' ) ),
 			),
 		),
-		'fields'         => array(
+		'fields'              => array(
 			array(
 				'type'   => 'fieldset',
 				'id'     => 'hero',
@@ -2200,10 +2203,21 @@ Input::register(
 			array(
 				'type'    => 'advanced_repeater',
 				'id'      => 'lines',
-				'title'   => __( 'Lines', 'simple-theme-options' ),
+				'title'   => __( 'Lines (nested level 1)', 'simple-theme-options' ),
 				'max'     => 10,
+				'default' => array( array( 'note' => '' ) ),
 				'fields'  => array(
 					array( 'type' => 'textarea', 'id' => 'note', 'title' => __( 'Note', 'simple-theme-options' ), 'default' => '' ),
+					array(
+						'type'    => 'advanced_repeater',
+						'id'      => 'cells',
+						'title'   => __( 'Cells (nested level 2)', 'simple-theme-options' ),
+						'max'     => 4,
+						'default' => array( array( 'cell_label' => '' ) ),
+						'fields'  => array(
+							array( 'type' => 'text', 'id' => 'cell_label', 'title' => __( 'Cell label', 'simple-theme-options' ), 'default' => '' ),
+						),
+					),
 				),
 			),
 		),
