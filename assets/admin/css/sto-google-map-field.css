@@ -1,5 +1,5 @@
 /**
- * Google Map field — Theme Settings soft chrome (matches gallery / dimension tokens).
+ * Location map field — Theme Settings soft chrome (matches gallery / dimension tokens). Leaflet + OSM in admin.
  */
 
 .sto-option-panel-wrapper .sto-field-row-google-map .sto-gmap {
@@ -21,6 +21,24 @@
 	background: #f6f7f7;
 }
 
+.sto-option-panel-wrapper .sto-field-row-google-map .sto-gmap__hint {
+	margin: 8px 0 0;
+	font-size: 12px;
+	line-height: 1.45;
+	color: #646970;
+}
+
+.sto-option-panel-wrapper .sto-field-row-google-map .sto-gmap__msg {
+	margin: 6px 0 0;
+	font-size: 12px;
+	line-height: 1.45;
+	color: #b32d2e;
+}
+
+.sto-option-panel-wrapper .sto-field-row-google-map .sto-gmap__msg[hidden] {
+	display: none !important;
+}
+
 .sto-option-panel-wrapper .sto-field-row-google-map .sto-gmap__search {
 	width: 100%;
 	max-width: min(720px, 100%);
@@ -29,22 +47,23 @@
 .sto-option-panel-wrapper .sto-field-row-google-map .sto-gmap__map-wrap {
 	position: relative;
 	background: #fff;
-}
-
-.sto-option-panel-wrapper .sto-field-row-google-map .sto-gmap__notice {
-	margin: 0;
-	padding: 10px 12px;
-	font-size: 13px;
-	line-height: 1.45;
-	color: #646970;
-	background: #fcf9e8;
-	border-bottom: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	z-index: 0;
 }
 
 .sto-option-panel-wrapper .sto-field-row-google-map .sto-gmap__canvas {
 	width: 100%;
 	min-height: 320px;
 	background: #f0f0f1;
+}
+
+.sto-option-panel-wrapper .sto-field-row-google-map .sto-gmap__canvas.leaflet-container {
+	z-index: 0;
+	font-family: inherit;
+}
+
+.sto-option-panel-wrapper .sto-field-row-google-map .leaflet-top,
+.sto-option-panel-wrapper .sto-field-row-google-map .leaflet-bottom {
+	z-index: 400;
 }
 
 .sto-option-panel-wrapper .sto-field-row-google-map .sto-gmap__fields {
@@ -87,9 +106,4 @@
 	border-color: #2271b1;
 	box-shadow: var(--sto-field-soft-shadow-focus, 0 0 0 1px #2271b1, 0 2px 6px rgba(34, 113, 177, 0.12));
 	outline: 2px solid transparent;
-}
-
-/* Pac container from Google floats above admin */
-.pac-container {
-	z-index: 1000000 !important;
 }

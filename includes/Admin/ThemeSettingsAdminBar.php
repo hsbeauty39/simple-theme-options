@@ -155,9 +155,12 @@ final class ThemeSettingsAdminBar {
 			return;
 		}
 
-		$leaves    = $menu->get_leaf_sections();
-		$first     = ! empty( $leaves[0]['slug'] ) ? (string) $leaves[0]['slug'] : '';
-		$root_href = $first !== '' ? $menu->get_theme_settings_url( $first ) : $menu->get_theme_settings_url();
+		if ( $menu->is_packaged_demo_menu() && ! $menu->is_demo_mode_enabled() ) {
+			return;
+		}
+
+		$def       = $menu->get_default_leaf_section_slug_for_menu_page( $page );
+		$root_href = $def !== '' ? $menu->get_theme_settings_url( $def, $page ) : $menu->get_theme_settings_url( '', $page );
 
 		$wp_admin_bar->add_node(
 			array(
@@ -175,6 +178,9 @@ final class ThemeSettingsAdminBar {
 			if ( empty( $sec['slug'] ) || empty( $sec['name'] ) ) {
 				continue;
 			}
+			if ( $menu->get_section_row_menu_page( $sec ) !== $page ) {
+				continue;
+			}
 
 			$parent_slug = (string) $sec['slug'];
 			$subs        = $menu->get_sub_sections_for_parent( $parent_slug );
@@ -187,7 +193,7 @@ final class ThemeSettingsAdminBar {
 						'parent' => 'sto-theme-settings',
 						'id'     => 'sto-ts-' . sanitize_key( $parent_slug ),
 						'title'  => $this->format_node_title( (string) $sec['name'], $sec_icon, $parent_slug ),
-						'href'   => $menu->get_theme_settings_url( $parent_slug ),
+						'href'   => $menu->get_theme_settings_url( $parent_slug, $page ),
 						'meta'   => array(
 							'class' => 'sto-ab-leaf-link',
 						),
@@ -199,8 +205,8 @@ final class ThemeSettingsAdminBar {
 			$group_id   = 'sto-ts-grp-' . sanitize_key( $parent_slug );
 			$first_sub  = $subs[0];
 			$group_href = ! empty( $first_sub['slug'] )
-				? $menu->get_theme_settings_url( (string) $first_sub['slug'] )
-				: $menu->get_theme_settings_url( $parent_slug );
+				? $menu->get_theme_settings_url( (string) $first_sub['slug'], $page )
+				: $menu->get_theme_settings_url( $parent_slug, $page );
 
 			$wp_admin_bar->add_node(
 				array(
@@ -218,6 +224,9 @@ final class ThemeSettingsAdminBar {
 				if ( empty( $sub['slug'] ) || empty( $sub['name'] ) ) {
 					continue;
 				}
+				if ( $menu->get_section_row_menu_page( $sub ) !== $page ) {
+					continue;
+				}
 
 				$sub_slug = (string) $sub['slug'];
 				$sub_icon = isset( $sub['icon'] ) ? (string) $sub['icon'] : '';
@@ -227,7 +236,7 @@ final class ThemeSettingsAdminBar {
 						'parent' => $group_id,
 						'id'     => 'sto-ts-' . sanitize_key( $sub_slug ),
 						'title'  => $this->format_node_title( (string) $sub['name'], $sub_icon, $sub_slug ),
-						'href'   => $menu->get_theme_settings_url( $sub_slug ),
+						'href'   => $menu->get_theme_settings_url( $sub_slug, $page ),
 						'meta'   => array(
 							'class' => 'sto-ab-sublink',
 						),

@@ -24,12 +24,15 @@ use SimpleThemeOptions\Admin\Options\ImportExport\ThemeSettingsImportExport;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
 use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
+use SimpleThemeOptions\Admin\Options\Fields\AdvancedRepeaterControl\AdvancedRepeaterControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\ButtonGroup\ButtonGroup;
 use SimpleThemeOptions\Admin\ThemeSettingsCleanScreen;
+use SimpleThemeOptions\Admin\ThemeSettingsDisplayLocations;
 use SimpleThemeOptions\Admin\ThemeSettingsMetabox;
+use SimpleThemeOptions\Admin\ThemeSettingsTermBox;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
@@ -103,6 +106,13 @@ final class Menu {
 	private $sto_options_metabox_overlay_post_ids = array();
 
 	/**
+	 * Stack of term IDs for {@see filter_option_sto_options_term_overlay()} while rendering the Theme Settings term panel.
+	 *
+	 * @var array<int, int>
+	 */
+	private $sto_options_term_overlay_term_ids = array();
+
+	/**
 	 * Whether the packaged **Field samples** / **Colors & surfaces** / **Accordion** demo UI is active.
 	 * Requires {@see is_demo_capability_allowed()} and option **`sto_theme_settings_ui_demo_enabled`** (default off).
 	 * For **client** menus, that option is toggled from **Advance**; for {@see is_packaged_demo_menu()}, use **Tools → Simple Backup** (Demo mode).
@@ -119,7 +129,7 @@ final class Menu {
 	/**
 	 * Whether post editor Theme Settings metaboxes should appear (any root registered a metabox, preference on, packaged demo gate).
 	 *
-	 * When no metabox roots are registered, returns **false** (filter not applied). Otherwise the stored option **`sto_theme_settings_ui_metabox_enabled`** (default **true**) is evaluated, then filter **`sto_theme_settings_metabox_ui_enabled`**.
+	 * When no metabox roots are registered, returns **false** (filter not applied). Otherwise filter **`sto_theme_settings_metabox_ui_enabled`** (default **true**).
 	 */
 	public function should_show_theme_settings_metaboxes(): bool {
 		if ( ThemeSettingsMetabox::instance()->get_roots() === array() ) {
@@ -128,9 +138,30 @@ final class Menu {
 		if ( $this->is_packaged_demo_menu() && ! $this->is_demo_mode_enabled() ) {
 			return false;
 		}
-		$on = wp_validate_boolean( get_option( ThemeSettingsImportExport::OPTION_UI_METABOX_ENABLED, true ) );
+		if ( ! ThemeSettingsDisplayLocations::instance()->is_metabox_enabled() ) {
+			return false;
+		}
 
-		return (bool) apply_filters( 'sto_theme_settings_metabox_ui_enabled', $on );
+		return (bool) apply_filters( 'sto_theme_settings_metabox_ui_enabled', true );
+	}
+
+	/**
+	 * Whether taxonomy term Theme Settings panels should appear.
+	 *
+	 * Filter {@see 'sto_theme_settings_term_metabox_ui_enabled'} (default **true**), same visibility rules as post metaboxes.
+	 */
+	public function should_show_theme_settings_term_metaboxes(): bool {
+		if ( ThemeSettingsTermBox::instance()->get_roots() === array() ) {
+			return false;
+		}
+		if ( $this->is_packaged_demo_menu() && ! $this->is_demo_mode_enabled() ) {
+			return false;
+		}
+		if ( ! ThemeSettingsDisplayLocations::instance()->is_taxonomy_enabled() ) {
+			return false;
+		}
+
+		return (bool) apply_filters( 'sto_theme_settings_term_metabox_ui_enabled', true );
 	}
 
 	/**
@@ -193,6 +224,73 @@ final class Menu {
 			$value = array();
 		}
 		$ov = get_post_meta( $post_id, ThemeSettingsMetabox::POST_SETTINGS_META_KEY, true );
+		if ( ! is_array( $ov ) || $ov === array() ) {
+			return $value;
+		}
+
+		return array_merge( $value, $ov );
+	}
+
+	/**
+	 * Global `sto_options` merged with per-term overrides (term wins on key collisions).
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_effective_sto_options_for_term( int $term_id ): array {
+		$base = get_option( 'sto_options', array() );
+		if ( ! is_array( $base ) ) {
+			$base = array();
+		}
+		$term_id = (int) $term_id;
+		if ( $term_id <= 0 ) {
+			return $base;
+		}
+		$ov = get_term_meta( $term_id, ThemeSettingsTermBox::TERM_SETTINGS_META_KEY, true );
+		if ( ! is_array( $ov ) || $ov === array() ) {
+			return $base;
+		}
+
+		return array_merge( $base, $ov );
+	}
+
+	/**
+	 * While rendering term panel HTML, merge term meta over `sto_options` for `get_option( 'sto_options' )` reads.
+	 */
+	public function push_sto_options_term_overlay( int $term_id ): void {
+		$term_id = (int) $term_id;
+		if ( $term_id <= 0 ) {
+			return;
+		}
+		$this->sto_options_term_overlay_term_ids[] = $term_id;
+		if ( count( $this->sto_options_term_overlay_term_ids ) === 1 ) {
+			add_filter( 'option_sto_options', array( $this, 'filter_option_sto_options_term_overlay' ), 10, 2 );
+		}
+	}
+
+	public function pop_sto_options_term_overlay(): void {
+		array_pop( $this->sto_options_term_overlay_term_ids );
+		if ( $this->sto_options_term_overlay_term_ids === array() ) {
+			remove_filter( 'option_sto_options', array( $this, 'filter_option_sto_options_term_overlay' ), 10 );
+		}
+	}
+
+	/**
+	 * @param mixed  $value  Option value from the database.
+	 * @param string $option Option name.
+	 * @return mixed
+	 */
+	public function filter_option_sto_options_term_overlay( $value, $option ) {
+		if ( $option !== 'sto_options' || $this->sto_options_term_overlay_term_ids === array() ) {
+			return $value;
+		}
+		$term_id = (int) end( $this->sto_options_term_overlay_term_ids );
+		if ( $term_id <= 0 ) {
+			return $value;
+		}
+		if ( ! is_array( $value ) ) {
+			$value = array();
+		}
+		$ov = get_term_meta( $term_id, ThemeSettingsTermBox::TERM_SETTINGS_META_KEY, true );
 		if ( ! is_array( $ov ) || $ov === array() ) {
 			return $value;
 		}
@@ -509,6 +607,17 @@ final class Menu {
 				)
 			);
 		}
+
+		$term_metabox_cfg = $this->parse_term_metabox_register_args( $args );
+		if ( ! empty( $term_metabox_cfg['taxonomies'] ) ) {
+			ThemeSettingsTermBox::instance()->register_root(
+				$slug_s,
+				array(
+					'taxonomies' => $term_metabox_cfg['taxonomies'],
+					'title'      => isset( $term_metabox_cfg['title'] ) ? (string) $term_metabox_cfg['title'] : '',
+				)
+			);
+		}
 	}
 
 	/**
@@ -558,6 +667,52 @@ final class Menu {
 		}
 		if ( isset( $from_nested['priority'] ) && is_string( $from_nested['priority'] ) && $from_nested['priority'] !== '' ) {
 			$out['priority'] = $from_nested['priority'];
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Parse term-metabox keys from {@see register()} $args.
+	 *
+	 * Supported shapes:
+	 * - `'term_metabox' => array( 'taxonomies' => array( 'category', 'product_cat' ), 'title' => '…' )`
+	 * - `'enable_term_metabox' => true` with optional `'term_metabox_taxonomies' => array( … )`
+	 *
+	 * @param array<string, mixed> $args
+	 * @return array{taxonomies: array<int, string>, title?: string}
+	 */
+	private function parse_term_metabox_register_args( array $args ): array {
+		$out = array(
+			'taxonomies' => array(),
+			'title'      => '',
+		);
+
+		$from_nested = isset( $args['term_metabox'] ) && is_array( $args['term_metabox'] ) ? $args['term_metabox'] : array();
+
+		if ( ! empty( $from_nested['taxonomies'] ) && is_array( $from_nested['taxonomies'] ) ) {
+			foreach ( $from_nested['taxonomies'] as $tax ) {
+				$tax = sanitize_key( (string) $tax );
+				if ( $tax !== '' && taxonomy_exists( $tax ) ) {
+					$out['taxonomies'][] = $tax;
+				}
+			}
+		} elseif ( ! empty( $args['enable_term_metabox'] ) ) {
+			$taxes = isset( $args['term_metabox_taxonomies'] ) && is_array( $args['term_metabox_taxonomies'] )
+				? $args['term_metabox_taxonomies']
+				: array( 'category', 'post_tag' );
+			foreach ( $taxes as $tax ) {
+				$tax = sanitize_key( (string) $tax );
+				if ( $tax !== '' && taxonomy_exists( $tax ) ) {
+					$out['taxonomies'][] = $tax;
+				}
+			}
+		}
+
+		$out['taxonomies'] = array_values( array_unique( $out['taxonomies'] ) );
+
+		if ( isset( $from_nested['title'] ) && is_string( $from_nested['title'] ) ) {
+			$out['title'] = $from_nested['title'];
 		}
 
 		return $out;
@@ -759,6 +914,7 @@ final class Menu {
             GalleryControl::get_field_ids_for_section( $section_slug ),
             MultiTextControl::get_field_ids_for_section( $section_slug ),
             RadioListsControl::get_field_ids_for_section( $section_slug ),
+            AdvancedRepeaterControl::get_field_ids_for_section( $section_slug ),
             GoogleMapControl::get_field_ids_for_section( $section_slug ),
             AlignmentControl::get_field_ids_for_section( $section_slug ),
             Range::get_field_ids_for_section( $section_slug ),
@@ -794,17 +950,34 @@ final class Menu {
      * @param array<string, mixed> $posted_options_raw Unslashed `sto_options` subset from the request.
      * @param bool                 $store_validation_transient When validation fails, store {@see get_validation_notice_transient_name()} payload for admin redirect screens.
      * @param int                  $metabox_post_id When **> 0**, persist this leaf’s keys to that post’s {@see ThemeSettingsMetabox::POST_SETTINGS_META_KEY} only (no global `update_option`).
+     * @param int                  $term_id         When **> 0**, persist to that term’s {@see ThemeSettingsTermBox::TERM_SETTINGS_META_KEY} only.
      * @return true|\WP_Error `WP_Error` with code `sto_theme_settings_validation` and `messages` list in error data.
      */
-    public function persist_theme_settings_leaf( string $menu_page_slug, string $requested_section_slug, array $posted_options_raw, bool $store_validation_transient = true, int $metabox_post_id = 0 ) {
+    public function persist_theme_settings_leaf( string $menu_page_slug, string $requested_section_slug, array $posted_options_raw, bool $store_validation_transient = true, int $metabox_post_id = 0, int $term_id = 0 ) {
         $menu_page_slug = sanitize_key( $menu_page_slug );
         if ( $menu_page_slug === '' || ! in_array( $menu_page_slug, $this->registered_menu_slugs, true ) ) {
             return new \WP_Error( 'sto_theme_settings_bad_menu', __( 'Invalid Theme Settings menu.', 'simple-theme-options' ) );
         }
 
         $metabox_post_id = (int) $metabox_post_id;
+        $term_id         = (int) $term_id;
+        if ( $metabox_post_id > 0 && $term_id > 0 ) {
+            return new \WP_Error( 'sto_theme_settings_bad_context', __( 'Invalid save context.', 'simple-theme-options' ) );
+        }
         if ( $metabox_post_id > 0 && ! current_user_can( 'edit_post', $metabox_post_id ) ) {
             return new \WP_Error( 'sto_theme_settings_bad_post', __( 'You cannot edit this post’s Theme Settings.', 'simple-theme-options' ) );
+        }
+        if ( $term_id > 0 ) {
+            $term = get_term( $term_id );
+            if ( ! $term instanceof \WP_Term ) {
+                return new \WP_Error( 'sto_theme_settings_bad_term', __( 'Invalid term.', 'simple-theme-options' ) );
+            }
+            if ( ! current_user_can( 'manage_options' ) ) {
+                return new \WP_Error( 'sto_theme_settings_bad_term', __( 'You cannot edit this term’s Theme Settings.', 'simple-theme-options' ) );
+            }
+            if ( ! ThemeSettingsTermBox::instance()->menu_root_allows_taxonomy( $menu_page_slug, (string) $term->taxonomy ) ) {
+                return new \WP_Error( 'sto_theme_settings_bad_term', __( 'Theme Settings are not available for this taxonomy.', 'simple-theme-options' ) );
+            }
         }
 
         $section_slug = $this->resolve_canonical_leaf_for_menu_and_section( $menu_page_slug, $requested_section_slug );
@@ -945,6 +1118,12 @@ final class Menu {
                 continue;
             }
 
+            if ( AdvancedRepeaterControl::is_registered_field_id( $option_key ) ) {
+                $raw_ar = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
+                $sanitized_options[ $option_key ] = AdvancedRepeaterControl::sanitize_posted_value( $option_key, $raw_ar );
+                continue;
+            }
+
             if ( GoogleMapControl::is_registered_field_id( $option_key ) ) {
                 $raw_map = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
                 $sanitized_options[ $option_key ] = GoogleMapControl::sanitize_posted_value( $option_key, $raw_map );
@@ -988,7 +1167,9 @@ final class Menu {
 
         $existing = $metabox_post_id > 0
             ? $this->get_effective_sto_options_for_post( $metabox_post_id )
-            : (array) get_option( 'sto_options', array() );
+            : ( $term_id > 0
+                ? $this->get_effective_sto_options_for_term( $term_id )
+                : (array) get_option( 'sto_options', array() ) );
         if ( ! is_array( $existing ) ) {
             $existing = array();
         }
@@ -1034,6 +1215,7 @@ final class Menu {
                 GalleryControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 MultiTextControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 RadioListsControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+                AdvancedRepeaterControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 GoogleMapControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 AlignmentControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options )
             ),
@@ -1078,6 +1260,21 @@ final class Menu {
             return true;
         }
 
+        if ( $term_id > 0 ) {
+            $prev = get_term_meta( $term_id, ThemeSettingsTermBox::TERM_SETTINGS_META_KEY, true );
+            if ( ! is_array( $prev ) ) {
+                $prev = array();
+            }
+            foreach ( array_keys( $section_key_map ) as $k ) {
+                if ( array_key_exists( $k, $sanitized_options ) ) {
+                    $prev[ $k ] = $sanitized_options[ $k ];
+                }
+            }
+            update_term_meta( $term_id, ThemeSettingsTermBox::TERM_SETTINGS_META_KEY, $prev );
+
+            return true;
+        }
+
         update_option( 'sto_options', $sanitized_options );
 
         return true;
@@ -1090,7 +1287,7 @@ final class Menu {
         }
 
         global $pagenow;
-        if ( $pagenow === 'post.php' || $pagenow === 'post-new.php' ) {
+        if ( $pagenow === 'post.php' || $pagenow === 'post-new.php' || $pagenow === 'term.php' || $pagenow === 'edit-tags.php' ) {
             return;
         }
 
@@ -1270,6 +1467,7 @@ final class Menu {
             GalleryControl::get_all_fields_for_search(),
             MultiTextControl::get_all_fields_for_search(),
             RadioListsControl::get_all_fields_for_search(),
+            AdvancedRepeaterControl::get_all_fields_for_search(),
             GoogleMapControl::get_all_fields_for_search(),
             AlignmentControl::get_all_fields_for_search(),
             Range::get_all_fields_for_search(),
@@ -1779,8 +1977,15 @@ final class Menu {
         return $this->get_sub_sections_by_parent_slug( sanitize_key( (string) $parent_slug ), true );
     }
 
-    private function render_section_panel( $section, $current_section_slug ) {
+    private function render_section_panel( $section, $current_section_slug, $surface = null, $surface_context = array() ) {
         $is_active = $current_section_slug === $section['slug'];
+        if ( $surface === null ) {
+            $surface = ThemeSettingsDisplayLocations::SURFACE_ADMIN;
+        }
+        ThemeSettingsDisplayLocations::instance()->set_render_surface(
+            (string) $surface,
+            is_array( $surface_context ) ? $surface_context : array()
+        );
         ?>
         <div
             class="sto-option-panel-section <?php echo esc_attr( $is_active ? 'sto-is-active' : 'sto-is-hidden' ); ?>"
@@ -2128,6 +2333,16 @@ final class Menu {
         $sto_form_action = add_query_arg( 'section', $current_section_slug, $sidebar_base );
         $sto_form_action = remove_query_arg( array( 'sto_saved', 'sto_imported', 'sto_validation_error', 'sto-metabox-saved' ), $sto_form_action );
 
+        $metabox_post_type = 'post';
+        if ( $editor_post instanceof \WP_Post ) {
+            $metabox_post_type = sanitize_key( (string) $editor_post->post_type );
+        } elseif ( $post_id > 0 ) {
+            $metabox_post_obj = get_post( $post_id );
+            if ( $metabox_post_obj instanceof \WP_Post ) {
+                $metabox_post_type = sanitize_key( (string) $metabox_post_obj->post_type );
+            }
+        }
+
         $this->push_sto_options_metabox_overlay( $post_id );
         ob_start();
         try {
@@ -2233,7 +2448,14 @@ final class Menu {
                                 <input type="hidden" name="sto_ts_section" value="<?php echo esc_attr( $current_section_slug ); ?>" />
                                 <div class="sto-option-panel-content-body">
                                     <?php foreach ( $leaf_sections as $section ) { ?>
-                                        <?php $this->render_section_panel( $section, $current_section_slug ); ?>
+                                        <?php
+                                        $this->render_section_panel(
+                                            $section,
+                                            $current_section_slug,
+                                            ThemeSettingsDisplayLocations::SURFACE_METABOX,
+                                            array( 'post_type' => $metabox_post_type )
+                                        );
+                                        ?>
                                     <?php } ?>
                                 </div>
                             </form>
@@ -2251,7 +2473,271 @@ final class Menu {
         return $html;
     }
 
-    
+    /**
+     * Base term editor URL for term panel deep links.
+     */
+    private function get_term_editor_base_url( int $term_id, string $taxonomy ): string {
+        $noise    = array( 'sto_saved', 'sto_imported', 'sto_validation_error', 'sto-term-saved', 'message' );
+        $term_id  = (int) $term_id;
+        $taxonomy = sanitize_key( $taxonomy );
+        if ( $term_id <= 0 || $taxonomy === '' ) {
+            return '';
+        }
+
+        $url = get_edit_term_link( $term_id, $taxonomy, '' );
+        if ( is_wp_error( $url ) || ! is_string( $url ) || $url === '' ) {
+            $url = add_query_arg(
+                array(
+                    'taxonomy' => $taxonomy,
+                    'tag_ID'   => $term_id,
+                ),
+                admin_url( 'term.php' )
+            );
+        }
+
+        return remove_query_arg( $noise, $url );
+    }
+
+    /**
+     * Base add-term URL for Theme Settings section links on `edit-tags.php`.
+     */
+    private function get_term_add_form_base_url( string $taxonomy ): string {
+        $taxonomy = sanitize_key( $taxonomy );
+        if ( $taxonomy === '' ) {
+            return '';
+        }
+
+        $noise = array( 'sto_saved', 'sto_imported', 'sto_validation_error', 'sto-term-saved', 'message' );
+
+        return remove_query_arg(
+            $noise,
+            add_query_arg(
+                array( 'taxonomy' => $taxonomy ),
+                admin_url( 'edit-tags.php' )
+            )
+        );
+    }
+
+    /**
+     * After a new term is created, persist Theme Settings posted from the add form (`created_{$taxonomy}`).
+     *
+     * @param array<string, mixed> $posted_options_raw Unslashed `sto_options` from the add-term POST.
+     */
+    public function persist_term_settings_from_add_request( string $menu_page_slug, array $posted_options_raw, int $term_id ): void {
+        $menu_page_slug = sanitize_key( $menu_page_slug );
+        $term_id        = (int) $term_id;
+        if ( $menu_page_slug === '' || $term_id <= 0 || $posted_options_raw === array() ) {
+            return;
+        }
+
+        foreach ( $this->get_leaf_sections_for_navigation_for_menu_page( $menu_page_slug ) as $section ) {
+            if ( empty( $section['slug'] ) ) {
+                continue;
+            }
+            $leaf = sanitize_key( (string) $section['slug'] );
+            if ( $leaf === '' ) {
+                continue;
+            }
+            $result = $this->persist_theme_settings_leaf( $menu_page_slug, $leaf, $posted_options_raw, false, 0, $term_id );
+            if ( is_wp_error( $result ) ) {
+                return;
+            }
+        }
+    }
+
+    /**
+     * Active leaf slug on `term.php` (uses `?section=` on the term editor URL).
+     */
+    public function get_term_active_leaf_slug( string $menu_page_slug ): string {
+        $menu_page_slug = sanitize_key( $menu_page_slug );
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $selected = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'] ) ) : '';
+
+        return $this->resolve_canonical_leaf_for_menu_and_section( $menu_page_slug, $selected );
+    }
+
+    /**
+     * Full Theme Settings panel on taxonomy term add / edit screens.
+     *
+     * @param string $menu_page_slug Options root slug.
+     * @param int    $term_id        Term ID on edit; **0** on add (`edit-tags.php`).
+     * @param string $taxonomy       Taxonomy slug.
+     */
+    public function get_term_panel_markup( string $menu_page_slug, int $term_id, string $taxonomy ): string {
+        $req = sanitize_key( $menu_page_slug );
+        if ( $req === '' || ! in_array( $req, $this->registered_menu_slugs, true ) ) {
+            return '';
+        }
+
+        if ( ! $this->should_show_theme_settings_term_metaboxes() ) {
+            return '';
+        }
+
+        $term_id  = (int) $term_id;
+        $taxonomy = sanitize_key( $taxonomy );
+        $is_add   = $term_id <= 0;
+
+        if ( $taxonomy === '' || ! ThemeSettingsTermBox::instance()->menu_root_allows_taxonomy( $req, $taxonomy ) ) {
+            return '';
+        }
+
+        if ( ! $is_add ) {
+            $term = get_term( $term_id, $taxonomy );
+            if ( ! $term instanceof \WP_Term ) {
+                return '';
+            }
+        }
+
+        $panel_heading = isset( $this->registered_menu_labels[ $req ] ) && $this->registered_menu_labels[ $req ] !== ''
+            ? (string) $this->registered_menu_labels[ $req ]
+            : __( 'Theme Settings', 'simple-theme-options' );
+
+        $current_section_slug = $this->get_term_active_leaf_slug( $req );
+        $current_section      = $this->get_section_by_slug( $current_section_slug );
+
+        $content_title = '';
+        if ( $current_section && isset( $current_section['name'] ) && (string) $current_section['name'] !== '' ) {
+            $content_title = (string) $current_section['name'];
+        }
+        if ( $content_title === '' ) {
+            $content_title = $this->get_leaf_breadcrumb_label( $current_section_slug );
+        }
+        if ( $content_title === '' ) {
+            $content_title = $panel_heading;
+        }
+
+        $content_icon  = $current_section && isset( $current_section['icon'] ) ? $current_section['icon'] : 'fa-light fa-circle-question';
+        $leaf_sections = $this->get_leaf_sections_for_navigation_for_menu_page( $req );
+        $default_leaf  = $this->get_default_leaf_section_slug_for_menu_page( $req );
+
+        $sidebar_base = $is_add
+            ? $this->get_term_add_form_base_url( $taxonomy )
+            : $this->get_term_editor_base_url( $term_id, $taxonomy );
+        if ( $sidebar_base === '' ) {
+            return '';
+        }
+
+        $sto_form_action = add_query_arg( 'section', $current_section_slug, $sidebar_base );
+        $sto_form_action = remove_query_arg( array( 'sto_saved', 'sto_imported', 'sto_validation_error', 'sto-term-saved' ), $sto_form_action );
+
+        if ( ! $is_add ) {
+            $this->push_sto_options_term_overlay( $term_id );
+        }
+        ob_start();
+        try {
+        ?>
+        <div class="sto-section-content sto-theme-settings-term-inner">
+            <div
+                class="sto-option-panel-wrapper sto-option-panel-wrapper--term sto-option-panel-wrapper--metabox"
+                data-sto-default-leaf="<?php echo esc_attr( $default_leaf ); ?>"
+                data-sto-menu-page="<?php echo esc_attr( $req ); ?>"
+                data-sto-term-edit-base="<?php echo esc_attr( $sidebar_base ); ?>"
+                data-sto-term-id="<?php echo esc_attr( (string) $term_id ); ?>"
+                data-sto-taxonomy="<?php echo esc_attr( $taxonomy ); ?>"
+                <?php echo $is_add ? ' data-sto-term-add="1"' : ''; ?>
+            >
+                <div
+                    class="sto-metabox-alert"
+                    role="status"
+                    data-sto-metabox-intro-dismiss="<?php echo esc_attr( ( $is_add ? 'add' : (string) $term_id ) . '-' . $req ); ?>"
+                >
+                    <div class="sto-metabox-alert__inner">
+                        <span class="sto-metabox-alert__icon" aria-hidden="true">
+                            <i class="fa-light fa-circle-info"></i>
+                        </span>
+                        <p class="sto-metabox-alert__text">
+                            <?php
+                            if ( $is_add ) {
+                                esc_html_e( 'These fields apply to this term only (they override the same keys from global Theme Settings on the front). They are stored when you add the term.', 'simple-theme-options' );
+                            } else {
+                                esc_html_e( 'These fields apply to this term only (they override the same keys from global Theme Settings on the front). They are stored when you update the term.', 'simple-theme-options' );
+                            }
+                            ?>
+                        </p>
+                        <button type="button" class="sto-metabox-alert__dismiss" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'simple-theme-options' ); ?>">
+                            <span class="sto-metabox-alert__dismiss-icon" aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="sto-metabox-inline-notice sto-metabox-inline-notice--success" role="status" hidden></div>
+                <div class="sto-metabox-inline-notice sto-metabox-inline-notice--error" role="alert" hidden></div>
+                <div class="sto-option-panel-head sto-panel-head-with-search">
+                    <h2 class="sto-option-panel-title sto-option-panel-title--metabox"><?php echo esc_html( $panel_heading ); ?></h2>
+                    <div class="sto-quick-search" data-sto-quick-search>
+                        <div class="sto-quick-search-field">
+                            <span class="sto-quick-search-icon-wrap" aria-hidden="true">
+                                <i class="sto-quick-search-icon fa-light fa-magnifying-glass"></i>
+                            </span>
+                            <input
+                                type="search"
+                                class="sto-quick-search-input"
+                                placeholder="<?php esc_attr_e( 'Start typing to find options…', 'simple-theme-options' ); ?>"
+                                autocomplete="off"
+                                aria-autocomplete="list"
+                                aria-controls="sto-quick-search-results-term"
+                                aria-expanded="false"
+                            />
+                        </div>
+                        <div
+                            class="sto-quick-search-results"
+                            id="sto-quick-search-results-term"
+                            role="listbox"
+                            hidden
+                        ></div>
+                    </div>
+                </div>
+                <div class="sto-option-panel-body">
+                    <div class="sto-option-panel-nav-layout">
+                        <div class="sto-option-panel-sidebar-wrap">
+                            <ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php esc_attr_e( 'Theme Settings sections', 'simple-theme-options' ); ?>">
+                                <?php foreach ( $this->get_sections_for_navigation_for_menu_page( $req ) as $section ) { ?>
+                                    <?php $this->render_sidebar_item( $section, $current_section_slug, false, $req, $sidebar_base ); ?>
+                                <?php } ?>
+                            </ul>
+                        </div>
+                        <div class="sto-option-panel-main">
+                            <div class="sto-option-panel-content-head">
+                                <span class="sto-option-panel-content-icon-wrap">
+                                    <i class="<?php echo esc_attr( $content_icon ); ?> sto-option-panel-content-icon"></i>
+                                </span>
+                                <h3 class="sto-option-panel-content-title"><?php echo esc_html( $content_title ); ?></h3>
+                            </div>
+                            <form id="sto-theme-settings-options-form" method="post" class="sto-options-form sto-options-form--metabox sto-options-form--term" action="<?php echo esc_url( $sto_form_action ); ?>" data-sto-term-form="1">
+                                <?php wp_nonce_field( 'sto_save_options_action', 'sto_save_options_nonce' ); ?>
+                                <input type="hidden" name="sto_ts_page" value="<?php echo esc_attr( $req ); ?>" />
+                                <input type="hidden" name="sto_ts_section" value="<?php echo esc_attr( $current_section_slug ); ?>" />
+                                <input type="hidden" name="sto_ts_taxonomy" value="<?php echo esc_attr( $taxonomy ); ?>" />
+                                <?php if ( $is_add ) : ?>
+                                    <input type="hidden" name="sto_ts_term_add" value="1" />
+                                <?php endif; ?>
+                                <div class="sto-option-panel-content-body">
+                                    <?php foreach ( $leaf_sections as $section ) { ?>
+                                        <?php
+                                        $this->render_section_panel(
+                                            $section,
+                                            $current_section_slug,
+                                            ThemeSettingsDisplayLocations::SURFACE_TAXONOMY,
+                                            array( 'taxonomy' => $taxonomy )
+                                        );
+                                        ?>
+                                    <?php } ?>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+                $html = (string) ob_get_clean();
+        } finally {
+            if ( ! $is_add ) {
+                $this->pop_sto_options_term_overlay();
+            }
+        }
+
+        return $html;
+    }
 
     public function render_menu_page() {
         echo $this->get_section_markup();

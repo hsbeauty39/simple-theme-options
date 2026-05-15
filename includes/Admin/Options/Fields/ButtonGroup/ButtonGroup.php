@@ -1,7 +1,10 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\Fields\ButtonGroup;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
@@ -33,7 +36,7 @@ final class ButtonGroup {
 
 	protected function init() {
 		// After ImageSelect (17), before Select (18).
-		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 17.5, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::BUTTON_GROUP, 2 );
 	}
 
 	/**
@@ -266,6 +269,9 @@ final class ButtonGroup {
 		}
 		foreach ( $this->fields_by_section[ $section_slug ] as $field ) {
 			if ( ! empty( $field['group'] ) || ResponsiveConfig::is_composite_inner_field( $field ) ) {
+				continue;
+			}
+			if ( ! FieldRenderGate::should_render_field( $field ) ) {
 				continue;
 			}
 			$this->render_field_markup( $field, 'default' );

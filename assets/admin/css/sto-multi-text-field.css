@@ -1,0 +1,115 @@
+/* Multi text repeater — align with Theme Settings soft inputs */
+
+.sto-field-row-multi-text .sto-multi-text {
+	max-width: min(720px, 100%);
+}
+
+.sto-multi-text__list {
+	list-style: none;
+	margin: 0 0 12px;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.sto-multi-text__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	min-height: 40px;
+	background: var(--sto-field-soft-bg, #fff);
+	border: 1px solid var(--sto-field-soft-border, #dcdcde);
+	border-radius: 4px;
+	box-shadow: var(--sto-field-soft-shadow, 0 1px 1px rgba(0, 0, 0, 0.04));
+}
+
+.sto-multi-text__item--placeholder {
+	min-height: 40px;
+	border-style: dashed;
+	opacity: 0.7;
+	background: rgba(0, 0, 0, 0.02);
+}
+
+.sto-multi-text__drag {
+	flex: 0 0 40px;
+	align-self: stretch;
+	width: 40px;
+	min-width: 40px;
+	margin: 0;
+	padding: 0;
+	border: none;
+	border-right: 1px solid var(--sto-field-soft-border, #dcdcde);
+	background: transparent;
+	color: #646970;
+	cursor: grab;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px 0 0 4px;
+}
+
+.sto-multi-text__drag:hover,
+.sto-multi-text__drag:focus-visible {
+	color: #2271b1;
+	background: rgba(34, 113, 177, 0.06);
+	outline: none;
+}
+
+.sto-multi-text__drag:active {
+	cursor: grabbing;
+}
+
+.sto-multi-text__input {
+	flex: 1 1 auto;
+	min-width: 0;
+	box-sizing: border-box;
+	margin: 0;
+	padding: 8px 10px;
+	min-height: 38px;
+	font-size: 14px;
+	line-height: 1.5;
+	color: #2c3338;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	background: transparent;
+}
+
+.sto-multi-text__input:focus {
+	outline: 2px solid transparent;
+	outline-offset: 0;
+	border-radius: 2px;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.sto-multi-text__remove {
+	flex: 0 0 44px;
+	align-self: stretch;
+	width: 44px;
+	min-width: 44px;
+	margin: 0;
+	padding: 0;
+	border: none;
+	border-left: 1px solid var(--sto-field-soft-border, #dcdcde);
+	background: transparent;
+	color: #646970;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0 4px 4px 0;
+}
+
+.sto-multi-text__remove:hover,
+.sto-multi-text__remove:focus-visible {
+	color: #b32d2e;
+	background: rgba(179, 45, 46, 0.06);
+	outline: none;
+}
+
+.sto-multi-text__add.button {
+	margin-top: 0;
+}

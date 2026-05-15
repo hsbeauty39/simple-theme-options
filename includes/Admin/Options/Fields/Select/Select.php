@@ -1,7 +1,10 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\Fields\Select;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
@@ -33,7 +36,7 @@ final class Select {
 
 	protected function init() {
 		// Priority 18: before Typography (19) so section output follows typical registration (selects first, then typography, then groups at 21).
-		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 18, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::SELECT_BLOCK, 2 );
 	}
 
 	/**
@@ -52,7 +55,7 @@ final class Select {
 	 * - required (optional)
 	 * - multiple (optional bool) — when true, the select stores an array of option keys; selected values render as blue Select2 chips with a "×" remove button.
 	 * - max (optional int) — when `multiple` is true, max simultaneous selections (0 = unlimited; capped at 100).
-	 * - tooltip: array( 'image' => URL, 'preloader' => optional URL ) or shorthand `tooltip_image` / `tooltip_preloader`
+	 * - tooltip: array( 'image' => URL ) — optional `'preloader'` only if you want a custom image/video instead of the built-in CSS spinner while loading; or shorthand `tooltip_image` / optional `tooltip_preloader`
 	 * - optional **responsive** => `true` or non-empty array (opts in to per-breakpoint storage)
 	 * - optional **device** => list of extra canonical breakpoint slugs; tabs = **union** of the default trio (`xxl`, `md`, `mobile`) and these keys (de-duplicated, **xxl → mobile** order). Omit or empty array for the default trio only.
 	 *
@@ -406,6 +409,9 @@ final class Select {
 
 		foreach ( $this->fields_by_section[ $section_slug ] as $field ) {
 			if ( ! empty( $field['group'] ) || ResponsiveConfig::is_composite_inner_field( $field ) ) {
+				continue;
+			}
+			if ( ! FieldRenderGate::should_render_field( $field ) ) {
 				continue;
 			}
 			$this->render_field( $field, 'default' );

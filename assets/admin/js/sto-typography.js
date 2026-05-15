@@ -4,6 +4,7 @@
     var catalog = null;
     var catalogPromise = null;
     var fontMap = null;
+    var customCssByFamily = {};
 
     function getCfg() {
         return (window.simple_theme_options && window.simple_theme_options.sto_typography) || {};
@@ -31,8 +32,13 @@
             .then(function(res) {
                 if (res && res.success && res.data && Array.isArray(res.data.fonts)) {
                     catalog = res.data.fonts;
+                    customCssByFamily =
+                        res.data.custom_css_by_family && typeof res.data.custom_css_by_family === 'object'
+                            ? res.data.custom_css_by_family
+                            : {};
                 } else {
                     catalog = [];
+                    customCssByFamily = {};
                 }
                 fontMap = {};
                 catalog.forEach(function(entry) {
@@ -130,6 +136,21 @@
         document.head.appendChild(link);
     }
 
+    function removeCustomFontCss(ownerId) {
+        $('style[data-sto-typography-custom="' + ownerId + '"]').remove();
+    }
+
+    function injectCustomFontCss(ownerId, css) {
+        removeCustomFontCss(ownerId);
+        if (!css) {
+            return;
+        }
+        var style = document.createElement('style');
+        style.setAttribute('data-sto-typography-custom', ownerId);
+        style.textContent = css;
+        document.head.appendChild(style);
+    }
+
     function readJson($hidden, $wrap) {
         var raw = $hidden.val();
         var def = {};
@@ -164,11 +185,16 @@
     function fillFamilySelect($sel, fonts, placeholder) {
         $sel.empty();
         $sel.append($('<option></option>').attr('value', '').text(placeholder));
+        var customTag = (getCfg().i18n && getCfg().i18n.custom) ? getCfg().i18n.custom : 'Custom';
         fonts.forEach(function(f) {
             if (!f || !f.family) {
                 return;
             }
-            $sel.append($('<option></option>').attr('value', f.family).text(f.family));
+            var label = f.family;
+            if (f.source === 'custom') {
+                label += ' (' + customTag + ')';
+            }
+            $sel.append($('<option></option>').attr('value', f.family).text(label));
         });
     }
 
@@ -231,15 +257,23 @@
         var variant = state.variant || 'regular';
         var tr = state.transform || 'none';
 
-        if (fam) {
+        var entry = fam && fontMap ? fontMap[fam] : null;
+        var stack = entry && entry.category ? entry.category : 'sans-serif';
+
+        if (fam && entry && entry.source === 'custom') {
+            removeDynamicFont(ownerId);
+            injectCustomFontCss(ownerId, customCssByFamily[fam] || '');
+        } else if (fam) {
+            removeCustomFontCss(ownerId);
             injectDynamicFont(ownerId, buildGoogleHref(fam, variant));
         } else {
             removeDynamicFont(ownerId);
+            removeCustomFontCss(ownerId);
         }
 
         var p = parseVariant(variant || 'regular');
         $text.css({
-            fontFamily: fam ? ('"' + fam.replace(/"/g, '') + '", sans-serif') : 'inherit',
+            fontFamily: fam ? ('"' + fam.replace(/"/g, '') + '", ' + stack) : 'inherit',
             fontWeight: fam ? String(p.w) : '400',
             fontStyle: fam && p.i ? 'italic' : 'normal',
             textTransform: tr === 'inherit' ? 'none' : tr
@@ -363,4 +397,19 @@
     });
 
     window.stoInitTypographyPanels = initTypographyIn;
+
+    window.stoResetTypographyCatalog = function() {
+        catalog = null;
+        catalogPromise = null;
+        fontMap = null;
+        customCssByFamily = {};
+    };
+
+    $(document).on('stoCustomFontsChanged', function() {
+        window.stoResetTypographyCatalog();
+        $('[data-sto-typography]').each(function() {
+            $(this).removeData('stoTypographyLoaded');
+        });
+        initTypographyIn($(document));
+    });
 })(jQuery);

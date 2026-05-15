@@ -15,7 +15,24 @@ defined( 'ABSPATH' ) || exit;
 final class Sections {
 	use SingletonTrait;
 
+	/**
+	 * Registers the Theme Settings **sidebar / submenu** tree only (used when {@see OptionsMenu::is_demo_mode_enabled()} is false).
+	 * Field modules are still booted from {@see SampleFieldModules::boot()} so export/save metadata matches registered keys.
+	 */
+	public function register_without_demo() {
+		$this->register_nav_structure();
+		add_action( 'sto_render_section_content', array( $this, 'render_section_content' ), 30, 2 );
+	}
+
 	public function register() {
+		$this->register_nav_structure();
+		add_action( 'sto_render_section_content', array( $this, 'render_section_content' ), 30, 2 );
+	}
+
+	/**
+	 * Parent sections + subsection leaves for the packaged Theme Settings menu.
+	 */
+	private function register_nav_structure(): void {
 		$options_menu = OptionsMenu::instance();
 
 		$options_menu->add_section( __( 'Field samples', 'simple-theme-options' ), 'field-samples', 'fa-light fa-layer-group' );
@@ -32,10 +49,6 @@ final class Sections {
 		$options_menu->add_sub_section( __( 'Link colors', 'simple-theme-options' ), 'appearance-links', 'fa-light fa-link', 'colors-surfaces' );
 
 		$options_menu->add_section( __( 'Accordion', 'simple-theme-options' ), 'accordion', 'fa-light fa-square-caret-down' );
-
-		$options_menu->add_section( __( 'Advance', 'simple-theme-options' ), ThemeSettingsImportExport::SECTION_SLUG, 'fa-light fa-file-arrow-up', array( 'nav_locked' => true ) );
-
-		add_action( 'sto_render_section_content', array( $this, 'render_section_content' ), 30, 2 );
 	}
 
 	/**
@@ -43,7 +56,7 @@ final class Sections {
 	 * @param array<string, mixed> $section      Section meta from Menu.
 	 */
 	public function render_section_content( $section_slug, $section ) {
-		$leaves = array(
+		$demo_leaves = array(
 			'layout-nav',
 			'layout-type',
 			'layout-inputs',
@@ -54,8 +67,12 @@ final class Sections {
 			'appearance-surfaces',
 			'appearance-links',
 			'accordion',
-			ThemeSettingsImportExport::SECTION_SLUG,
 		);
+		$options_menu = OptionsMenu::instance();
+		$advance_leaf = ThemeSettingsImportExport::get_advance_section_slug_for_menu_page( $options_menu, $options_menu->get_parent_menu_slug() );
+		$leaves         = $options_menu->is_demo_mode_enabled()
+			? array_merge( $demo_leaves, array( $advance_leaf ) )
+			: array( $advance_leaf );
 
 		if ( in_array( $section_slug, $leaves, true ) ) {
 			return;

@@ -1,7 +1,12 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\Fields\CodeEditor;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+
+use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
+use SimpleThemeOptions\Admin\ThemeSettingsMetabox;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
@@ -111,12 +116,14 @@ final class CodeEditor {
 
 	protected function init() {
 		// Between Input (19.5) and Typography (20) so plain text inputs and code blocks sit together.
-		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 19.55, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::CODE_EDITOR, 2 );
 
-		// Prime `wp.codeEditor` (loads CodeMirror + the required modes) on the options screen.
-		// We hook BEFORE Assets::enqueue_scripts (priority 10) so any localized data is in place
-		// before our `sto-code-editor` helper script runs.
+		// Prime `wp.codeEditor` (loads CodeMirror + the required modes) on Theme Settings **and**
+		// post editor metabox screens. Priority **9** runs before `Assets::enqueue_scripts` (10).
 		add_action( 'admin_enqueue_scripts', array( $this, 'maybe_prime_code_editor' ), 9 );
+		// Block editor loads the edit screen in a context where we still need CodeMirror registered
+		// for meta box markup (mirrors the admin `post.php` hook path).
+		add_action( 'enqueue_block_editor_assets', array( $this, 'maybe_prime_code_editor_block' ), 9 );
 	}
 
 	/**
@@ -385,6 +392,9 @@ final class CodeEditor {
 
 		foreach ( $this->fields_by_section[ $section_slug ] as $field ) {
 			if ( ! empty( $field['group'] ) || ResponsiveConfig::is_composite_inner_field( $field ) ) {
+				continue;
+			}
+			if ( ! FieldRenderGate::should_render_field( $field ) ) {
 				continue;
 			}
 			$this->render_field_markup( $field, 'default' );
@@ -715,34 +725,76 @@ final class CodeEditor {
 	}
 
 	/**
-	 * Whole-screen-life enqueue helper. Calls **`wp_enqueue_code_editor()`** once per unique mode
-	 * registered for the current page so CodeMirror loads only the addons it needs — CSS-only
-	 * screens never pay for the JS / PHP mode chunks and vice-versa.
+	 * Whether this admin load should prime CodeMirror for registered fields (Theme Settings page or post metabox).
+	 *
+	 * @param string $hook_suffix From {@see admin_enqueue_scripts}, or empty when called from {@see enqueue_block_editor_assets}.
 	 */
-	public function maybe_prime_code_editor() {
+	private function should_prime_code_editor_for_screen( string $hook_suffix = '' ): bool {
+		if ( empty( $this->fields_by_id ) ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		if ( $page !== '' ) {
+			if ( strpos( $page, 'theme-settings' ) !== false ) {
+				return true;
+			}
+			$slugs = OptionsMenu::instance()->get_registered_menu_slugs();
+			foreach ( $slugs as $slug ) {
+				$slug = sanitize_key( (string) $slug );
+				if ( $slug !== '' && $page === $slug ) {
+					return true;
+				}
+			}
+		}
+
+		$hook = is_string( $hook_suffix ) ? $hook_suffix : '';
+		if ( $hook === '' && function_exists( 'get_current_screen' ) ) {
+			$sc = get_current_screen();
+			if ( $sc && isset( $sc->base ) && 'post' === $sc->base ) {
+				$hook = isset( $GLOBALS['pagenow'] ) && is_string( $GLOBALS['pagenow'] ) ? $GLOBALS['pagenow'] : 'post.php';
+			}
+		}
+
+		if ( $hook !== 'post.php' && $hook !== 'post-new.php' ) {
+			return false;
+		}
+
+		if ( ! current_user_can( 'manage_options' ) || ! OptionsMenu::instance()->should_show_theme_settings_metaboxes() ) {
+			return false;
+		}
+
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$pt     = ( $screen && isset( $screen->post_type ) ) ? sanitize_key( (string) $screen->post_type ) : '';
+		if ( $pt === '' ) {
+			return false;
+		}
+
+		foreach ( ThemeSettingsMetabox::instance()->get_roots() as $mslug => $_cfg ) {
+			if ( ThemeSettingsMetabox::instance()->menu_root_allows_post_type( (string) $mslug, $pt ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Calls **`wp_enqueue_code_editor()`** once per unique mode so CodeMirror loads only the addons it needs.
+	 */
+	private function prime_registered_code_editor_mimes(): void {
 		if ( ! function_exists( 'wp_enqueue_code_editor' ) ) {
 			return;
 		}
 
-		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( $page === '' || strpos( $page, 'theme-settings' ) === false ) {
-			return;
-		}
-
-		if ( empty( $this->fields_by_id ) ) {
-			return;
-		}
-
-		$mimes_seen      = array();
+		$mimes_seen       = array();
 		$preload_for_auto = false;
 
 		foreach ( $this->fields_by_id as $field ) {
 			$mode     = isset( $field['mode'] ) ? (string) $field['mode'] : 'text';
 			$switcher = ! array_key_exists( 'language_switcher', $field ) || (bool) $field['language_switcher'];
 
-			// Auto-detect mode + every field that exposes the chrome-bar switcher must be able to
-			// flip between languages at runtime; pre-loading the common mode set avoids a "blank
-			// highlighting" flash when the user switches to PHP / HTML / JS for the first time.
 			if ( $mode === 'auto' || $switcher ) {
 				$preload_for_auto = true;
 			}
@@ -752,8 +804,6 @@ final class CodeEditor {
 				continue;
 			}
 			$mimes_seen[ $mime ] = true;
-			// Return value can be `false` if the user disabled syntax highlighting in their profile;
-			// our JS helper falls back to a plain `<textarea>` in that case.
 			wp_enqueue_code_editor( array( 'type' => $mime ) );
 		}
 
@@ -766,6 +816,30 @@ final class CodeEditor {
 				wp_enqueue_code_editor( array( 'type' => $mime ) );
 			}
 		}
+	}
+
+	/**
+	 * Whole-screen-life enqueue helper (Theme Settings admin + post editor Theme Settings metabox).
+	 *
+	 * @param string $hook_suffix Current admin page file, e.g. `post.php`.
+	 */
+	public function maybe_prime_code_editor( $hook_suffix = '' ) {
+		if ( ! $this->should_prime_code_editor_for_screen( is_string( $hook_suffix ) ? $hook_suffix : '' ) ) {
+			return;
+		}
+
+		$this->prime_registered_code_editor_mimes();
+	}
+
+	/**
+	 * Block editor: same priming when the edit screen hosts our meta box (no `$_GET['page']` slug).
+	 */
+	public function maybe_prime_code_editor_block(): void {
+		if ( ! $this->should_prime_code_editor_for_screen( '' ) ) {
+			return;
+		}
+
+		$this->prime_registered_code_editor_mimes();
 	}
 
 	/**

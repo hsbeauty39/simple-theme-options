@@ -13,8 +13,8 @@ final class FieldTitle {
 	 * Read tooltip config from a field definition.
 	 *
 	 * Supported shapes:
-	 * - `tooltip` => array( 'image' => URL, 'preloader' => optional URL for image or video )
-	 * - `tooltip_image` => URL, optional `tooltip_preloader` => URL
+	 * - `tooltip` => array( 'image' => URL, optional `'preloader'` => URL ) — omit **preloader** (or leave empty) to use the **built-in CSS spinner** while **image** loads; **preloader** is only for an optional custom image or short video (`.mp4` / `.webm` / `.ogg`) instead of that spinner.
+	 * - `tooltip_image` => URL, optional `tooltip_preloader` => URL (same semantics).
 	 *
 	 * @param array<string, mixed> $field
 	 * @return array{image: string, preloader: string}|null

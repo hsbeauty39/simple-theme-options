@@ -110,6 +110,7 @@
 /* White card: equal padding on all sides + reference shadow */
 #sto-field-help-popover .sto-field-help-popover__surface {
     position: relative;
+    min-width: 240px;
     max-width: min(92vw, 400px);
     padding: 12px;
     margin: 0;
@@ -129,13 +130,79 @@
 
 #sto-field-help-popover .sto-field-help-popover__body {
     position: relative;
-    min-width: min(220px, 100%);
+    /* Avoid min(220px, 100%): percentage can resolve to 0 before layout, collapsing the popover. */
+    min-width: 220px;
     min-height: 120px;
     max-height: min(72vh, 560px);
     display: flex;
     align-items: center;
     justify-content: center;
     background: #fff;
+}
+
+/* Image help popover: loading / error cards (all fields using FieldTitle image tooltips). */
+#sto-field-help-popover .sto-tooltip-help-card {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 360px;
+    padding: 20px 18px;
+    text-align: center;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #fafbfc 0%, #f0f0f1 100%);
+    border: 1px solid #e0e0e0;
+}
+
+#sto-field-help-popover .sto-tooltip-help-card--error {
+    background: linear-gradient(180deg, #fef7f7 0%, #fce8e8 100%);
+    border-color: #e8b4b4;
+}
+
+#sto-field-help-popover .sto-tooltip-help-card__media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;
+    margin-bottom: 12px;
+}
+
+#sto-field-help-popover .sto-tooltip-help-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 12px;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    color: #b32d2e;
+    background: #fff;
+    border: 2px solid #e8b4b4;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+#sto-field-help-popover .sto-tooltip-help-card__title {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #1d2327;
+}
+
+#sto-field-help-popover .sto-tooltip-help-card--error .sto-tooltip-help-card__title {
+    color: #6b1e1e;
+}
+
+#sto-field-help-popover .sto-tooltip-help-card__hint {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #646970;
+}
+
+#sto-field-help-popover .sto-tooltip-help-card--error .sto-tooltip-help-card__hint {
+    color: #50575e;
 }
 
 #sto-field-help-popover .sto-field-help-popover__body img.sto-field-help-popover__img {
@@ -186,7 +253,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f0f0f1;
+    background: transparent;
     z-index: 1;
 }
 

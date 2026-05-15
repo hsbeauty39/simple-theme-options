@@ -1,16 +1,17 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\ImportExport;
 
+use SimpleThemeOptions\Admin\CustomFonts\CustomFontsAdmin;
+use SimpleThemeOptions\Admin\ThemeSettingsDisplayLocations;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
-use SimpleThemeOptions\Admin\ThemeSettingsMetabox;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * **Advance** section: export / import **`sto_options`**, optional **Demo mode** toggle, **post editor Theme Settings metabox** preference, and per-file import history.
- * The **Advance** leaf is auto-registered on **`init`** (priority 100) for every **non‑packaged** top-level menu root (hidden from side navigation by default; use **`sto_theme_settings_advance_section_args`** to show it in the menu). The same tools are available under **Tools → Simple Backup** (`tools.php?page=sto-simple-backup`) with **export scope** (client menus only; packaged demo roots omitted) and packaged-demo toggle support.
+ * The **Advance** leaf is auto-registered on **`init`** (priority 100) for every **non‑packaged** top-level menu root (hidden from side navigation by default; use **`sto_theme_settings_advance_section_args`** to show it in the menu). The same tools are available under **Tools → Simple Backup** (`tools.php?page=sto-simple-backup`) with sidebar sections **Backup** (`section=backup`) and **Custom fonts** (`section=custom-fonts`) via **`SimpleBackupPage`**, plus **export scope** (client menus only; packaged demo roots omitted) and packaged-demo toggle support.
  * **AJAX export** ensures **`sto_include_option_fields`** runs when needed so the field registry is populated like a Theme Settings screen load.
  * **Import** merges keys from the JSON file into **`sto_options`** by default; optional full replace removes keys not present in the file.
  */
@@ -21,6 +22,12 @@ final class ThemeSettingsImportExport {
 
 	/** `tools.php?page=` slug for **Tools → Simple Backup** (export scope, import, demo). */
 	public const SETTINGS_ADVANCE_PAGE = 'sto-simple-backup';
+
+	/** Tools → Simple Backup sidebar: import / export / demo. */
+	public const TOOLS_SECTION_BACKUP = 'backup';
+
+	/** Tools → Simple Backup sidebar: custom font uploads. */
+	public const TOOLS_SECTION_CUSTOM_FONTS = 'custom-fonts';
 
 	/** Prior **`tools.php?page=`** slug; {@see Menu::redirect_legacy_tools_backup_page_slug()} redirects here. */
 	public const LEGACY_TOOLS_BACKUP_PAGE_SLUG = 'sto-theme-options-backup';
@@ -99,6 +106,7 @@ final class ThemeSettingsImportExport {
 	 *
 	 * @see OptionsMenu::should_show_theme_settings_metaboxes()
 	 */
+	/** @deprecated No longer used; metaboxes show when registered. Kept for backwards compatibility. */
 	public const OPTION_UI_METABOX_ENABLED = 'sto_theme_settings_ui_metabox_enabled';
 
 	/** List of imports: each row `id`, `filename`, `keys`, `imported_at`. */
@@ -121,7 +129,7 @@ final class ThemeSettingsImportExport {
 		add_action( 'wp_ajax_sto_theme_settings_export', array( $this, 'ajax_export' ) );
 		add_action( 'wp_ajax_sto_theme_settings_import', array( $this, 'ajax_import' ) );
 		add_action( 'wp_ajax_sto_theme_settings_set_ui_demo', array( $this, 'ajax_set_ui_demo' ) );
-		add_action( 'wp_ajax_sto_theme_settings_set_ui_metabox', array( $this, 'ajax_set_ui_metabox' ) );
+		add_action( 'wp_ajax_sto_theme_settings_set_import_display_locations', array( $this, 'ajax_set_import_display_locations' ) );
 		add_action( 'wp_ajax_sto_theme_settings_import_entry_remove', array( $this, 'ajax_import_entry_remove' ) );
 		add_action( 'wp_ajax_sto_theme_settings_import_entry_export', array( $this, 'ajax_import_entry_export' ) );
 		add_action( 'wp_ajax_sto_theme_settings_import_entries_remove', array( $this, 'ajax_import_entries_remove' ) );
@@ -204,11 +212,7 @@ final class ThemeSettingsImportExport {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		echo '<div class="wrap sto-simple-backup-wrap">';
-		echo '<h1>' . esc_html__( 'Simple Backup', 'simple-theme-options' ) . '</h1>';
-		echo '<div class="sto-option-panel-wrapper">';
-		$this->render_advance_panel( 'settings' );
-		echo '</div></div>';
+		SimpleBackupPage::render();
 	}
 
 	/**
@@ -234,20 +238,38 @@ final class ThemeSettingsImportExport {
 			$context = 'section';
 		}
 
-		$idsuf        = 'settings' === $context ? '-settings' : '';
+		$idsuf = 'settings' === $context ? '-settings' : '';
+		?>
+		<div class="sto-advance-import-export" data-sto-advance-import-export="1" data-sto-advance-import-export-from="<?php echo esc_attr( $context ); ?>">
+			<?php $this->render_backup_tools_content( $context, $idsuf ); ?>
+			<?php if ( 'section' === $context ) : ?>
+				<?php CustomFontsAdmin::instance()->render_panel( $idsuf ); ?>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Backup tools markup (export, import, demo toggles, history) without the outer wrapper or custom fonts card.
+	 *
+	 * @param 'section'|'settings' $context
+	 */
+	public function render_backup_tools_content( string $context = 'section', string $idsuf = '' ): void {
+		if ( 'section' !== $context && 'settings' !== $context ) {
+			$context = 'section';
+		}
+		if ( $idsuf === '' ) {
+			$idsuf = 'settings' === $context ? '-settings' : '';
+		}
+
 		$intro_id     = 'sto-advance-intro' . $idsuf;
 		$options_menu = OptionsMenu::instance();
 		$demo_cap     = $options_menu->is_demo_capability_allowed();
 		$demo_on      = wp_validate_boolean( get_option( self::OPTION_UI_DEMO_ENABLED, false ) );
-		$metabox_roots = ThemeSettingsMetabox::instance()->get_roots();
-		$metabox_on    = wp_validate_boolean( get_option( self::OPTION_UI_METABOX_ENABLED, true ) );
-		$metabox_prefs_visible = $metabox_roots !== array()
-			&& ( ! $options_menu->is_packaged_demo_menu() || $options_menu->is_demo_mode_enabled() );
 		$history      = $this->get_import_history();
 		$history_ui   = array_slice( array_reverse( $history ), 0, self::MAX_IMPORT_HISTORY_UI );
 		$total_rows   = count( $history );
 		?>
-		<div class="sto-advance-import-export" data-sto-advance-import-export="1" data-sto-advance-import-export-from="<?php echo esc_attr( $context ); ?>">
 			<input type="hidden" value="" data-sto-advance-source-name autocomplete="off" />
 			<?php if ( 'settings' === $context ) : ?>
 			<?php
@@ -386,40 +408,6 @@ final class ThemeSettingsImportExport {
 				<?php endif; ?>
 			<?php endif; ?>
 
-			<?php if ( $metabox_prefs_visible ) : ?>
-			<div class="sto-advance-card sto-advance-card--metabox">
-				<?php
-				FieldTitle::render_heading(
-					__( 'Post editor Theme Settings', 'simple-theme-options' ),
-					'default',
-					null,
-					'sto-advance-metabox',
-					false,
-					'',
-					''
-				);
-				?>
-				<p class="sto-advance-card__desc"><?php esc_html_e( 'When enabled, the full Theme Settings panel appears as a meta box on the post types your theme registered. Values are stored per post (over global defaults for those keys). Use Save options inside the box.', 'simple-theme-options' ); ?></p>
-				<div class="sto-advance-demo-toggle" data-sto-advance-metabox-wrap>
-					<input type="hidden" id="sto-advance-metabox-input<?php echo esc_attr( $idsuf ); ?>" data-sto-advance-metabox-input value="<?php echo $metabox_on ? '1' : '0'; ?>" />
-					<button
-						type="button"
-						class="sto-switcher<?php echo $metabox_on ? ' sto-switcher--on' : ''; ?>"
-						data-sto-advance-metabox-switch
-						aria-pressed="<?php echo $metabox_on ? 'true' : 'false'; ?>"
-						aria-label="<?php esc_attr_e( 'Toggle Theme Settings meta box on post and page editors', 'simple-theme-options' ); ?>"
-					>
-						<span class="sto-switcher__track" aria-hidden="true">
-							<span class="sto-switcher__knob"></span>
-							<span class="sto-switcher__label sto-switcher__label--on"><?php esc_html_e( 'ON', 'simple-theme-options' ); ?></span>
-							<span class="sto-switcher__label sto-switcher__label--off"><?php esc_html_e( 'OFF', 'simple-theme-options' ); ?></span>
-						</span>
-					</button>
-					<span class="sto-advance-demo-toggle__hint" data-sto-advance-metabox-status role="status" aria-live="polite"></span>
-				</div>
-			</div>
-			<?php endif; ?>
-
 			<?php if ( $total_rows > 0 ) : ?>
 			<div class="sto-advance-card sto-advance-card--import-log" data-sto-advance-import-log="1">
 				<?php
@@ -472,12 +460,25 @@ final class ThemeSettingsImportExport {
 									continue;
 								}
 								?>
-								<tr data-sto-advance-import-row="<?php echo esc_attr( $rid ); ?>">
-									<td class="sto-advance-table__check">
+								<?php
+								$import_display = ThemeSettingsDisplayLocations::instance()->get_import_settings( $rid );
+								?>
+								<tr
+									class="sto-advance-import-row"
+									data-sto-advance-import-row="<?php echo esc_attr( $rid ); ?>"
+									data-sto-import-row-toggle
+									role="button"
+									tabindex="0"
+									aria-expanded="false"
+								>
+									<td class="sto-advance-table__check" data-sto-import-ignore-toggle>
 										<input type="checkbox" data-sto-advance-import-cb value="<?php echo esc_attr( $rid ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Select import %s', 'simple-theme-options' ), $fname !== '' ? $fname : $rid ) ); ?>" />
 									</td>
-									<td><code class="sto-advance-table__filename"><?php echo esc_html( $fname !== '' ? $fname : __( '(untitled import)', 'simple-theme-options' ) ); ?></code></td>
-									<td class="sto-advance-table__actions">
+									<td>
+										<code class="sto-advance-table__filename"><?php echo esc_html( $fname !== '' ? $fname : __( '(untitled import)', 'simple-theme-options' ) ); ?></code>
+										<span class="sto-advance-import-row__hint"><?php esc_html_e( 'Click row to set where these keys appear', 'simple-theme-options' ); ?></span>
+									</td>
+									<td class="sto-advance-table__actions" data-sto-import-ignore-toggle>
 										<button type="button" class="button button-small sto-advance-table-btn" data-sto-advance-import-download-entry="<?php echo esc_attr( $rid ); ?>">
 											<i class="fa-light fa-download" aria-hidden="true"></i>
 											<?php esc_html_e( 'Download', 'simple-theme-options' ); ?>
@@ -486,6 +487,11 @@ final class ThemeSettingsImportExport {
 											<i class="fa-light fa-trash" aria-hidden="true"></i>
 											<?php esc_html_e( 'Delete', 'simple-theme-options' ); ?>
 										</button>
+									</td>
+								</tr>
+								<tr class="sto-advance-import-row-detail sto-is-hidden" data-sto-import-row-detail="<?php echo esc_attr( $rid ); ?>" hidden>
+									<td colspan="3">
+										<?php ThemeSettingsDisplayLocations::instance()->render_import_panel( $rid, $import_display, $idsuf ); ?>
 									</td>
 								</tr>
 							<?php endforeach; ?>
@@ -590,7 +596,6 @@ final class ThemeSettingsImportExport {
 				</div>
 				<p class="sto-advance-status sto-advance-status--error" data-sto-advance-import-status role="alert" hidden></p>
 			</div>
-		</div>
 		<?php
 	}
 
@@ -747,10 +752,11 @@ final class ThemeSettingsImportExport {
 		update_option( 'sto_options', $options );
 		$this->append_import_history_entry(
 			array(
-				'id'          => wp_generate_password( 12, false, false ),
-				'filename'    => $source_name,
-				'keys'        => $keys_from_file,
-				'imported_at' => gmdate( 'c' ),
+				'id'                 => wp_generate_password( 12, false, false ),
+				'filename'           => $source_name,
+				'keys'               => $keys_from_file,
+				'imported_at'        => gmdate( 'c' ),
+				'display_locations'  => ThemeSettingsDisplayLocations::instance()->get_default_settings(),
 			)
 		);
 
@@ -792,26 +798,41 @@ final class ThemeSettingsImportExport {
 		);
 	}
 
-	public function ajax_set_ui_metabox(): void {
+	public function ajax_set_import_display_locations(): void {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'You do not have permission to change this setting.', 'simple-theme-options' ) ), 403 );
 		}
 
-		if ( ThemeSettingsMetabox::instance()->get_roots() === array() ) {
-			wp_send_json_error( array( 'message' => __( 'No Theme Settings meta box is registered for this site.', 'simple-theme-options' ) ), 400 );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$import_id = isset( $_POST['import_id'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['import_id'] ) ) : '';
+		if ( $import_id === '' || ! preg_match( '/^[a-zA-Z0-9]+$/', $import_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid import reference.', 'simple-theme-options' ) ), 400 );
+		}
+
+		if ( $this->find_import_entry_by_id( $import_id ) === null ) {
+			wp_send_json_error( array( 'message' => __( 'That import was not found.', 'simple-theme-options' ) ), 404 );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$raw = isset( $_POST['ui_metabox'] ) ? wp_unslash( (string) $_POST['ui_metabox'] ) : '0';
-		$on  = in_array( $raw, array( '1', 'true', 'yes', 'on' ), true );
+		$raw = isset( $_POST['display_locations'] ) ? wp_unslash( $_POST['display_locations'] ) : '';
+		if ( is_string( $raw ) && $raw !== '' ) {
+			$decoded = json_decode( $raw, true );
+			$payload = is_array( $decoded ) ? $decoded : array();
+		} elseif ( is_array( $raw ) ) {
+			$payload = $raw;
+		} else {
+			$payload = array();
+		}
 
-		update_option( self::OPTION_UI_METABOX_ENABLED, $on );
+		if ( ! ThemeSettingsDisplayLocations::instance()->save_import_settings( $import_id, $payload ) ) {
+			wp_send_json_error( array( 'message' => __( 'Could not save display settings. Try again.', 'simple-theme-options' ) ), 500 );
+		}
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Preference saved. Reloading…', 'simple-theme-options' ),
+				'message' => __( 'Display settings saved.', 'simple-theme-options' ),
 			)
 		);
 	}
@@ -977,6 +998,9 @@ final class ThemeSettingsImportExport {
 	 * @param array{id: string, filename: string, keys: array<int, string>, imported_at: string} $entry
 	 */
 	private function append_import_history_entry( array $entry ): void {
+		if ( ! isset( $entry['display_locations'] ) || ! is_array( $entry['display_locations'] ) ) {
+			$entry['display_locations'] = ThemeSettingsDisplayLocations::instance()->get_default_settings();
+		}
 		$list = $this->get_import_history_raw();
 		array_unshift( $list, $entry );
 		if ( count( $list ) > self::MAX_IMPORT_HISTORY ) {
@@ -1013,10 +1037,11 @@ final class ThemeSettingsImportExport {
 
 		$migrated = array(
 			array(
-				'id'          => wp_generate_password( 12, false, false ),
-				'filename'    => __( 'Previous import', 'simple-theme-options' ),
-				'keys'        => $this->sanitize_key_list( $legacy['keys'] ),
-				'imported_at' => isset( $legacy['imported_at'] ) ? (string) $legacy['imported_at'] : gmdate( 'c' ),
+				'id'                => wp_generate_password( 12, false, false ),
+				'filename'          => __( 'Previous import', 'simple-theme-options' ),
+				'keys'              => $this->sanitize_key_list( $legacy['keys'] ),
+				'imported_at'       => isset( $legacy['imported_at'] ) ? (string) $legacy['imported_at'] : gmdate( 'c' ),
+				'display_locations' => ThemeSettingsDisplayLocations::instance()->get_default_settings(),
 			),
 		);
 		update_option( self::OPTION_IMPORT_HISTORY, $migrated );
@@ -1026,9 +1051,45 @@ final class ThemeSettingsImportExport {
 	}
 
 	/**
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function get_import_history_for_display(): array {
+		return $this->get_import_history();
+	}
+
+	/**
+	 * @param array<string, mixed> $fields
+	 */
+	public function update_import_entry( string $id, array $fields ): bool {
+		$id = sanitize_text_field( $id );
+		if ( $id === '' ) {
+			return false;
+		}
+
+		$list    = $this->get_import_history_raw();
+		$updated = false;
+		foreach ( $list as $idx => $row ) {
+			if ( ! is_array( $row ) || ! isset( $row['id'] ) || (string) $row['id'] !== $id ) {
+				continue;
+			}
+			$list[ $idx ] = array_merge( $row, $fields );
+			$updated      = true;
+			break;
+		}
+
+		if ( ! $updated ) {
+			return false;
+		}
+
+		update_option( self::OPTION_IMPORT_HISTORY, $list );
+
+		return true;
+	}
+
+	/**
 	 * @return array<string, mixed>|null
 	 */
-	private function find_import_entry_by_id( string $id ): ?array {
+	public function find_import_entry_by_id( string $id ): ?array {
 		foreach ( $this->get_import_history() as $row ) {
 			if ( isset( $row['id'] ) && (string) $row['id'] === $id ) {
 				return is_array( $row ) ? $row : null;

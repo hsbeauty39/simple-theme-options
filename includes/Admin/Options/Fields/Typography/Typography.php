@@ -1,12 +1,16 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\Fields\Typography;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveControl;
+use SimpleThemeOptions\Data\CustomFontsRegistry;
 use SimpleThemeOptions\Data\TypographyFontsCatalog;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
@@ -34,7 +38,7 @@ final class Typography {
 
 	protected function init() {
 		// Priority 20: after standalone Select (18) and Color (19), before Group (21).
-		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 20, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::TYPOGRAPHY, 2 );
 		add_action( 'wp_ajax_sto_typography_fonts', array( $this, 'ajax_font_catalog' ) );
 	}
 
@@ -250,7 +254,8 @@ final class Typography {
 
 		wp_send_json_success(
 			array(
-				'fonts' => TypographyFontsCatalog::get_fonts_list(),
+				'fonts'              => TypographyFontsCatalog::get_fonts_list(),
+				'custom_css_by_family' => CustomFontsRegistry::get_css_by_family(),
 			)
 		);
 	}
@@ -314,6 +319,9 @@ final class Typography {
 
 		foreach ( $this->fields_by_section[ $section_slug ] as $field ) {
 			if ( ! empty( $field['group'] ) || ResponsiveConfig::is_composite_inner_field( $field ) ) {
+				continue;
+			}
+			if ( ! FieldRenderGate::should_render_field( $field ) ) {
 				continue;
 			}
 			$this->render_field_markup( $field, 'default' );

@@ -1,7 +1,10 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\Fields\CheckboxControl;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
@@ -35,7 +38,7 @@ final class CheckboxControl {
 
 	protected function init() {
 		// Same band as Switcher / Select so samples can order via boot sequence.
-		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 18, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::SELECT_BLOCK, 2 );
 	}
 
 	/**
@@ -430,6 +433,9 @@ final class CheckboxControl {
 			if ( ! empty( $field['group'] ) || ResponsiveConfig::is_composite_inner_field( $field ) ) {
 				continue;
 			}
+			if ( ! FieldRenderGate::should_render_field( $field ) ) {
+				continue;
+			}
 			$this->render_field_markup( $field, 'default' );
 		}
 	}
@@ -496,8 +502,16 @@ final class CheckboxControl {
 		$labels        = isset( $field['labels'] ) && is_array( $field['labels'] ) ? $field['labels'] : array( 'on' => '', 'off' => '' );
 		$on_label      = isset( $labels['on'] ) ? (string) $labels['on'] : __( 'Enabled', 'simple-theme-options' );
 		$off_label     = isset( $labels['off'] ) ? (string) $labels['off'] : __( 'Disabled', 'simple-theme-options' );
-		$default_single = isset( $field['default'] ) ? $this->sanitize_single_stored( (string) $field['default'] ) : '0';
-		$default_list   = $multiple && isset( $field['default'] ) ? $field['default'] : array();
+		$default_single = '0';
+		if ( ! $multiple && isset( $field['default'] ) ) {
+			if ( is_array( $field['default'] ) ) {
+				$first = reset( $field['default'] );
+				$default_single = is_scalar( $first ) ? $this->sanitize_single_stored( (string) $first ) : '0';
+			} else {
+				$default_single = $this->sanitize_single_stored( (string) $field['default'] );
+			}
+		}
+		$default_list   = $multiple && isset( $field['default'] ) && is_array( $field['default'] ) ? $field['default'] : array();
 		$wrapper_class  = isset( $field['wrapper_class'] ) ? (string) $field['wrapper_class'] : '';
 		$required       = isset( $field['required'] ) && is_array( $field['required'] ) ? $field['required'] : array();
 		$required_json  = ! empty( $required ) ? wp_json_encode( $required ) : '';

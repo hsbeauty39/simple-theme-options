@@ -9,6 +9,7 @@ use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
 use SimpleThemeOptions\Admin\Options\Fields\Common\LayoutWidth;
 use SimpleThemeOptions\Admin\Options\Fields\ImageSelect\ImageSelect;
@@ -26,6 +27,7 @@ use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
 use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
+use SimpleThemeOptions\Admin\Options\Fields\AdvancedRepeaterControl\AdvancedRepeaterControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Accordion\Accordion;
@@ -53,7 +55,7 @@ final class Group {
 	private $groups_index = array();
 
 	protected function init() {
-		add_action( 'sto_render_section_content', array( $this, 'render_groups' ), 21, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_groups' ), RenderSectionContentPriority::GROUP, 2 );
 	}
 
 	/**
@@ -77,8 +79,9 @@ final class Group {
 	 * - **Dimension:** `type` => **`dimension`**, **`id`**, **`title`**, optional **`sides`** (1–6 of **`array( 'key' => 'top', 'label' => 'TOP' )`**), **`units`** subset of **`px`**, **`%`**, **`rem`**, **`em`**, **`custom`**, **`min`**, **`max`**, **`step`**, **`default`** (partial **`u` / `c` / `linked` / `values`**), optional **`unit_label`**, **`show_link`** (default **true**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored JSON per slice. Boot **`Dimension::instance()`** when used inside groups.
 	 * - **Icon select:** `type` => **`icon_select`**, **`id`**, **`title`**, optional **`default`** (full Font Awesome class from **`assets/admin/data/sto-icon-select-manifest.json`**), optional **`allow_clear`**, **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as one class string per slice (e.g. **`fa-light fa-house`**). Boot **`IconSelect::instance()`** when used inside groups / tabs / accordion.
 	 * - **Gallery:** `type` => **`gallery`**, **`id`**, **`title`**, optional **`default`** => **`array( 101, 102, 103 )`** (image attachment IDs only), optional **`max`** (int **`0`** = unlimited, capped at **100**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as JSON **`["id","id"]`** or per-breakpoint map. Boot **`GalleryControl::instance()`** when used inside groups.
+	 * - **Advanced repeater:** `type` => **`advanced_repeater`**, **`id`**, **`title`**, **`fields`** (schema: **`fieldset`** with nested **`fields`**, **`advanced_repeater`** for nesting, **`text`**, **`number`**, **`textarea`**, **`select`**, **`switcher`**). Optional **`max`**, **`default`** as array of row objects, **`html_required`** on leaves, conditional **`required`** on the repeater row, **`description`**, **`tooltip`**. Stored as JSON array of objects in **`sto_options[id]`** (no responsive map on inner leaves in v1). Boot **`AdvancedRepeaterControl::instance()`** when used inside groups / tabs / accordion.
 	 * - **Multi text:** `type` => **`multi_text`**, **`id`**, **`title`**, optional **`default`** => **`array( 'Line 1', 'Line 2' )`**, optional **`max`** (int **`0`** = unlimited, hard cap **100**), **`placeholder`**, **`html_required`**, conditional **`required`**, **`tooltip`**. Stored as JSON **`["a","b"]`**. Boot **`MultiTextControl::instance()`** when used inside groups.
-	 * - **Radio lists:** `type` => **`radio_lists`**, **`id`**, **`title`**, **`options`** (same map as **ButtonGroup**), optional **`default`** => **`array( array( 'title' => '…', 'value' => 'key' ), … )`**, optional **`max`** (0 = unlimited, hard cap **50**), **`show_row_titles`**, **`radio_layout`** (**`stack`** | **`inline`**), **`html_required`**, conditional **`required`**, **`tooltip`**. Stored as JSON rows in **`sto_options[id]`** (no responsive map). Boot **`RadioListsControl::instance()`** when used inside groups.
+	 * - **Radio lists:** `type` => **`radio_lists`**, **`id`**, **`title`**, **`options`** (same map as **ButtonGroup**), optional **`default`** => **`array( array( 'title' => '…', 'value' => 'key' ), … )`**, optional **`max`** (0 = unlimited, hard cap **50**), **`show_row_titles`**, **`repeatable`** (bool, default **true** — **false** = single row, no add / drag / remove), **`radio_layout`** (**`stack`** = column of tiles | **`inline`** = row), **`html_required`**, conditional **`required`**, **`tooltip`**. Stored as JSON rows in **`sto_options[id]`** (no responsive map). Boot **`RadioListsControl::instance()`** when used inside groups.
 	 * - **Google map:** `type` => **`google_map`**, **`id`**, **`title`**, optional **`default`** (partial **`formatted_address`**, **`address`**, **`street`**, **`city`**, **`state`**, **`zip`**, **`country`**, **`lat`**, **`lng`**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Map uses **OpenStreetMap** tiles + **Nominatim** (no Google API key). Stored as one JSON object per slice (or per-breakpoint map). Boot **`GoogleMapControl::instance()`** when used inside groups.
 	 * - **Alignment:** `type` => **`alignment`**, **`id`**, **`title`**, **`options`** (same shape as **ButtonGroup**: value => label string or array with **`label`**, optional **`tooltip`**, **`preview_image`**, **`icon`**), optional **`default`** (sanitize_key), optional **`orientation`** => **`horizontal`** | **`vertical`**, **`density`** => **`default`** | **`compact`**, **`show_labels`** (bool), **`allow_clear`** (bool), optional **`css_map`** (option key => CSS fragment for themes), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as a scalar string or per-breakpoint map. Boot **`AlignmentControl::instance()`** when used inside groups.
 	 * - **Tabs:** `type` => **`tabs`**, **`id`**, **`title`**, **`tabs`**, **`fields`** — **`fields`** may mix **leaf** controls, **`type` => `accordion`**, **nested groups** (`id`, `title`, `fields`), and **nested `tabs`** (ids auto-prefixed per nesting level). Optional **`responsive`**, **`device`**. Stored keys: **`{tabs_id}_{tab_id}_{inner_id}`** (and scoped ids for nested blocks). **`sto-tabs.css`** stacks grid cells full-width at **960px**.
@@ -499,6 +502,21 @@ final class Group {
 				continue;
 			}
 
+			if ( $this->is_advanced_repeater_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				AdvancedRepeaterControl::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && AdvancedRepeaterControl::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'advanced_repeater',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
 			if ( $this->is_multi_text_item( $item ) ) {
 				$item['section_slug'] = $section_slug;
 				$item['group']        = $parent_group_id;
@@ -787,11 +805,23 @@ final class Group {
 	}
 
 	private function is_nested_group_item( $item ) {
+		if ( isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) !== '' ) {
+			return false;
+		}
 		if ( isset( $item['options'] ) && is_array( $item['options'] ) ) {
 			return false;
 		}
 
 		return isset( $item['fields'] ) && is_array( $item['fields'] ) && ! empty( $item['id'] );
+	}
+
+	private function is_advanced_repeater_item( $item ) {
+		return is_array( $item )
+			&& isset( $item['type'] )
+			&& sanitize_key( (string) $item['type'] ) === 'advanced_repeater'
+			&& ! empty( $item['id'] )
+			&& ! empty( $item['fields'] )
+			&& is_array( $item['fields'] );
 	}
 
 	private function index_group( $section_slug, $group_id, $title, $parent_id ) {
@@ -1091,6 +1121,11 @@ final class Group {
 							$rlfield = RadioListsControl::get_field( $section_slug, (string) $node['id'] );
 							if ( $rlfield ) {
 								RadioListsControl::instance()->render_field_markup( $rlfield, 'group_inner' );
+							}
+						} elseif ( $node['kind'] === 'advanced_repeater' && ! empty( $node['id'] ) ) {
+							$arfield = AdvancedRepeaterControl::get_field( $section_slug, (string) $node['id'] );
+							if ( $arfield ) {
+								AdvancedRepeaterControl::instance()->render_field_markup( $arfield, 'group_inner' );
 							}
 						} elseif ( $node['kind'] === 'google_map' && ! empty( $node['id'] ) ) {
 							$gmfield = GoogleMapControl::get_field( $section_slug, (string) $node['id'] );

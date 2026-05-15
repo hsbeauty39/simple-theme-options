@@ -1,7 +1,10 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\Fields\Input;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
@@ -17,7 +20,7 @@ final class Input {
 	use FieldSingletonAccessors;
 	use FieldSanitizePostedProxy;
 
-	public const INPUT_TYPES = array( 'text', 'number', 'textarea', 'editor', 'email', 'phone', 'search' );
+	public const INPUT_TYPES = array( 'text', 'number', 'textarea', 'editor', 'email', 'phone', 'search', 'password' );
 
 	/**
 	 * @var array<string, array<int, array<string, mixed>>>
@@ -45,7 +48,7 @@ final class Input {
 
 	protected function init() {
 		// After Color (19), before Typography (20).
-		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 19.5, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::INPUT, 2 );
 		add_filter( 'mce_buttons', array( $this, 'filter_mce_buttons_append_toolbar_end' ), 99, 2 );
 		add_filter( 'tiny_mce_before_init', array( $this, 'filter_tiny_mce_before_init_toolbar_end' ), 20, 2 );
 	}
@@ -55,11 +58,12 @@ final class Input {
 	 *
 	 * Keys:
 	 * - section_slug, id (required)
-	 * - input_type: one of text|number|textarea|editor|email|phone|search — or set `type` to that value in groups
+	 * - input_type: one of text|number|textarea|editor|email|phone|search|password — or set `type` to that value in groups
 	 * - title?, description?, default? (string), placeholder? (all types; editor applies to underlying textarea),
 	 *   class?, wrapper_class?, required? (conditional visibility JSON), tooltip?, group?
 	 * - html_required? (bool, default false) — HTML5 required on the control (separate from conditional `required`).
 	 * - number: optional min, max, step (numeric strings; empty min/max = no bound)
+	 * - password: HTML **type="password"** with optional **show/hide** toggle; stored with **`sanitize_text_field`** (same as **text** — not encrypted at rest)
 	 * - textarea: optional rows (int, default 5), cols (int, default 60)
 	 * - editor: optional editor_height (int px, default **160**, min **100**), media_buttons (bool, default true), teeny (bool, default false),
 	 *   drag_drop_upload (bool, default true), optional **toolbar_end** => array( **label** (short text), **tooltip**, **snippet** (HTML inserted on click) ) — appends a control after the kitchen-sink button on row 1
@@ -331,6 +335,18 @@ final class Input {
 	}
 
 	/**
+	 * Wrapper class for the input cell (password adds show/hide toggle layout).
+	 */
+	private function input_wrap_classes( string $input_type ): string {
+		$classes = 'sto-input-wrap';
+		if ( $input_type === 'password' ) {
+			$classes .= ' sto-input-wrap--password';
+		}
+
+		return $classes;
+	}
+
+	/**
 	 * @param array<string, mixed> $field
 	 */
 	private function resolve_input_type( $field ) {
@@ -448,6 +464,7 @@ final class Input {
 				return $this->sanitize_phone_value( $str );
 
 			case 'search':
+			case 'password':
 			case 'text':
 			default:
 				return sanitize_text_field( $str );
@@ -529,6 +546,9 @@ final class Input {
 
 		foreach ( $this->fields_by_section[ $section_slug ] as $field ) {
 			if ( ! empty( $field['group'] ) || ResponsiveConfig::is_composite_inner_field( $field ) ) {
+				continue;
+			}
+			if ( ! FieldRenderGate::should_render_field( $field ) ) {
 				continue;
 			}
 			$this->render_field_markup( $field, 'default' );
@@ -651,7 +671,7 @@ final class Input {
 				$name      = 'sto_options[' . $field_id . '][' . $tabs_pane_bp . ']';
 				$dom_id    = $field_id . '_' . $tabs_pane_bp;
 				?>
-				<div class="sto-input-wrap">
+				<div class="<?php echo esc_attr( $this->input_wrap_classes( $input_type ) ); ?>">
 					<?php
 					if ( $input_type === 'editor' ) {
 						$this->render_wp_editor( $field, $name, $cur );
@@ -675,7 +695,7 @@ final class Input {
 						$dom_id  = $field_id . '_' . $bp;
 						ResponsiveControl::render_pane_start( $bp, $visible );
 						?>
-						<div class="sto-input-wrap">
+						<div class="<?php echo esc_attr( $this->input_wrap_classes( $input_type ) ); ?>">
 							<?php
 							if ( $input_type === 'textarea' ) {
 								$this->render_textarea( $field, $name, $cur, $input_class, $placeholder, $dom_id );
@@ -695,7 +715,7 @@ final class Input {
 				$current_value = $this->get_option_value( $field_id, $default_value, $input_type );
 				$name          = 'sto_options[' . $field_id . ']';
 				?>
-				<div class="sto-input-wrap">
+				<div class="<?php echo esc_attr( $this->input_wrap_classes( $input_type ) ); ?>">
 					<?php
 					if ( $input_type === 'editor' ) {
 						$this->render_wp_editor( $field, $name, $current_value );
@@ -938,8 +958,13 @@ final class Input {
 			'value'       => $value,
 			'class'       => trim( 'sto-input-control sto-input-control--' . sanitize_html_class( $input_type ) . ' ' . $input_class ),
 			'placeholder' => $placeholder,
-			'autocomplete'=> $input_type === 'search' ? 'off' : '',
+			'autocomplete'=> ( $input_type === 'search' || $input_type === 'password' ) ? 'off' : '',
 		);
+
+		if ( $input_type === 'password' ) {
+			$attrs['spellcheck']      = 'false';
+			$attrs['autocapitalize'] = 'off';
+		}
 
 		if ( $input_type === 'number' ) {
 			if ( isset( $field['min'] ) && $field['min'] !== null && $field['min'] !== '' ) {
@@ -971,6 +996,12 @@ final class Input {
 			echo ' ' . esc_attr( $k ) . '="' . esc_attr( (string) $v ) . '"';
 		}
 		echo ' />';
+
+		if ( $input_type === 'password' ) {
+			echo '<button type="button" class="sto-input-password-toggle" data-sto-password-toggle="1" aria-pressed="false" aria-label="' . esc_attr__( 'Show password', 'simple-theme-options' ) . '">';
+			echo '<span class="dashicons dashicons-visibility" aria-hidden="true"></span>';
+			echo '</button>';
+		}
 	}
 
 	/**

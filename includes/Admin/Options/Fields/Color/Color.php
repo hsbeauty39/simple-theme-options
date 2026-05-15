@@ -1,7 +1,10 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\Fields\Color;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
@@ -26,9 +29,14 @@ final class Color {
 	 */
 	private $fields_by_id = array();
 
+	/**
+	 * @var array<string, true>
+	 */
+	private $registered_ids = array();
+
 	protected function init() {
 		// After Select (18), before Typography (20) and Group (21).
-		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 19, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::COLOR, 2 );
 	}
 
 	/**
@@ -229,6 +237,9 @@ final class Color {
 
 		foreach ( $this->fields_by_section[ $section_slug ] as $field ) {
 			if ( ! empty( $field['group'] ) || ResponsiveConfig::is_composite_inner_field( $field ) ) {
+				continue;
+			}
+			if ( ! FieldRenderGate::should_render_field( $field ) ) {
 				continue;
 			}
 			$this->render_field_markup( $field, 'default' );

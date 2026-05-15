@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * - `'metabox' => array( 'post_types' => array( 'page', 'post' ), … )`, or
  * - `'enable_metabox' => true` plus optional `'metabox_post_types' => array( … )`.
  *
- * When at least one root registers a metabox, visibility is also controlled by option **`sto_theme_settings_ui_metabox_enabled`** (default **on**), toggled from **Advance** / **Tools → Simple Backup**, and {@see OptionsMenu::should_show_theme_settings_metaboxes()}.
+ * When at least one root registers a metabox, visibility follows {@see OptionsMenu::should_show_theme_settings_metaboxes()} (packaged demo gate + filter **`sto_theme_settings_metabox_ui_enabled`**). Values save per post on **Publish** / **Update** (no separate save control in the box).
  */
 final class ThemeSettingsMetabox {
 	use SingletonTrait;
@@ -82,7 +82,11 @@ final class ThemeSettingsMetabox {
 			? $this->roots[ $menu_slug ]['post_types']
 			: array();
 
-		return in_array( $post_type, array_map( 'sanitize_key', $pts ), true );
+		if ( ! in_array( $post_type, array_map( 'sanitize_key', $pts ), true ) ) {
+			return false;
+		}
+
+		return ThemeSettingsDisplayLocations::instance()->is_post_type_enabled( $post_type );
 	}
 
 	private function attach_hooks(): void {

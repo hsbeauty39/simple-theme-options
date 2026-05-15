@@ -1,7 +1,10 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\Fields\RadioListsControl;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
@@ -15,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * Register with **`'type' => 'radio_lists'`**. Keys: **`section_slug`**, **`id`**, **`title`**, **`options`** (required, same map shape as **ButtonGroup**),
  * optional **`default`** => **`array( array( 'title' => '…', 'value' => 'key' ), … )`**, optional **`max`** (int **`0`** = unlimited, hard cap **{@see MAX_ROWS}**),
- * optional **`show_row_titles`** (bool, default **true**), optional **`radio_layout`** => **`stack`** (default) or **`inline`** (option tiles wrap in a row),
+ * optional **`show_row_titles`** (bool, default **true**), optional **`repeatable`** (bool, default **true** — when **false**, one fixed row only: no add / drag / remove; same JSON shape **`[{title,value}]`**), optional **`radio_layout`** => **`stack`** (default — option tiles in a **column**) or **`inline`** (tiles in a **row**, wrap),
  * **`description`**, conditional **`required`**, **`html_required`**, **`tooltip`**, **`wrapper_class`**, optional **`group`**.
  * Admin: **Add list**, **drag** handle reorders (**jQuery UI Sortable**), **delete** removes a row. **No per-breakpoint `responsive` slice** (same carve-out pattern as **`multi_text`**).
  */
@@ -43,7 +46,7 @@ final class RadioListsControl {
 
 	protected function init() {
 		// After ButtonGroup (17.5), before Select (18).
-		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 17.55, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::RADIO_LISTS, 2 );
 	}
 
 	/**
@@ -105,6 +108,7 @@ final class RadioListsControl {
 		$field['group']           = isset( $field['group'] ) ? sanitize_key( (string) $field['group'] ) : '';
 		$field['html_required']   = ! empty( $field['html_required'] );
 		$field['show_row_titles'] = array_key_exists( 'show_row_titles', $field ) ? (bool) $field['show_row_titles'] : true;
+		$field['repeatable']      = ! array_key_exists( 'repeatable', $field ) ? true : (bool) $field['repeatable'];
 
 		$layout = isset( $field['radio_layout'] ) ? sanitize_key( (string) $field['radio_layout'] ) : 'stack';
 		if ( $layout !== 'inline' ) {
@@ -121,7 +125,8 @@ final class RadioListsControl {
 		$allowed = array_keys( $options );
 		$field['options']       = $options;
 		$field['allowed_keys']  = $allowed;
-		$field['default_rows']  = $this->normalize_default_rows( isset( $field['default'] ) ? $field['default'] : array(), $options, $allowed, $field['max'] );
+		$default_cap            = ! empty( $field['repeatable'] ) ? $field['max'] : 1;
+		$field['default_rows']  = $this->normalize_default_rows( isset( $field['default'] ) ? $field['default'] : array(), $options, $allowed, $default_cap );
 
 		if ( ! isset( $this->fields_by_section[ $section_slug ] ) ) {
 			$this->fields_by_section[ $section_slug ] = array();
@@ -266,9 +271,12 @@ final class RadioListsControl {
 		if ( ! is_array( $field ) || empty( $field['options'] ) ) {
 			return wp_json_encode( array() );
 		}
-		$options = $field['options'];
-		$max     = isset( $field['max'] ) ? absint( $field['max'] ) : 0;
-		$cap     = ( $max > 0 ) ? min( $max, self::MAX_ROWS ) : self::MAX_ROWS;
+		$options    = $field['options'];
+		$repeatable = ! empty( $field['repeatable'] );
+		$max        = isset( $field['max'] ) ? absint( $field['max'] ) : 0;
+		$cap        = ! $repeatable
+			? 1
+			: ( ( $max > 0 ) ? min( $max, self::MAX_ROWS ) : self::MAX_ROWS );
 
 		$parsed = $this->parse_rows( $raw );
 		$out    = array();
@@ -288,6 +296,14 @@ final class RadioListsControl {
 			$out[] = array(
 				'title' => $title,
 				'value' => $vk,
+			);
+		}
+
+		if ( ! $repeatable && $out === array() ) {
+			$keys = array_keys( $options );
+			$out[] = array(
+				'title' => '',
+				'value' => $keys ? (string) $keys[0] : '',
 			);
 		}
 
@@ -377,6 +393,9 @@ final class RadioListsControl {
 			if ( ! empty( $field['group'] ) ) {
 				continue;
 			}
+			if ( ! FieldRenderGate::should_render_field( $field ) ) {
+				continue;
+			}
 			$this->render_field_markup( $field, 'default' );
 		}
 	}
@@ -402,6 +421,7 @@ final class RadioListsControl {
 		$default_rows   = isset( $field['default_rows'] ) && is_array( $field['default_rows'] ) ? $field['default_rows'] : array();
 		$show_titles    = ! empty( $field['show_row_titles'] );
 		$radio_layout   = isset( $field['radio_layout'] ) ? (string) $field['radio_layout'] : 'stack';
+		$repeatable     = ! isset( $field['repeatable'] ) || $field['repeatable'];
 		$is_inner       = ( 'group_inner' === $context );
 		$group_label    = $title !== '' ? $title : $field_id;
 
@@ -417,6 +437,19 @@ final class RadioListsControl {
 		$rows = json_decode( (string) $json, true );
 		if ( ! is_array( $rows ) ) {
 			$rows = array();
+		}
+		if ( ! $repeatable ) {
+			if ( $rows === array() ) {
+				$keys = array_keys( $options );
+				$rows = array(
+					array(
+						'title' => '',
+						'value' => $keys ? (string) $keys[0] : '',
+					),
+				);
+			} else {
+				$rows = array_slice( array_values( $rows ), 0, 1 );
+			}
 		}
 
 		$opts_for_js = array();
@@ -448,9 +481,10 @@ final class RadioListsControl {
 			<?php endif; ?>
 
 			<div
-				class="sto-radio-lists"
+				class="sto-radio-lists<?php echo $repeatable ? '' : ' sto-radio-lists--single'; ?>"
 				data-sto-radio-lists="1"
-				data-sto-radio-lists-max="<?php echo esc_attr( (string) ( $max > 0 ? $max : 0 ) ); ?>"
+				data-sto-radio-lists-repeatable="<?php echo esc_attr( $repeatable ? '1' : '0' ); ?>"
+				data-sto-radio-lists-max="<?php echo esc_attr( (string) ( ! $repeatable ? 1 : ( $max > 0 ? $max : 0 ) ) ); ?>"
 				data-sto-radio-lists-show-titles="<?php echo esc_attr( $show_titles ? '1' : '0' ); ?>"
 				data-sto-radio-lists-layout="<?php echo esc_attr( $radio_layout ); ?>"
 				data-sto-radio-lists-options="<?php echo esc_attr( wp_json_encode( $opts_for_js ) ); ?>"
@@ -474,7 +508,8 @@ final class RadioListsControl {
 							$r_val = $keys ? (string) $keys[0] : '';
 						}
 						?>
-						<li class="sto-radio-lists__item" data-sto-radio-lists-item>
+						<li class="sto-radio-lists__item<?php echo $repeatable ? '' : ' sto-radio-lists__item--single'; ?>" data-sto-radio-lists-item>
+							<?php if ( $repeatable ) : ?>
 							<button
 								type="button"
 								class="sto-radio-lists__drag"
@@ -482,6 +517,7 @@ final class RadioListsControl {
 								aria-label="<?php echo esc_attr( $i18n['drag'] ); ?>"
 								title="<?php echo esc_attr( $i18n['drag'] ); ?>"
 							><i class="fa-light fa-grip-dots-vertical" aria-hidden="true"></i></button>
+							<?php endif; ?>
 							<div class="sto-radio-lists__body">
 								<?php if ( $show_titles ) : ?>
 									<div class="sto-radio-lists__title-wrap">
@@ -524,6 +560,7 @@ final class RadioListsControl {
 									<?php endforeach; ?>
 								</div>
 							</div>
+							<?php if ( $repeatable ) : ?>
 							<button
 								type="button"
 								class="sto-radio-lists__remove"
@@ -531,12 +568,15 @@ final class RadioListsControl {
 								aria-label="<?php echo esc_attr( $i18n['remove'] ); ?>"
 								title="<?php echo esc_attr( $i18n['remove'] ); ?>"
 							><i class="fa-light fa-trash-can" aria-hidden="true"></i></button>
+							<?php endif; ?>
 						</li>
 					<?php endforeach; ?>
 				</ul>
+				<?php if ( $repeatable ) : ?>
 				<button type="button" class="button sto-radio-lists__add" data-sto-radio-lists-add>
 					<?php echo esc_html( $i18n['addMore'] ); ?>
 				</button>
+				<?php endif; ?>
 			</div>
 
 			<?php if ( $description ) : ?>

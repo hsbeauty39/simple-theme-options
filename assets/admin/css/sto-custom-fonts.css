@@ -1,0 +1,305 @@
+/**
+ * Custom fonts panel (Advance / Tools → Simple Backup).
+ */
+
+.sto-option-panel-wrapper .sto-advance-card--custom-fonts,
+.sto-advance-import-export .sto-advance-card--custom-fonts {
+	max-width: 100%;
+}
+
+.sto-advance-card--custom-fonts .sto-advance-dropzone,
+.sto-advance-import-export .sto-advance-card--custom-fonts .sto-advance-dropzone {
+	position: relative;
+	display: block;
+	margin: 0 0 16px;
+	padding: 0;
+	border: 2px dashed #c3c4c7;
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: #f6f7f7;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sto-advance-card--custom-fonts .sto-advance-dropzone:hover,
+.sto-advance-card--custom-fonts .sto-advance-dropzone.sto-is-dragover,
+.sto-advance-import-export .sto-advance-card--custom-fonts .sto-advance-dropzone:hover,
+.sto-advance-import-export .sto-advance-card--custom-fonts .sto-advance-dropzone.sto-is-dragover {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.sto-advance-card--custom-fonts .sto-advance-file-input,
+.sto-advance-import-export .sto-advance-card--custom-fonts .sto-advance-file-input {
+	position: absolute;
+	width: 0.1px;
+	height: 0.1px;
+	opacity: 0;
+	overflow: hidden;
+	z-index: -1;
+}
+
+.sto-advance-card--custom-fonts .sto-advance-dropzone__inner,
+.sto-advance-import-export .sto-advance-card--custom-fonts .sto-advance-dropzone__inner {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 120px;
+	padding: 20px 16px;
+}
+
+.sto-advance-card--custom-fonts .sto-advance-dropzone__icon,
+.sto-advance-import-export .sto-advance-card--custom-fonts .sto-advance-dropzone__icon {
+	font-size: 28px;
+	color: #50575e;
+}
+
+.sto-advance-card--custom-fonts .sto-advance-dropzone__title,
+.sto-advance-import-export .sto-advance-card--custom-fonts .sto-advance-dropzone__title {
+	font-size: 15px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.sto-advance-card--custom-fonts .sto-advance-dropzone__hint,
+.sto-advance-import-export .sto-advance-card--custom-fonts .sto-advance-dropzone__hint {
+	font-size: 13px;
+	color: #646970;
+	text-align: center;
+}
+
+.sto-custom-fonts-form__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 14px;
+}
+
+.sto-custom-fonts-preview {
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: #f6f7f7;
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.sto-custom-fonts-preview__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.sto-custom-fonts-preview__row:last-child {
+	margin-bottom: 0;
+}
+
+.sto-custom-fonts-preview__row--cols {
+	gap: 18px;
+}
+
+.sto-custom-fonts-preview__row--cols > span {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+.sto-custom-fonts-preview__label {
+	font-weight: 600;
+	color: #50575e;
+}
+
+.sto-custom-fonts-preview__value {
+	color: #1d2327;
+	word-break: break-word;
+}
+
+.sto-custom-fonts-preview__note {
+	margin: 8px 0 0;
+	padding: 8px 10px;
+	border-left: 3px solid #dba617;
+	background: #fff8e1;
+	color: #50575e;
+	font-size: 12px;
+}
+
+.sto-custom-fonts-preview__zip-heading {
+	margin: 10px 0 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.sto-custom-fonts-preview__zip-table-wrap {
+	overflow-x: auto;
+	margin-bottom: 4px;
+}
+
+.sto-custom-fonts-preview__zip-table {
+	margin: 0;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	border-collapse: separate;
+	border-spacing: 0;
+	font-size: 12px;
+}
+
+.sto-custom-fonts-preview__zip-table thead th {
+	background: #fff;
+	font-weight: 600;
+}
+
+.sto-custom-fonts-preview__zip-table td {
+	word-break: break-word;
+}
+
+.sto-custom-fonts-empty {
+	margin: 12px 0 0;
+	padding: 16px;
+	border: 1px dashed #c3c4c7;
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: #f6f7f7;
+	font-size: 13px;
+	color: #646970;
+	text-align: center;
+}
+
+.sto-custom-fonts-table-wrap {
+	margin-top: 20px;
+	overflow-x: auto;
+}
+
+.sto-custom-fonts-table-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.sto-custom-fonts-table .check-column {
+	width: 2.2em;
+	vertical-align: middle;
+}
+
+.sto-custom-fonts-table .check-column input[type="checkbox"] {
+	margin: 0;
+}
+
+.sto-custom-fonts-table {
+	margin: 0;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.sto-custom-fonts-table thead th {
+	background: #f6f7f7;
+	font-weight: 600;
+}
+
+.sto-custom-fonts-table__file {
+	max-width: 220px;
+	word-break: break-all;
+	font-size: 12px;
+	color: #50575e;
+}
+
+.sto-custom-fonts-table__actions-col {
+	width: 88px;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.sto-advance-card--custom-fonts .sto-advance-status {
+	margin-top: 12px;
+}
+
+.sto-custom-fonts-live {
+	margin: 0 0 16px;
+	padding: 16px;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: #fff;
+}
+
+.sto-custom-fonts-live__title {
+	margin: 0 0 6px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.sto-custom-fonts-live__desc {
+	margin: 0 0 10px;
+	font-size: 13px;
+	color: #646970;
+}
+
+.sto-custom-fonts-live__mode {
+	margin: 0 0 12px;
+	padding: 8px 10px;
+	border-left: 3px solid #2271b1;
+	background: #f0f6fc;
+	font-size: 12px;
+	color: #50575e;
+}
+
+.sto-custom-fonts-live__controls {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 12px 14px;
+	margin-bottom: 14px;
+}
+
+.sto-custom-fonts-live__field {
+	min-width: 0;
+}
+
+.sto-custom-fonts-live__label {
+	display: block;
+	margin-bottom: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #50575e;
+}
+
+.sto-custom-fonts-live__sample {
+	padding: 14px 16px;
+	border: 1px solid var(--sto-field-soft-border, #e0e0e0);
+	border-radius: var(--sto-field-soft-radius, 5px);
+	background: #f6f7f7;
+}
+
+.sto-custom-fonts-live__glyphs {
+	margin: 0 0 12px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #50575e;
+	word-break: break-word;
+}
+
+.sto-custom-fonts-live__heading {
+	margin: 0 0 10px;
+	font-size: 22px;
+	line-height: 1.3;
+	color: #1d2327;
+}
+
+.sto-custom-fonts-live__body {
+	margin: 0;
+	font-size: 15px;
+	line-height: 1.5;
+	color: #333;
+}
+
+@media (max-width: 782px) {
+	.sto-custom-fonts-live__controls {
+		grid-template-columns: 1fr;
+	}
+}

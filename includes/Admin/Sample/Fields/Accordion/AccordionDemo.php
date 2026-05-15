@@ -15,6 +15,7 @@ use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
@@ -52,6 +53,7 @@ final class AccordionDemo {
 		DateField::instance();
 		DateTimeField::instance();
 		Dimension::instance();
+		IconSelect::instance();
 		GalleryControl::instance();
 		GoogleMapControl::instance();
 		AlignmentControl::instance();

@@ -14,11 +14,11 @@
             if ($code.length && $code.hasClass('sto-code-editor--is-fullscreen')) {
                 return $(document.body);
             }
-            var $inner = $s.closest('.sto-theme-settings-metabox-inner');
+            var $inner = $s.closest('.sto-theme-settings-metabox-inner, .sto-theme-settings-term-inner');
             if ($inner.length) {
                 // Block editor (WP 6.7+ split view): the meta box region clips overflow — Select2 must
                 // portal to body or dropdowns / AJAX results are clipped and controls look "broken".
-                // Classic postbox can clip too; body parent matches WP dev-note guidance for popovers.
+                // Classic postbox / term edit table can clip too; body parent matches WP dev-note guidance for popovers.
                 return $(document.body);
             }
             var $sidebar = $s.closest('.edit-post-sidebar, .interface-interface-skeleton__sidebar');
@@ -1900,7 +1900,7 @@
             });
         })();
 
-        $(document).on('submit', 'form.sto-options-form--metabox', function(e) {
+        $(document).on('submit', 'form.sto-options-form--metabox, form.sto-options-form--term', function(e) {
             e.preventDefault();
         });
 
@@ -2126,6 +2126,147 @@
         }
         initStoMetaboxSaveOnPostSave();
 
+        function stoRunTermThemeSettingsAjaxSave(options) {
+            options = options || {};
+            var silent = !!options.silent;
+            var termCfg = window.simple_theme_options && window.simple_theme_options.sto_term;
+            if (!termCfg || !termCfg.active || !termCfg.ajax_save_nonce || !termCfg.ajax_action || !termCfg.term_id) {
+                return Promise.resolve({ skipped: true });
+            }
+            var $form = $('form#sto-theme-settings-options-form.sto-options-form--term');
+            if (!$form.length) {
+                return Promise.resolve({ skipped: true });
+            }
+            var formEl = $form[0];
+            $(formEl).trigger('submit');
+            var $inner = $form.closest('.sto-theme-settings-term-inner');
+            var $ok = $inner.find('.sto-metabox-inline-notice--success');
+            var $err = $inner.find('.sto-metabox-inline-notice--error');
+            return new Promise(function(resolve, reject) {
+                window.setTimeout(function() {
+                    var fd = new window.FormData(formEl);
+                    fd.append('action', termCfg.ajax_action);
+                    fd.append('nonce', termCfg.ajax_save_nonce);
+                    fd.append('term_id', String(termCfg.term_id || ''));
+                    fd.append('taxonomy', String(termCfg.taxonomy || ''));
+                    var ajaxUrl = (window.simple_theme_options && window.simple_theme_options.ajax_url) || '';
+                    window
+                        .fetch(ajaxUrl, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            body: fd
+                        })
+                        .then(function(r) {
+                            return r.json();
+                        })
+                        .then(function(json) {
+                            if (json && json.success) {
+                                if (!silent) {
+                                    if ($ok.length) {
+                                        $ok
+                                            .text((termCfg.i18n && termCfg.i18n.saved) || (json.data && json.data.message) || '')
+                                            .prop('hidden', false);
+                                    }
+                                    if ($err.length) {
+                                        $err.text('').prop('hidden', true);
+                                    }
+                                }
+                                resolve(json);
+                            } else {
+                                var msg =
+                                    (json && json.data && json.data.message) ||
+                                    (termCfg.i18n && termCfg.i18n.save_failed) ||
+                                    '';
+                                if ($err.length) {
+                                    $err.text(msg).prop('hidden', false);
+                                }
+                                if ($ok.length) {
+                                    $ok.text('').prop('hidden', true);
+                                }
+                                reject(new Error(msg || 'sto_term_save_failed'));
+                            }
+                        })
+                        .catch(function() {
+                            if ($err.length) {
+                                $err.text((termCfg.i18n && termCfg.i18n.save_failed) || '').prop('hidden', false);
+                            }
+                            reject(new Error('sto_term_save_network'));
+                        });
+                }, 60);
+            });
+        }
+
+        function stoMergeStoTermFieldsIntoForm($targetForm) {
+            var $sto = $('form#sto-theme-settings-options-form.sto-options-form--term');
+            if (!$sto.length || !$targetForm.length) {
+                return;
+            }
+            $sto.find('fieldset[disabled]').prop('disabled', false);
+            $targetForm.find('.sto-term-bridge-field').remove();
+            $sto.serializeArray().forEach(function(item) {
+                if (!item.name) {
+                    return;
+                }
+                $('<input>', {
+                    type: 'hidden',
+                    'class': 'sto-term-bridge-field',
+                    name: item.name,
+                    value: item.value
+                }).appendTo($targetForm);
+            });
+        }
+
+        function initStoTermSaveOnTermAdd() {
+            var termCfg = window.simple_theme_options && window.simple_theme_options.sto_term;
+            if (!termCfg || !termCfg.active || !termCfg.is_add) {
+                return;
+            }
+            var $addForm = $('#addtag');
+            if (!$addForm.length || !$('form#sto-theme-settings-options-form.sto-options-form--term').length) {
+                return;
+            }
+            $addForm.on('submit.stoTermAddPersist', function() {
+                stoMergeStoTermFieldsIntoForm($addForm);
+            });
+        }
+        initStoTermSaveOnTermAdd();
+
+        function initStoTermSaveOnTermEdit() {
+            var termCfg = window.simple_theme_options && window.simple_theme_options.sto_term;
+            if (!termCfg || !termCfg.active || !termCfg.term_id || termCfg.is_add) {
+                return;
+            }
+            var $termForm = $('#edittag');
+            if (!$termForm.length) {
+                return;
+            }
+            if (!$('form#sto-theme-settings-options-form.sto-options-form--term').length) {
+                return;
+            }
+            var stoTermResubmitting = false;
+            $termForm.on('submit.stoTermPersist', function(ev) {
+                if (stoTermResubmitting) {
+                    stoTermResubmitting = false;
+                    return;
+                }
+                ev.preventDefault();
+                stoRunTermThemeSettingsAjaxSave({ silent: true })
+                    .then(function() {
+                        stoTermResubmitting = true;
+                        if ($termForm[0]) {
+                            window.HTMLFormElement.prototype.submit.call($termForm[0]);
+                        }
+                    })
+                    .catch(function() {
+                        stoTermResubmitting = true;
+                        if ($termForm[0]) {
+                            window.HTMLFormElement.prototype.submit.call($termForm[0]);
+                        }
+                    });
+            });
+        }
+        initStoTermSaveOnTermEdit();
+
         /**
          * Block editor: Theme Settings may start off-screen or inside a clipped panel; `:visible`
          * skips Select2 init until the user scrolls/opens Meta boxes. Re-init when the shell enters view.
@@ -2163,6 +2304,40 @@
             obs.observe(el);
         }
         initStoMetaboxIntersectionRefresh();
+
+        function initStoTermIntersectionRefresh() {
+            var termCfg = window.simple_theme_options && window.simple_theme_options.sto_term;
+            if (!termCfg || !termCfg.active || typeof window.IntersectionObserver !== 'function') {
+                return;
+            }
+            var el = document.querySelector('.sto-theme-settings-term-inner');
+            if (!el) {
+                return;
+            }
+            var deb = null;
+            var obs = new window.IntersectionObserver(
+                function(entries) {
+                    var hit = false;
+                    for (var i = 0; i < entries.length; i++) {
+                        if (entries[i] && entries[i].isIntersecting) {
+                            hit = true;
+                            break;
+                        }
+                    }
+                    if (!hit) {
+                        return;
+                    }
+                    window.clearTimeout(deb);
+                    deb = window.setTimeout(function() {
+                        deb = null;
+                        refreshStoSelect2();
+                    }, 100);
+                },
+                { root: null, rootMargin: '80px 0px 80px 0px', threshold: 0 }
+            );
+            obs.observe(el);
+        }
+        initStoTermIntersectionRefresh();
 
         (function initStoMetaboxIntroDismiss() {
             var $alerts = $('.sto-metabox-alert[data-sto-metabox-intro-dismiss]');

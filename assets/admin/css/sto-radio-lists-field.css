@@ -15,6 +15,14 @@
 	gap: 10px;
 }
 
+.sto-radio-lists--single .sto-radio-lists__list {
+	margin-bottom: 0;
+}
+
+.sto-radio-lists__item--single .sto-radio-lists__body {
+	padding-left: 10px;
+}
+
 .sto-radio-lists__item {
 	display: flex;
 	align-items: stretch;

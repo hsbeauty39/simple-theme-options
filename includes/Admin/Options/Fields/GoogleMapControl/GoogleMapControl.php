@@ -1,7 +1,10 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
@@ -13,13 +16,13 @@ use SimpleThemeOptions\Traits\SingletonTrait;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * **Google Map** location control: map + Places search + structured address fields in **`sto_options[id]`**
- * as a JSON object (or per-breakpoint map of JSON strings when **`responsive`** is set).
+ * **Location map** control (`google_map` type): Leaflet + OpenStreetMap tiles + Nominatim search/reverse geocode — **no API key**.
+ * Map, search (Enter), click / drag marker, and structured address fields in **`sto_options[id]`** as a JSON object (or per-breakpoint map
+ * when **`responsive`** is set). **Sync:** search fills all parts; editing address fields rebuilds the search line; editing coordinates (debounced) runs reverse geocode.
  *
  * Register with **`'type' => 'google_map'`** (or **`GoogleMapControl::register()`**). Keys: **`section_slug`**, **`id`**, **`title`**,
  * optional **`default`** (partial associative array — merged with the canonical keys below), **`description`**, conditional **`required`**,
- * **`html_required`**, **`tooltip`**, **`wrapper_class`**, optional **`responsive`** + **`device`**, optional **`google_maps_api_key`**
- * (per-field override; otherwise use the **`sto_google_maps_api_key`** filter). Stored JSON keys: **`formatted_address`**, **`address`**
+ * **`html_required`**, **`tooltip`**, **`wrapper_class`**, optional **`responsive`** + **`device`**. Stored JSON keys: **`formatted_address`**, **`address`**
  * (street number), **`street`**, **`city`**, **`state`**, **`zip`**, **`country`**, **`lat`**, **`lng`**. Boot **`GoogleMapControl::instance()`**
  * before **`Group::register()`** when used inside groups / tabs / accordion.
  */
@@ -62,7 +65,7 @@ final class GoogleMapControl {
 
 	protected function init() {
 		// After AlignmentControl (19.44), before Tabs (19.45).
-		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 19.441, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::GOOGLE_MAP, 2 );
 	}
 
 	/**
@@ -124,7 +127,6 @@ final class GoogleMapControl {
 		$field['required']      = isset( $field['required'] ) && is_array( $field['required'] ) ? $field['required'] : array();
 		$field['group']         = isset( $field['group'] ) ? sanitize_key( (string) $field['group'] ) : '';
 		$field['html_required'] = ! empty( $field['html_required'] );
-		$field['google_maps_api_key'] = isset( $field['google_maps_api_key'] ) ? sanitize_text_field( (string) $field['google_maps_api_key'] ) : '';
 
 		$bps = ResponsiveConfig::breakpoints_for_field( $field );
 		$field['responsive_breakpoints'] = $bps;
@@ -336,6 +338,9 @@ final class GoogleMapControl {
 			if ( ! empty( $field['group'] ) || ResponsiveConfig::is_composite_inner_field( $field ) ) {
 				continue;
 			}
+			if ( ! FieldRenderGate::should_render_field( $field ) ) {
+				continue;
+			}
 			$this->render_field_markup( $field, 'default' );
 		}
 	}
@@ -385,7 +390,8 @@ final class GoogleMapControl {
 
 		$i18n = array(
 			'searchPlaceholder' => __( 'Search address…', 'simple-theme-options' ),
-			'noApiKey'          => __( 'Add a Maps JavaScript API key (Maps JavaScript API + Places API) via the sto_google_maps_api_key filter or the google_maps_api_key field option to enable the map and autocomplete. You can still edit coordinates and address fields manually.', 'simple-theme-options' ),
+			'searchHint'        => __( 'Press Enter to search. The line below and the address fields stay in sync with the map.', 'simple-theme-options' ),
+			'geocodeError'      => __( 'Could not look up that place. Try again in a moment.', 'simple-theme-options' ),
 			'address'           => __( 'Address', 'simple-theme-options' ),
 			'street'            => __( 'Street', 'simple-theme-options' ),
 			'city'              => __( 'City', 'simple-theme-options' ),
@@ -420,7 +426,7 @@ final class GoogleMapControl {
 				$json      = isset( $value_map[ $tabs_pane_bp ] ) ? (string) $value_map[ $tabs_pane_bp ] : wp_json_encode( $defaults );
 				$input_name = 'sto_options[' . $field_id . '][' . $tabs_pane_bp . ']';
 				$id_suffix  = $field_id . '_' . $tabs_pane_bp;
-				$this->render_google_map_widget( $id_suffix, $input_name, $json, $group_label . ' — ' . strtoupper( $tabs_pane_bp ), $field, $i18n );
+				$this->render_google_map_widget( $id_suffix, $input_name, $json, $group_label . ' — ' . strtoupper( $tabs_pane_bp ), $i18n );
 				?>
 			<?php elseif ( ! empty( $bps_storage ) ) : ?>
 				<div class="sto-responsive">
@@ -434,7 +440,7 @@ final class GoogleMapControl {
 						$input_name = 'sto_options[' . $field_id . '][' . $bp . ']';
 						$id_suffix  = $field_id . '_' . $bp;
 						ResponsiveControl::render_pane_start( $bp, $visible );
-						$this->render_google_map_widget( $id_suffix, $input_name, $json, $group_label . ' — ' . strtoupper( $bp ), $field, $i18n );
+						$this->render_google_map_widget( $id_suffix, $input_name, $json, $group_label . ' — ' . strtoupper( $bp ), $i18n );
 						ResponsiveControl::render_pane_end();
 					endforeach;
 					ResponsiveControl::render_panes_close();
@@ -444,7 +450,7 @@ final class GoogleMapControl {
 				<?php
 				$json       = $this->get_merged_json( $field_id, $defaults );
 				$input_name = 'sto_options[' . $field_id . ']';
-				$this->render_google_map_widget( $field_id, $input_name, $json, $group_label, $field, $i18n );
+				$this->render_google_map_widget( $field_id, $input_name, $json, $group_label, $i18n );
 				?>
 			<?php endif; ?>
 
@@ -460,16 +466,11 @@ final class GoogleMapControl {
 	 * @param string               $input_name
 	 * @param string               $json
 	 * @param string               $group_label
-	 * @param array<string, mixed> $field
 	 * @param array<string, string> $i18n
 	 */
-	private function render_google_map_widget( $id_suffix, $input_name, $json, $group_label, array $field, array $i18n ) {
-		$payload = $this->decode_payload_string( $json );
+	private function render_google_map_widget( $id_suffix, $input_name, $json, $group_label, array $i18n ) {
+		$payload  = $this->decode_payload_string( $json );
 		$json_out = wp_json_encode( $payload );
-
-		$per_field_key = isset( $field['google_maps_api_key'] ) ? (string) $field['google_maps_api_key'] : '';
-		$filter_key    = (string) apply_filters( 'sto_google_maps_api_key', '' );
-		$api_attr      = $per_field_key !== '' ? $per_field_key : $filter_key;
 
 		$search_id = 'sto_gmap_search_' . $id_suffix;
 		?>
@@ -477,7 +478,6 @@ final class GoogleMapControl {
 			class="sto-gmap"
 			data-sto-gmap="1"
 			data-sto-gmap-i18n="<?php echo esc_attr( wp_json_encode( $i18n ) ); ?>"
-			data-sto-gmap-api-key="<?php echo esc_attr( $api_attr ); ?>"
 			aria-label="<?php echo esc_attr( $group_label ); ?>"
 		>
 			<div class="sto-gmap__chrome">
@@ -492,9 +492,10 @@ final class GoogleMapControl {
 						value="<?php echo esc_attr( $payload['formatted_address'] ); ?>"
 						autocomplete="off"
 					/>
+					<p class="sto-gmap__hint"><?php echo esc_html( $i18n['searchHint'] ); ?></p>
+					<p class="sto-gmap__msg" data-sto-gmap-msg hidden role="status" aria-live="polite"></p>
 				</div>
 				<div class="sto-gmap__map-wrap">
-					<div class="sto-gmap__notice" data-sto-gmap-no-key hidden><?php echo esc_html( $i18n['noApiKey'] ); ?></div>
 					<div class="sto-gmap__canvas" data-sto-gmap-canvas role="presentation"></div>
 				</div>
 				<div class="sto-gmap__fields">

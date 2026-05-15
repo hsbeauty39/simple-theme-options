@@ -15,11 +15,14 @@ use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
 use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
+use SimpleThemeOptions\Admin\Options\Fields\AdvancedRepeaterControl\AdvancedRepeaterControl;
+use SimpleThemeOptions\Data\CustomFontsRegistry;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\ViewportOptions;
 
 use SimpleThemeOptions\Admin\ThemeSettingsMetabox;
+use SimpleThemeOptions\Admin\ThemeSettingsTermBox;
 
 /**
  * Full saved option map (`sto_options`).
@@ -62,6 +65,38 @@ function sto_get_effective_options_for_post( $post_id = null ) {
 	}
 
 	return array_merge( $base, sto_get_post_theme_setting_overrides( $post_id ) );
+}
+
+/**
+ * Option keys saved from Theme Settings on a taxonomy term (merged over global `sto_options`).
+ *
+ * @param int|null $term_id Term ID or null for the queried term.
+ * @return array<string, mixed>
+ */
+function sto_get_term_theme_setting_overrides( $term_id = null ) {
+	$term_id = null !== $term_id ? (int) $term_id : (int) get_queried_object_id();
+	if ( $term_id <= 0 ) {
+		return array();
+	}
+	$m = get_term_meta( $term_id, ThemeSettingsTermBox::TERM_SETTINGS_META_KEY, true );
+
+	return is_array( $m ) ? $m : array();
+}
+
+/**
+ * Global Theme Settings merged with a term’s overrides (term wins on overlapping keys).
+ *
+ * @param int|null $term_id Term ID or null for the queried term.
+ * @return array<string, mixed>
+ */
+function sto_get_effective_options_for_term( $term_id = null ) {
+	$base    = sto_get_options();
+	$term_id = null !== $term_id ? (int) $term_id : (int) get_queried_object_id();
+	if ( $term_id <= 0 ) {
+		return $base;
+	}
+
+	return array_merge( $base, sto_get_term_theme_setting_overrides( $term_id ) );
 }
 
 /**
@@ -275,6 +310,38 @@ function sto_get_radio_lists_rows( $field_id, $json_or_scalar = null ) {
 	}
 
 	return RadioListsControl::instance()->get_rows_for_field( $field_id, $json_or_scalar );
+}
+
+/**
+ * Items from a registered **`advanced_repeater`** field (`sto_options[id]` JSON array of associative row objects; nested repeaters are arrays of objects under their key).
+ *
+ * @param string      $field_id       Option key in `sto_options`.
+ * @param string|null $json_or_scalar When non-null, parse this JSON string instead of reading `sto_options`.
+ * @return array<int, array<string, mixed>> Ordered items (sanitized to the field schema).
+ */
+function sto_get_advanced_repeater_items( $field_id, $json_or_scalar = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return array();
+	}
+
+	return AdvancedRepeaterControl::instance()->get_items_for_field( $field_id, $json_or_scalar );
+}
+
+/**
+ * All uploaded custom font faces (`sto_custom_fonts` option).
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function sto_get_custom_fonts() {
+	return CustomFontsRegistry::get_faces();
+}
+
+/**
+ * `@font-face` CSS for all custom fonts (front-end and admin typography preview).
+ */
+function sto_get_custom_fonts_css(): string {
+	return CustomFontsRegistry::build_font_face_css_all();
 }
 
 /**

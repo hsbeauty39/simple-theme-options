@@ -1,5 +1,5 @@
 /**
- * Radio lists repeater: sortable rows, hidden JSON (sto_options).
+ * Radio lists: ordered rows, each with optional title + one choice from shared `options`, stored as JSON in `sto_options[id]`.
  */
 (function ($) {
     'use strict';
@@ -35,6 +35,10 @@
     function layoutMode($wrap) {
         var m = String($wrap.attr('data-sto-radio-lists-layout') || 'stack');
         return m === 'inline' ? 'inline' : 'stack';
+    }
+
+    function repeatable($wrap) {
+        return $wrap.attr('data-sto-radio-lists-repeatable') !== '0';
     }
 
     function readRows($wrap) {
@@ -120,6 +124,7 @@
         var opts = parseOptions($wrap);
         var keys = Object.keys(opts);
         var i18n = parseI18n($wrap);
+        var rep = repeatable($wrap);
         var show = showTitles($wrap);
         var layout = layoutMode($wrap);
         var drag = i18n.drag != null ? String(i18n.drag) : '';
@@ -175,13 +180,23 @@
                 escapeHtml(lab) +
                 '</span></label>';
         }
-        return (
-            '<li class="sto-radio-lists__item" data-sto-radio-lists-item>' +
+        var grip =
             '<button type="button" class="sto-radio-lists__drag" data-sto-radio-lists-drag aria-label="' +
             escapeAttr(drag) +
             '" title="' +
             escapeAttr(drag) +
-            '"><i class="fa-light fa-grip-dots-vertical" aria-hidden="true"></i></button>' +
+            '"><i class="fa-light fa-grip-dots-vertical" aria-hidden="true"></i></button>';
+        var trash =
+            '<button type="button" class="sto-radio-lists__remove" data-sto-radio-lists-remove aria-label="' +
+            escapeAttr(rem) +
+            '" title="' +
+            escapeAttr(rem) +
+            '"><i class="fa-light fa-trash-can" aria-hidden="true"></i></button>';
+        return (
+            '<li class="sto-radio-lists__item' +
+            (rep ? '' : ' sto-radio-lists__item--single') +
+            '" data-sto-radio-lists-item">' +
+            (rep ? grip : '') +
             '<div class="sto-radio-lists__body">' +
             titleBlock +
             '<div class="sto-radio-lists__radios sto-radio-lists__radios--' +
@@ -191,11 +206,7 @@
             '">' +
             radios +
             '</div></div>' +
-            '<button type="button" class="sto-radio-lists__remove" data-sto-radio-lists-remove aria-label="' +
-            escapeAttr(rem) +
-            '" title="' +
-            escapeAttr(rem) +
-            '"><i class="fa-light fa-trash-can" aria-hidden="true"></i></button>' +
+            (rep ? trash : '') +
             '</li>'
         );
     }
@@ -247,6 +258,9 @@
 
         $wrap.on('click', '[data-sto-radio-lists-add]', function (ev) {
             ev.preventDefault();
+            if (!repeatable($wrap)) {
+                return;
+            }
             var rows = readRows($wrap);
             var cap = maxRows($wrap);
             if (cap > 0 && rows.length >= cap) {
@@ -274,6 +288,9 @@
 
         $wrap.on('click', '[data-sto-radio-lists-remove]', function (ev) {
             ev.preventDefault();
+            if (!repeatable($wrap)) {
+                return;
+            }
             var $li = $(this).closest('[data-sto-radio-lists-item]');
             $li.remove();
             updateHiddenFromDom($wrap);
@@ -302,7 +319,9 @@
             }
         });
 
-        bindSortable($wrap);
+        if (repeatable($wrap)) {
+            bindSortable($wrap);
+        }
 
         $wrap.find('[data-sto-radio-lists-item]').each(function () {
             syncOptClasses($(this));

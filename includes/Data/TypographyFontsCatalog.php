@@ -90,8 +90,13 @@ final class TypographyFontsCatalog {
 			),
 		);
 
+		$custom = CustomFontsRegistry::get_catalog_map();
+		if ( $custom !== array() ) {
+			$fonts = array_merge( $fonts, $custom );
+		}
+
 		/**
-		 * @param array<string, array{variants: array<int, string>, category: string}> $fonts
+		 * @param array<string, array{variants: array<int, string>, category: string, source?: string}> $fonts
 		 */
 		return apply_filters( 'sto_typography_font_catalog', $fonts );
 	}
@@ -102,11 +107,15 @@ final class TypographyFontsCatalog {
 	public static function get_fonts_list() {
 		$list = array();
 		foreach ( self::get_fonts_map() as $family => $meta ) {
-			$list[] = array(
+			$row = array(
 				'family'   => $family,
 				'variants' => isset( $meta['variants'] ) && is_array( $meta['variants'] ) ? array_values( $meta['variants'] ) : array( 'regular' ),
 				'category' => isset( $meta['category'] ) ? (string) $meta['category'] : 'sans-serif',
 			);
+			if ( isset( $meta['source'] ) && (string) $meta['source'] === 'custom' ) {
+				$row['source'] = 'custom';
+			}
+			$list[] = $row;
 		}
 
 		usort(

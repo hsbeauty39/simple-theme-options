@@ -14,6 +14,7 @@ use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
 use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
+use SimpleThemeOptions\Admin\Options\Fields\AdvancedRepeaterControl\AdvancedRepeaterControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
@@ -47,6 +48,7 @@ final class General {
 		GalleryControl::instance();
 		MultiTextControl::instance();
 		RadioListsControl::instance();
+		AdvancedRepeaterControl::instance();
 		GoogleMapControl::instance();
 		AlignmentControl::instance();
 		Tabs::instance();
@@ -269,12 +271,41 @@ final class General {
 			)
 		);
 
+		RadioListsControl::register(
+			array(
+				'section_slug'     => 'layout-inputs',
+				'id'               => 'layout_sample_radio_list_single',
+				'title'            => __( 'Radio list (single row, outside group)', 'simple-theme-options' ),
+				'description'      => __( 'Same tile radios as repeater radio lists, but **repeatable** is off: one list only (no add / drag / remove). **`radio_layout` => `stack`** stacks choices in a **column** (use **`inline`** for a horizontal row). Register with **RadioListsControl::register** and empty **group** so it prints on the section before the group panel. JSON is still **[{title,value}]** — use **sto_get_radio_lists_rows( \'layout_sample_radio_list_single\' )[0][\'value\']** (or the first element) in the theme.', 'simple-theme-options' ),
+				'repeatable'       => false,
+				'show_row_titles'  => false,
+				'radio_layout'     => 'stack',
+				'default'          => array(
+					array(
+						'title' => '',
+						'value' => 'comfortable',
+					),
+				),
+				'options'          => array(
+					'compact'     => array(
+						'label'   => __( 'Compact', 'simple-theme-options' ),
+						'tooltip' => __( 'Tighter spacing.', 'simple-theme-options' ),
+					),
+					'comfortable' => array(
+						'label'   => __( 'Comfortable', 'simple-theme-options' ),
+						'tooltip' => __( 'More breathing room.', 'simple-theme-options' ),
+					),
+					'spacious'    => __( 'Spacious', 'simple-theme-options' ),
+				),
+			)
+		);
+
 		Group::register(
 			array(
 				'section_slug'  => 'layout-inputs',
 				'id'            => 'input_controls',
 				'title'         => __( 'Text & number inputs', 'simple-theme-options' ),
-				'description'   => __( 'This leaf is Theme Settings → Field samples → Inputs & buttons (section slug layout-inputs). Representative controls: text, number, email, password, textarea, classic editor, phone, search, plus date, datetime, dimension, gallery, multi_text, radio_lists, map, alignment, icon, and button groups.', 'simple-theme-options' ),
+				'description'   => __( 'This leaf is Theme Settings → Field samples → Inputs & buttons (section slug layout-inputs). Representative controls: text, number, email, password, textarea, classic editor, phone, search, plus date, datetime, dimension, gallery, multi_text, radio_lists, **advanced_repeater** (nested JSON blocks), map, alignment, icon, and button groups. A **single-row** radio_lists demo (**layout_sample_radio_list_single**) is registered above this group on the same section.', 'simple-theme-options' ),
 				'fields'        => array(
 					array(
 						'type'            => 'text',
@@ -414,8 +445,8 @@ final class General {
 						'type'          => 'radio_lists',
 						'id'            => 'layout_sample_radio_lists',
 						'title'         => __( 'Repeater radio lists', 'simple-theme-options' ),
-						'description'   => __( 'Each row is one list: optional label plus one choice from the shared options map (same shape as a button group). Add list / drag / remove. Stored as JSON in sto_options. Theme helper: sto_get_radio_lists_rows( \'layout_sample_radio_lists\' ).', 'simple-theme-options' ),
-						'radio_layout'  => 'inline',
+						'description'   => __( 'Each row is one list: optional label plus one choice from the shared options map (same shape as a button group). Options stack in a column per list (**`radio_layout` => `stack`**); use **`inline`** for a horizontal row. Add list / drag / remove. Stored as JSON in sto_options. Theme helper: sto_get_radio_lists_rows( \'layout_sample_radio_lists\' ).', 'simple-theme-options' ),
+						'radio_layout'  => 'stack',
 						'default'       => array(
 							array(
 								'title' => __( 'Primary list', 'simple-theme-options' ),
@@ -437,6 +468,150 @@ final class General {
 								'tooltip' => __( 'More breathing room.', 'simple-theme-options' ),
 							),
 							'spacious'   => __( 'Spacious', 'simple-theme-options' ),
+						),
+					),
+					array(
+						'type'          => 'advanced_repeater',
+						'id'            => 'layout_sample_advanced_repeater',
+						'title'         => __( 'Advanced repeater', 'simple-theme-options' ),
+						'description'   => __( 'Showcase row: **fieldset** (text, number, textarea, select, switcher), **nested repeater** (level 1), and **second nested repeater** (level 2) with text + select + switcher. Drag, collapse/expand (all levels start **collapsed** by default), add/remove. Schema types match **`AdvancedRepeaterControl`** only. One JSON array in **sto_options**. Theme: **sto_get_advanced_repeater_items( \'layout_sample_advanced_repeater\' )**. Optional **`default_collapsed` => false** opens new rows by default (default is **true**). Inner leaves: no per-breakpoint **responsive** (carve-out).', 'simple-theme-options' ),
+						'max'           => 12,
+						'default'       => array(
+							array(
+								'adv_block'    => array(
+									'adv_title'     => __( 'First block', 'simple-theme-options' ),
+									'adv_qty'       => '2',
+									'adv_summary'   => __( 'Demo summary for this top-level item.', 'simple-theme-options' ),
+									'adv_tier'      => 'standard',
+									'adv_feature'   => '0',
+								),
+								'adv_subitems' => array(
+									array(
+										'adv_note'  => __( 'Nested line A (level 1 note).', 'simple-theme-options' ),
+										'adv_cells' => array(
+											array(
+												'adv_cell_label' => __( 'Level-2 row', 'simple-theme-options' ),
+												'adv_cell_mode'  => 'mode_standard',
+												'adv_cell_on'    => '1',
+											),
+										),
+									),
+								),
+							),
+						),
+						'fields'        => array(
+							array(
+								'type'   => 'fieldset',
+								'id'     => 'adv_block',
+								'title'  => __( 'Primary fields (fieldset)', 'simple-theme-options' ),
+								'fields' => array(
+									array(
+										'type'          => 'text',
+										'id'            => 'adv_title',
+										'title'         => __( 'Block title', 'simple-theme-options' ),
+										'default'       => '',
+										'html_required' => true,
+									),
+									array(
+										'type'    => 'number',
+										'id'      => 'adv_qty',
+										'title'   => __( 'Quantity', 'simple-theme-options' ),
+										'default' => '1',
+										'min'     => '1',
+										'max'     => '99',
+										'step'    => '1',
+									),
+									array(
+										'type'          => 'textarea',
+										'id'            => 'adv_summary',
+										'title'         => __( 'Summary', 'simple-theme-options' ),
+										'description'   => __( 'Longer copy inside the fieldset.', 'simple-theme-options' ),
+										'default'       => '',
+										'placeholder'   => __( 'Optional summary…', 'simple-theme-options' ),
+									),
+									array(
+										'type'          => 'select',
+										'id'            => 'adv_tier',
+										'title'         => __( 'Tier (select)', 'simple-theme-options' ),
+										'placeholder'   => __( 'Choose…', 'simple-theme-options' ),
+										'default'       => 'standard',
+										'options'       => array(
+											'standard' => __( 'Standard', 'simple-theme-options' ),
+											'premium'  => __( 'Premium', 'simple-theme-options' ),
+										),
+									),
+									array(
+										'type'          => 'switcher',
+										'id'            => 'adv_feature',
+										'title'         => __( 'Feature toggle (switcher)', 'simple-theme-options' ),
+										'description'   => __( 'Example switcher inside the fieldset.', 'simple-theme-options' ),
+										'default'       => '0',
+									),
+								),
+							),
+							array(
+								'type'          => 'advanced_repeater',
+								'id'            => 'adv_subitems',
+								'title'         => __( 'Nested repeater (level 1)', 'simple-theme-options' ),
+								'max'           => 8,
+								'default'       => array(
+									array(
+										'adv_note'  => '',
+										'adv_cells' => array(
+											array(
+												'adv_cell_label' => '',
+												'adv_cell_mode'  => 'mode_standard',
+												'adv_cell_on'    => '0',
+											),
+										),
+									),
+								),
+								'fields'        => array(
+									array(
+										'type'    => 'textarea',
+										'id'      => 'adv_note',
+										'title'   => __( 'Note (level 1)', 'simple-theme-options' ),
+										'default' => '',
+									),
+									array(
+										'type'          => 'advanced_repeater',
+										'id'            => 'adv_cells',
+										'title'         => __( 'Nested repeater (level 2)', 'simple-theme-options' ),
+										'max'           => 6,
+										'default'       => array(
+											array(
+												'adv_cell_label' => '',
+												'adv_cell_mode'  => 'mode_standard',
+												'adv_cell_on'    => '0',
+											),
+										),
+										'fields'        => array(
+											array(
+												'type'    => 'text',
+												'id'      => 'adv_cell_label',
+												'title'   => __( 'Label (text)', 'simple-theme-options' ),
+												'default' => '',
+											),
+											array(
+												'type'        => 'select',
+												'id'          => 'adv_cell_mode',
+												'title'       => __( 'Mode (select)', 'simple-theme-options' ),
+												'default'     => 'mode_standard',
+												'options'     => array(
+													'mode_standard' => __( 'Standard', 'simple-theme-options' ),
+													'mode_alt'      => __( 'Alternate', 'simple-theme-options' ),
+												),
+											),
+											array(
+												'type'    => 'switcher',
+												'id'      => 'adv_cell_on',
+												'title'   => __( 'Inner toggle (level 2)', 'simple-theme-options' ),
+												'default' => '0',
+											),
+										),
+									),
+								),
+							),
 						),
 					),
 					array(

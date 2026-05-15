@@ -28,7 +28,17 @@ final class Menu {
 				'metabox'        => array(
 					'post_types' => array( 'post', 'page' ),
 					'context'    => 'normal',
-					'priority'   => 'low',
+					'priority'   => 'high',
+				),
+				'term_metabox'   => array(
+					'taxonomies' => array_filter(
+						array(
+							'category',
+							'post_tag',
+							taxonomy_exists( 'product_cat' ) ? 'product_cat' : '',
+							taxonomy_exists( 'product_tag' ) ? 'product_tag' : '',
+						)
+					),
 				),
 			)
 		);

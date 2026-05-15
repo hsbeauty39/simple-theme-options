@@ -1311,9 +1311,11 @@
 
 /* -------------------------------------------------------------------------------------------- */
 /* Post editor metabox — same Theme Settings chrome, constrained inside `.postbox`.              */
+/* Term add/edit (`sto-theme-settings-term-inner`) reuses alert + inline notice rules below.      */
 /* -------------------------------------------------------------------------------------------- */
 
-.sto-theme-settings-metabox-inner .sto-metabox-alert {
+.sto-theme-settings-metabox-inner .sto-metabox-alert,
+.sto-theme-settings-term-inner .sto-metabox-alert {
     margin: 0 0 14px;
     padding: 0;
     border: 1px solid #c5d9ed;
@@ -1325,18 +1327,22 @@
 }
 
 .sto-theme-settings-metabox-inner .sto-metabox-alert[hidden],
-.sto-theme-settings-metabox-inner .sto-metabox-alert.sto-metabox-alert--dismissed {
+.sto-theme-settings-metabox-inner .sto-metabox-alert.sto-metabox-alert--dismissed,
+.sto-theme-settings-term-inner .sto-metabox-alert[hidden],
+.sto-theme-settings-term-inner .sto-metabox-alert.sto-metabox-alert--dismissed {
     display: none !important;
 }
 
-.sto-theme-settings-metabox-inner .sto-metabox-alert__inner {
+.sto-theme-settings-metabox-inner .sto-metabox-alert__inner,
+.sto-theme-settings-term-inner .sto-metabox-alert__inner {
     display: flex;
     align-items: flex-start;
     gap: 10px;
     padding: 12px 10px 12px 12px;
 }
 
-.sto-theme-settings-metabox-inner .sto-metabox-alert__icon {
+.sto-theme-settings-metabox-inner .sto-metabox-alert__icon,
+.sto-theme-settings-term-inner .sto-metabox-alert__icon {
     flex: 0 0 auto;
     margin-top: 1px;
     color: #2271b1;
@@ -1344,7 +1350,8 @@
     line-height: 1;
 }
 
-.sto-theme-settings-metabox-inner .sto-metabox-alert__text {
+.sto-theme-settings-metabox-inner .sto-metabox-alert__text,
+.sto-theme-settings-term-inner .sto-metabox-alert__text {
     flex: 1 1 auto;
     margin: 0;
     padding: 0;
@@ -1354,7 +1361,8 @@
     color: #1d2327;
 }
 
-.sto-theme-settings-metabox-inner .sto-metabox-alert__dismiss {
+.sto-theme-settings-metabox-inner .sto-metabox-alert__dismiss,
+.sto-theme-settings-term-inner .sto-metabox-alert__dismiss {
     flex: 0 0 auto;
     margin: -4px -6px -4px 0;
     padding: 4px 8px;
@@ -1368,37 +1376,62 @@
 }
 
 .sto-theme-settings-metabox-inner .sto-metabox-alert__dismiss:hover,
-.sto-theme-settings-metabox-inner .sto-metabox-alert__dismiss:focus {
+.sto-theme-settings-metabox-inner .sto-metabox-alert__dismiss:focus,
+.sto-theme-settings-term-inner .sto-metabox-alert__dismiss:hover,
+.sto-theme-settings-term-inner .sto-metabox-alert__dismiss:focus {
     color: #1d2327;
     background: rgba(0, 0, 0, 0.06);
     outline: none;
     box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.25);
 }
 
-.sto-theme-settings-metabox-inner .sto-metabox-alert__dismiss-icon {
+.sto-theme-settings-metabox-inner .sto-metabox-alert__dismiss-icon,
+.sto-theme-settings-term-inner .sto-metabox-alert__dismiss-icon {
     display: block;
     font-size: 20px;
     font-weight: 400;
     line-height: 1;
 }
 
-.sto-theme-settings-metabox-inner .sto-metabox-inline-notice {
+.sto-theme-settings-metabox-inner .sto-metabox-inline-notice,
+.sto-theme-settings-term-inner .sto-metabox-inline-notice {
     margin: 0 0 12px;
     padding: 8px 12px;
     border-radius: 4px;
     font-size: 13px;
 }
 
-.sto-theme-settings-metabox-inner .sto-metabox-inline-notice--success {
+.sto-theme-settings-metabox-inner .sto-metabox-inline-notice--success,
+.sto-theme-settings-term-inner .sto-metabox-inline-notice--success {
     background: #edfaef;
     border: 1px solid #46b450;
     color: #1e4620;
 }
 
-.sto-theme-settings-metabox-inner .sto-metabox-inline-notice--error {
+.sto-theme-settings-metabox-inner .sto-metabox-inline-notice--error,
+.sto-theme-settings-term-inner .sto-metabox-inline-notice--error {
     background: #fcf0f1;
     border: 1px solid #d63638;
     color: #3c434a;
+}
+
+/* Taxonomy add/edit: full-width panel; WP `.form-field` must not collapse the alert row. */
+.form-field.sto-term-settings-row,
+.form-field.sto-term-settings-row--add {
+    max-width: none;
+}
+
+.form-field.sto-term-settings-row .sto-theme-settings-term-inner,
+.form-field.sto-term-settings-row--add .sto-theme-settings-term-inner {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.form-field.sto-term-settings-row .sto-metabox-alert__text,
+.form-field.sto-term-settings-row--add .sto-metabox-alert__text {
+    float: none;
+    width: auto;
 }
 
 .sto-theme-settings-metabox-inner .sto-option-panel-title--metabox {

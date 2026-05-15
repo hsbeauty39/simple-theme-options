@@ -1,6 +1,8 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options\Fields\Tabs;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+
 use SimpleThemeOptions\Admin\Options\Fields\Accordion\Accordion;
 use SimpleThemeOptions\Admin\Options\Fields\BackgroundControl\BackgroundControl;
 use SimpleThemeOptions\Admin\Options\Fields\BorderControl\BorderControl;
@@ -10,6 +12,7 @@ use SimpleThemeOptions\Admin\Options\Fields\ButtonGroup\ButtonGroup;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
 use SimpleThemeOptions\Admin\Options\Fields\Common\LayoutWidth;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
@@ -25,6 +28,7 @@ use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
 use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
+use SimpleThemeOptions\Admin\Options\Fields\AdvancedRepeaterControl\AdvancedRepeaterControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
@@ -72,7 +76,7 @@ final class Tabs {
 	private $registered_ids = array();
 
 	protected function init() {
-		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), 19.45, 2 );
+		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::TABS, 2 );
 	}
 
 	/**
@@ -431,6 +435,9 @@ final class Tabs {
 			if ( ! is_array( $field ) || ! empty( $field['from_group'] ) ) {
 				continue;
 			}
+			if ( ! FieldRenderGate::should_render_field( $field ) ) {
+				continue;
+			}
 			$this->render_field_markup( $field, 'default' );
 		}
 	}
@@ -457,6 +464,9 @@ final class Tabs {
 			return false;
 		}
 		if ( isset( $inner['type'] ) && sanitize_key( (string) $inner['type'] ) === 'radio_lists' ) {
+			return false;
+		}
+		if ( isset( $inner['type'] ) && sanitize_key( (string) $inner['type'] ) === 'advanced_repeater' ) {
 			return false;
 		}
 		if ( isset( $inner['type'] ) && sanitize_key( (string) $inner['type'] ) === 'input' ) {
@@ -584,6 +594,11 @@ final class Tabs {
 			RadioListsControl::register( $clone_reg );
 
 			return RadioListsControl::get_field( $section, $fid ) ? 'radio_lists' : '';
+		}
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'advanced_repeater' && ! empty( $clone_reg['fields'] ) && is_array( $clone_reg['fields'] ) ) {
+			AdvancedRepeaterControl::register( $clone_reg );
+
+			return AdvancedRepeaterControl::get_field( $section, $fid ) ? 'advanced_repeater' : '';
 		}
 		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'google_map' ) {
 			GoogleMapControl::register( $clone_reg );
@@ -1089,6 +1104,12 @@ final class Tabs {
 				if ( $f ) {
 					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
 					RadioListsControl::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
+			case 'advanced_repeater':
+				$f = AdvancedRepeaterControl::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					AdvancedRepeaterControl::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
 			case 'google_map':

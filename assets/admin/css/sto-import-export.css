@@ -7,6 +7,19 @@
 	max-width: 720px;
 }
 
+/* Tools → Simple Backup: full-width sidebar layout (Backup | Custom fonts). */
+.sto-option-panel-wrapper--simple-backup .sto-option-panel-main .sto-advance-import-export {
+	max-width: none;
+}
+
+.sto-option-panel-wrapper--simple-backup .sto-option-panel-nav-layout {
+	align-items: flex-start;
+}
+
+.sto-option-panel-wrapper--simple-backup .sto-option-panel-section.sto-is-hidden {
+	display: none;
+}
+
 .sto-option-panel-wrapper .sto-advance-import-export__intro {
 	margin: 0 0 20px;
 	font-size: 14px;
@@ -28,6 +41,26 @@
 	font-size: 13px;
 	line-height: 1.5;
 	color: #646970;
+}
+
+.sto-option-panel-wrapper .sto-advance-import-merge {
+	margin: 0 0 16px;
+	font-size: 13px;
+	line-height: 1.45;
+	color: #50575e;
+}
+
+.sto-option-panel-wrapper .sto-advance-import-merge__label {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	cursor: pointer;
+	font-weight: 500;
+}
+
+.sto-option-panel-wrapper .sto-advance-import-merge__label input {
+	margin-top: 2px;
+	flex-shrink: 0;
 }
 
 .sto-option-panel-wrapper .sto-advance-card .sto-field-title-row {
@@ -165,6 +198,80 @@
 	min-height: 1.25em;
 }
 
+/* Where to show Theme Settings — expandable location rows */
+.sto-option-panel-wrapper .sto-display-locations {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	margin: 0;
+	border: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	border-radius: var(--sto-field-soft-radius, 6px);
+	background: #fff;
+	overflow: hidden;
+}
+
+.sto-option-panel-wrapper .sto-display-location {
+	border-bottom: 1px solid var(--sto-field-soft-border, #e6e8eb);
+}
+
+.sto-option-panel-wrapper .sto-display-location:last-child {
+	border-bottom: 0;
+}
+
+.sto-option-panel-wrapper .sto-display-location__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 12px 14px;
+	background: #f9f9f9;
+}
+
+.sto-option-panel-wrapper .sto-display-location__title {
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.sto-option-panel-wrapper .sto-display-location__body {
+	padding: 12px 14px 14px;
+	border-top: 1px solid var(--sto-field-soft-border, #e6e8eb);
+	background: #fff;
+}
+
+.sto-option-panel-wrapper .sto-display-location__body.sto-is-hidden {
+	display: none !important;
+}
+
+.sto-option-panel-wrapper .sto-display-location__hint {
+	margin: 0 0 12px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #646970;
+}
+
+.sto-option-panel-wrapper .sto-display-location__checks {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 8px 16px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.sto-option-panel-wrapper .sto-display-location__check-label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: #1d2327;
+	cursor: pointer;
+}
+
+.sto-option-panel-wrapper .sto-display-location__check-label input {
+	margin: 0;
+}
+
 .sto-option-panel-wrapper .sto-advance-table-wrap {
 	overflow-x: auto;
 	margin: 0 0 12px;
@@ -184,9 +291,47 @@
 	vertical-align: middle;
 }
 
-.sto-option-panel-wrapper .sto-advance-table code {
-	font-size: 12px;
+.sto-option-panel-wrapper .sto-advance-table__check {
+	width: 44px;
+	text-align: center;
+}
+
+.sto-option-panel-wrapper .sto-advance-table code.sto-advance-table__filename {
+	font-size: 13px;
 	word-break: break-all;
+}
+
+.sto-option-panel-wrapper .sto-advance-import-row {
+	cursor: pointer;
+}
+
+.sto-option-panel-wrapper .sto-advance-import-row--open {
+	background: #f6f7f7;
+}
+
+.sto-option-panel-wrapper .sto-advance-import-row__hint {
+	display: block;
+	margin-top: 4px;
+	font-size: 12px;
+	color: #646970;
+	font-weight: 400;
+}
+
+.sto-option-panel-wrapper .sto-advance-import-row-detail > td {
+	padding: 0 12px 14px;
+	background: #fafafa;
+	border-top: 0;
+}
+
+.sto-option-panel-wrapper .sto-display-locations--import {
+	margin-top: 8px;
+}
+
+.sto-option-panel-wrapper .sto-display-location__intro {
+	margin: 0 0 12px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #646970;
 }
 
 .sto-option-panel-wrapper .sto-advance-table__actions {
@@ -200,11 +345,38 @@
 }
 
 .sto-option-panel-wrapper .sto-advance-import-log__bulk {
-	margin-top: 8px;
+	margin: 0 0 12px;
 }
 
 .sto-option-panel-wrapper .sto-advance-import-log__note {
 	margin: 0 0 12px;
 	font-size: 13px;
+	color: #646970;
+}
+
+.sto-option-panel-wrapper .sto-advance-export-menus {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 0 0 4px;
+	padding: 0;
+	border: 0;
+}
+
+.sto-option-panel-wrapper .sto-advance-export-menu-label {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	margin: 0;
+	font-size: 14px;
+	font-weight: 500;
+	color: #1d2327;
+	cursor: pointer;
+}
+
+.sto-option-panel-wrapper .sto-advance-export-menu-label__slug {
+	font-size: 12px;
+	font-weight: 400;
 	color: #646970;
 }

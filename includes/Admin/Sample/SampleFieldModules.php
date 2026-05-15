@@ -1,13 +1,16 @@
 <?php
 namespace SimpleThemeOptions\Admin\Sample;
 
+use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Boots sample Theme Settings field registrar classes and section navigation.
  *
- * Invoked from {@see \SimpleThemeOptions\Plugin::register_hooks()} before {@see \SimpleThemeOptions\Admin\Sample\Menu::instance()}
- * for users with the **manage_options** capability, so {@see \SimpleThemeOptions\Admin\Sample\Menu::init()} only registers the Theme Settings admin page.
+ * Invoked from {@see \SimpleThemeOptions\Plugin::register_hooks()} after {@see \SimpleThemeOptions\Admin\Sample\Menu::instance()}
+ * for users with the **manage_options** capability, so {@see \SimpleThemeOptions\Admin\Sample\Menu::init()} only registers the Theme Settings admin page
+ * (with **`packaged_demo`** + **`demo`** flags on {@see \SimpleThemeOptions\Admin\Options\Menu::register()}).
  *
  * Field modules live under `includes/Admin/Sample/Fields/{Group}/{ClassName}.php`.
  * Each module is a **PascalCase** `.php` file whose basename matches the PHP class name
@@ -22,6 +25,13 @@ final class SampleFieldModules {
 	 */
 	public static function boot() {
 		self::boot_discovered_field_modules();
+
+		if ( ! OptionsMenu::instance()->is_demo_mode_enabled() ) {
+			Sections::instance()->register_without_demo();
+
+			return;
+		}
+
 		Sections::instance()->register();
 	}
 
