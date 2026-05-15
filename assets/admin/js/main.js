@@ -2143,6 +2143,40 @@
         }
         initStoMetaboxIntersectionRefresh();
 
+        (function initStoMetaboxIntroDismiss() {
+            var $alerts = $('.sto-metabox-alert[data-sto-metabox-intro-dismiss]');
+            if (!$alerts.length) {
+                return;
+            }
+            $alerts.each(function() {
+                var $a = $(this);
+                var token = $a.attr('data-sto-metabox-intro-dismiss') || '';
+                if (!token) {
+                    return;
+                }
+                var key = 'sto_metabox_intro_' + token;
+                try {
+                    if (window.localStorage && window.localStorage.getItem(key) === '1') {
+                        $a.attr('hidden', true).addClass('sto-metabox-alert--dismissed');
+                        return;
+                    }
+                } catch (e1) {
+                    /* storage blocked */
+                }
+                $a.on('click', '.sto-metabox-alert__dismiss', function(ev) {
+                    ev.preventDefault();
+                    try {
+                        if (window.localStorage) {
+                            window.localStorage.setItem(key, '1');
+                        }
+                    } catch (e2) {
+                        /* ignore */
+                    }
+                    $a.attr('hidden', true).addClass('sto-metabox-alert--dismissed');
+                });
+            });
+        })();
+
         window.addEventListener('popstate', function() {
             syncActiveState(window.location.href);
         });

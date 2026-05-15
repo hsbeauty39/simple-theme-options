@@ -2130,9 +2130,23 @@ final class Menu {
                 data-sto-post-edit-base="<?php echo esc_attr( $sidebar_base ); ?>"
                 data-sto-post-id="<?php echo esc_attr( (string) $post_id ); ?>"
             >
-                <p class="sto-metabox-hint description">
-                    <?php esc_html_e( 'These fields apply to this post only (they override the same keys from global Theme Settings on the front). They are stored when you publish or update the post.', 'simple-theme-options' ); ?>
-                </p>
+                <div
+                    class="sto-metabox-alert"
+                    role="status"
+                    data-sto-metabox-intro-dismiss="<?php echo esc_attr( (string) $post_id . '-' . $req ); ?>"
+                >
+                    <div class="sto-metabox-alert__inner">
+                        <span class="sto-metabox-alert__icon" aria-hidden="true">
+                            <i class="fa-light fa-circle-info"></i>
+                        </span>
+                        <p class="sto-metabox-alert__text">
+                            <?php esc_html_e( 'These fields apply to this post only (they override the same keys from global Theme Settings on the front). They are stored when you publish or update the post.', 'simple-theme-options' ); ?>
+                        </p>
+                        <button type="button" class="sto-metabox-alert__dismiss" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'simple-theme-options' ); ?>">
+                            <span class="sto-metabox-alert__dismiss-icon" aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                </div>
                 <div class="sto-metabox-inline-notice sto-metabox-inline-notice--success" role="status" hidden></div>
                 <div class="sto-metabox-inline-notice sto-metabox-inline-notice--error" role="alert" hidden></div>
                 <div class="sto-option-panel-head sto-panel-head-with-search">
