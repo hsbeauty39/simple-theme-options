@@ -22,7 +22,9 @@ use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
-use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
+use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
+use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
+use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Accordion\Accordion;
@@ -66,14 +68,17 @@ final class Group {
 	 * - **Checkbox / multi-check:** `type` => **`checkbox`**, **`id`**, **`title`**, optional **`description`**, **`multiple`** (bool). Single: **`default`** `1`|`0`, optional **`labels`** (`on` / `off`). Multi: **`options`** (value => label or `label`+`tooltip`), **`default`** (array of keys), optional **`max`**, **`columns`** (1–6), optional **`responsive`**, **`device`**.
 	 * - Image select: `type` => `image_select`, plus `id`, `title`, `options` (value => `label` string or array with `label`, `preset`, optional `image`), `default`, `required`, `tooltip`, optional **`responsive`**, **`device`**.
 	 * - Dynamic object: `type` => `dynamic_object`, plus `id`, `title`, `post_type`, optional `multiple` (bool), `max` (max selections), `placeholder`, `limit` (max posts per AJAX page, default **10**), `search_min_length` (default **3**), `post_status`, `default` (string or array of ids), `required`, `tooltip`, optional **`responsive`**, **`device`**.
-	 * - Input: `type` => `text`|`number`|`textarea`|`editor`|`email`|`phone`|`search` (or `type` => `input` with `input_type` set to one of those), plus `id`, `title`, optional `description`, `default`, `placeholder` (all types; editor sets textarea placeholder), optional **`html_required`** (HTML5 `required`, separate from conditional `required`), `min`/`max`/`step` (number), `rows`/`cols` (textarea), `editor_height`/`media_buttons`/`teeny`/`drag_drop_upload` (editor), optional **`toolbar_end`** on **editor** => `array( 'label', 'tooltip', 'snippet' )` (TinyMCE row-1 after kitchen sink), conditional **`required`**, `tooltip`, optional **`responsive`**, **`device`** (not for **`editor`**).
+	 * - Input: `type` => `text`|`number`|`textarea`|`editor`|`email`|`phone`|`search`|`password` (or `type` => `input` with `input_type` set to one of those), plus `id`, `title`, optional `description`, `default`, `placeholder` (all types; editor sets textarea placeholder), optional **`html_required`** (HTML5 `required`, separate from conditional `required`), `min`/`max`/`step` (number), `rows`/`cols` (textarea), `editor_height`/`media_buttons`/`teeny`/`drag_drop_upload` (editor), optional **`toolbar_end`** on **editor** => `array( 'label', 'tooltip', 'snippet' )` (TinyMCE row-1 after kitchen sink), conditional **`required`**, `tooltip`, optional **`responsive`**, **`device`** (not for **`editor`**).
 	 * - **Button group:** `type` => **`button_group`**, `id`, `title`, **`options`** (value => label string **or** array with **`label`**, optional **`tooltip`** (plain text on segment **`?`** when no **`preview_image`**), optional **`preview_image`** URL shown in the same floating image popover as **`FieldTitle`** on segment **`?` hover**), optional **`default`**, `description`, conditional **`required`**, row **`tooltip`** / **`tooltip_image`** via **`FieldTitle`**, optional **`responsive`**, **`device`**.
 	 * - **Range:** `type` => **`range`**, `id`, `title`, optional `description`, `default` (number, `760px`-style string, or array `v` / `u` / `c`), numeric `min` / `max` / `step`, optional **`units`** => ordered non-empty subset of **`px`**, **`%`**, **`rem`**, **`em`**, **`custom`** (default: all five; one entry = locked unit; **`custom`** alone = suffix field only), optional **`unit_label`** (UI-only text after the number, e.g. `PAGE`; with **`units` => array( 'custom' )** hides the suffix field and CUSTOM chip), conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**.
 	 * - **Date:** `type` => **`date`**, **`id`**, **`title`**, optional **`description`**, **`default`** (Y-m-d or empty), **`placeholder`**, optional **`min_date`** / **`max_date`** (inclusive Y-m-d), optional **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as **`Y-m-d`** string or per-breakpoint map. Theme: read **`sto_options['id']`** (string or array).
 	 * - **Date + time:** `type` => **`datetime`**, same keys as **date** plus optional **`time_step`** (seconds for native time input **`step`**, default **60**). Stored as **`Y-m-d H:i`** (24-hour) or per-breakpoint map. Boot **`DateTimeField::instance()`** when used inside groups.
 	 * - **Dimension:** `type` => **`dimension`**, **`id`**, **`title`**, optional **`sides`** (1–6 of **`array( 'key' => 'top', 'label' => 'TOP' )`**), **`units`** subset of **`px`**, **`%`**, **`rem`**, **`em`**, **`custom`**, **`min`**, **`max`**, **`step`**, **`default`** (partial **`u` / `c` / `linked` / `values`**), optional **`unit_label`**, **`show_link`** (default **true**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored JSON per slice. Boot **`Dimension::instance()`** when used inside groups.
+	 * - **Icon select:** `type` => **`icon_select`**, **`id`**, **`title`**, optional **`default`** (full Font Awesome class from **`assets/admin/data/sto-icon-select-manifest.json`**), optional **`allow_clear`**, **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as one class string per slice (e.g. **`fa-light fa-house`**). Boot **`IconSelect::instance()`** when used inside groups / tabs / accordion.
 	 * - **Gallery:** `type` => **`gallery`**, **`id`**, **`title`**, optional **`default`** => **`array( 101, 102, 103 )`** (image attachment IDs only), optional **`max`** (int **`0`** = unlimited, capped at **100**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as JSON **`["id","id"]`** or per-breakpoint map. Boot **`GalleryControl::instance()`** when used inside groups.
-	 * - **Google map:** `type` => **`google_map`**, **`id`**, **`title`**, optional **`default`** (partial **`formatted_address`**, **`address`**, **`street`**, **`city`**, **`state`**, **`zip`**, **`country`**, **`lat`**, **`lng`**), optional **`google_maps_api_key`** (per-field Maps JavaScript API key; else use **`sto_google_maps_api_key`** filter), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as one JSON object per slice (or per-breakpoint map). Boot **`GoogleMapControl::instance()`** when used inside groups.
+	 * - **Multi text:** `type` => **`multi_text`**, **`id`**, **`title`**, optional **`default`** => **`array( 'Line 1', 'Line 2' )`**, optional **`max`** (int **`0`** = unlimited, hard cap **100**), **`placeholder`**, **`html_required`**, conditional **`required`**, **`tooltip`**. Stored as JSON **`["a","b"]`**. Boot **`MultiTextControl::instance()`** when used inside groups.
+	 * - **Radio lists:** `type` => **`radio_lists`**, **`id`**, **`title`**, **`options`** (same map as **ButtonGroup**), optional **`default`** => **`array( array( 'title' => '…', 'value' => 'key' ), … )`**, optional **`max`** (0 = unlimited, hard cap **50**), **`show_row_titles`**, **`radio_layout`** (**`stack`** | **`inline`**), **`html_required`**, conditional **`required`**, **`tooltip`**. Stored as JSON rows in **`sto_options[id]`** (no responsive map). Boot **`RadioListsControl::instance()`** when used inside groups.
+	 * - **Google map:** `type` => **`google_map`**, **`id`**, **`title`**, optional **`default`** (partial **`formatted_address`**, **`address`**, **`street`**, **`city`**, **`state`**, **`zip`**, **`country`**, **`lat`**, **`lng`**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Map uses **OpenStreetMap** tiles + **Nominatim** (no Google API key). Stored as one JSON object per slice (or per-breakpoint map). Boot **`GoogleMapControl::instance()`** when used inside groups.
 	 * - **Alignment:** `type` => **`alignment`**, **`id`**, **`title`**, **`options`** (same shape as **ButtonGroup**: value => label string or array with **`label`**, optional **`tooltip`**, **`preview_image`**, **`icon`**), optional **`default`** (sanitize_key), optional **`orientation`** => **`horizontal`** | **`vertical`**, **`density`** => **`default`** | **`compact`**, **`show_labels`** (bool), **`allow_clear`** (bool), optional **`css_map`** (option key => CSS fragment for themes), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as a scalar string or per-breakpoint map. Boot **`AlignmentControl::instance()`** when used inside groups.
 	 * - **Tabs:** `type` => **`tabs`**, **`id`**, **`title`**, **`tabs`**, **`fields`** — **`fields`** may mix **leaf** controls, **`type` => `accordion`**, **nested groups** (`id`, `title`, `fields`), and **nested `tabs`** (ids auto-prefixed per nesting level). Optional **`responsive`**, **`device`**. Stored keys: **`{tabs_id}_{tab_id}_{inner_id}`** (and scoped ids for nested blocks). **`sto-tabs.css`** stacks grid cells full-width at **960px**.
 	 * - **Accordion:** `type` => **`accordion`**, **`id`**, **`title`**, **`panels`**, **`fields`** — each **`panels[]`** row: **`id`**, **`label`**, optional **`expanded`** / **`show`** / **`open`** (first truthy row starts open; otherwise all collapsed on load). **`fields`** may mix **leaf** fields, **`tabs`**, **`accordion`**, and **nested groups** (same composition rules as **Tabs** / tree builders). Optional **`responsive`**, **`device`**, **`description`**, **`required`**, **`tooltip`**. Stored keys: **`{accordion_id}_{panel_id}_{inner_id}`**. **`sto-accordion.css`** / **`sto-accordion.js`**.
@@ -463,6 +468,21 @@ final class Group {
 				continue;
 			}
 
+			if ( $this->is_icon_select_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				IconSelect::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && IconSelect::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'icon_select',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
 			if ( $this->is_gallery_item( $item ) ) {
 				$item['section_slug'] = $section_slug;
 				$item['group']        = $parent_group_id;
@@ -471,6 +491,36 @@ final class Group {
 				if ( $fid && GalleryControl::get_field( $section_slug, $fid ) ) {
 					$nodes[] = array(
 						'kind' => 'gallery',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
+			if ( $this->is_multi_text_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				MultiTextControl::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && MultiTextControl::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'multi_text',
+						'id'   => $fid,
+						'span' => $span,
+					);
+				}
+				continue;
+			}
+
+			if ( $this->is_radio_lists_item( $item ) ) {
+				$item['section_slug'] = $section_slug;
+				$item['group']        = $parent_group_id;
+				RadioListsControl::register( $item );
+				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
+				if ( $fid && RadioListsControl::get_field( $section_slug, $fid ) ) {
+					$nodes[] = array(
+						'kind' => 'radio_lists',
 						'id'   => $fid,
 						'span' => $span,
 					);
@@ -650,8 +700,20 @@ final class Group {
 		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'dimension' && ! empty( $item['id'] );
 	}
 
+	private function is_icon_select_item( $item ) {
+		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'icon_select' && ! empty( $item['id'] );
+	}
+
 	private function is_gallery_item( $item ) {
 		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'gallery' && ! empty( $item['id'] );
+	}
+
+	private function is_multi_text_item( $item ) {
+		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'multi_text' && ! empty( $item['id'] );
+	}
+
+	private function is_radio_lists_item( $item ) {
+		return is_array( $item ) && isset( $item['type'] ) && sanitize_key( (string) $item['type'] ) === 'radio_lists' && ! empty( $item['id'] ) && ! empty( $item['options'] ) && is_array( $item['options'] );
 	}
 
 	private function is_google_map_item( $item ) {
@@ -1009,10 +1071,25 @@ final class Group {
 							if ( $dimfield ) {
 								Dimension::instance()->render_field_markup( $dimfield, 'group_inner' );
 							}
+						} elseif ( $node['kind'] === 'icon_select' && ! empty( $node['id'] ) ) {
+							$iconfield = IconSelect::get_field( $section_slug, (string) $node['id'] );
+							if ( $iconfield ) {
+								IconSelect::instance()->render_field_markup( $iconfield, 'group_inner' );
+							}
 						} elseif ( $node['kind'] === 'gallery' && ! empty( $node['id'] ) ) {
 							$gfield = GalleryControl::get_field( $section_slug, (string) $node['id'] );
 							if ( $gfield ) {
 								GalleryControl::instance()->render_field_markup( $gfield, 'group_inner' );
+							}
+						} elseif ( $node['kind'] === 'multi_text' && ! empty( $node['id'] ) ) {
+							$mtfield = MultiTextControl::get_field( $section_slug, (string) $node['id'] );
+							if ( $mtfield ) {
+								MultiTextControl::instance()->render_field_markup( $mtfield, 'group_inner' );
+							}
+						} elseif ( $node['kind'] === 'radio_lists' && ! empty( $node['id'] ) ) {
+							$rlfield = RadioListsControl::get_field( $section_slug, (string) $node['id'] );
+							if ( $rlfield ) {
+								RadioListsControl::instance()->render_field_markup( $rlfield, 'group_inner' );
 							}
 						} elseif ( $node['kind'] === 'google_map' && ! empty( $node['id'] ) ) {
 							$gmfield = GoogleMapControl::get_field( $section_slug, (string) $node['id'] );

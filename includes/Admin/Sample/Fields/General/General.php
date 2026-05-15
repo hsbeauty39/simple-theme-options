@@ -10,7 +10,10 @@ use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
+use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
+use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
@@ -40,7 +43,10 @@ final class General {
 		DateField::instance();
 		DateTimeField::instance();
 		Dimension::instance();
+		IconSelect::instance();
 		GalleryControl::instance();
+		MultiTextControl::instance();
+		RadioListsControl::instance();
 		GoogleMapControl::instance();
 		AlignmentControl::instance();
 		Tabs::instance();
@@ -64,7 +70,7 @@ final class General {
 					'id'            => 'layout_header',
 					'title'         => __( 'Site header', 'simple-theme-options' ),
 					'placeholder'   => __( 'Select', 'simple-theme-options' ),
-					'description'   => __( 'Choose which header layout applies globally. Sample uses a minimal option list.', 'simple-theme-options' ),
+					'description'   => __( 'Choose which header layout applies by default globally; per-post overrides are possible from the Theme Settings meta box on posts/pages.', 'simple-theme-options' ),
 					'default'       => 'default_header_layout',
 					'responsive'    => true,
 					'options'       => array(
@@ -268,7 +274,7 @@ final class General {
 				'section_slug'  => 'layout-inputs',
 				'id'            => 'input_controls',
 				'title'         => __( 'Text & number inputs', 'simple-theme-options' ),
-				'description'   => __( 'Representative input types: text, number, textarea, classic editor, email, phone, and search.', 'simple-theme-options' ),
+				'description'   => __( 'This leaf is Theme Settings → Field samples → Inputs & buttons (section slug layout-inputs). Representative controls: text, number, email, password, textarea, classic editor, phone, search, plus date, datetime, dimension, gallery, multi_text, radio_lists, map, alignment, icon, and button groups.', 'simple-theme-options' ),
 				'fields'        => array(
 					array(
 						'type'            => 'text',
@@ -289,6 +295,22 @@ final class General {
 						'max'             => '12',
 						'step'            => '1',
 						'placeholder'     => __( '1–12', 'simple-theme-options' ),
+					),
+					array(
+						'type'            => 'email',
+						'id'              => 'layout_contact_email',
+						'title'           => __( 'Contact email', 'simple-theme-options' ),
+						'description'     => __( 'HTML email input; stored with sanitize_email.', 'simple-theme-options' ),
+						'default'         => '',
+						'placeholder'     => 'name@example.com',
+					),
+					array(
+						'type'            => 'password',
+						'id'              => 'layout_sample_api_secret',
+						'title'           => __( 'Sample API secret', 'simple-theme-options' ),
+						'description'     => __( 'Masked input with a show / hide control (eye). Stored with sanitize_text_field like plain text—not encrypted in the database unless you add that in the theme.', 'simple-theme-options' ),
+						'default'         => '',
+						'placeholder'     => __( 'Paste secret…', 'simple-theme-options' ),
 					),
 					array(
 						'type'          => 'date',
@@ -376,10 +398,52 @@ final class General {
 						'max'           => 24,
 					),
 					array(
+						'type'          => 'multi_text',
+						'id'            => 'layout_sample_multi_text',
+						'title'         => __( 'Repeater text lines', 'simple-theme-options' ),
+						'description'   => __( 'Add lines with the Add more button, drag the grip to reorder, use the trash control to remove. Optional default lines in PHP: default => array( \'Line 1\', \'Line 2\' ); optional placeholder for empty inputs. Stored as JSON in sto_options. Theme helper: sto_get_multi_text_lines( \'layout_sample_multi_text\' ).', 'simple-theme-options' ),
+						'default'       => array(
+							__( 'First bullet', 'simple-theme-options' ),
+							__( 'Second bullet', 'simple-theme-options' ),
+							__( 'Third bullet', 'simple-theme-options' ),
+						),
+						'placeholder'   => __( 'Type a line…', 'simple-theme-options' ),
+						'max'           => 40,
+					),
+					array(
+						'type'          => 'radio_lists',
+						'id'            => 'layout_sample_radio_lists',
+						'title'         => __( 'Repeater radio lists', 'simple-theme-options' ),
+						'description'   => __( 'Each row is one list: optional label plus one choice from the shared options map (same shape as a button group). Add list / drag / remove. Stored as JSON in sto_options. Theme helper: sto_get_radio_lists_rows( \'layout_sample_radio_lists\' ).', 'simple-theme-options' ),
+						'radio_layout'  => 'inline',
+						'default'       => array(
+							array(
+								'title' => __( 'Primary list', 'simple-theme-options' ),
+								'value' => 'compact',
+							),
+							array(
+								'title' => __( 'Secondary list', 'simple-theme-options' ),
+								'value' => 'comfortable',
+							),
+						),
+						'max'           => 12,
+						'options'       => array(
+							'compact'    => array(
+								'label'   => __( 'Compact', 'simple-theme-options' ),
+								'tooltip' => __( 'Tighter spacing.', 'simple-theme-options' ),
+							),
+							'comfortable' => array(
+								'label'   => __( 'Comfortable', 'simple-theme-options' ),
+								'tooltip' => __( 'More breathing room.', 'simple-theme-options' ),
+							),
+							'spacious'   => __( 'Spacious', 'simple-theme-options' ),
+						),
+					),
+					array(
 						'type'          => 'google_map',
 						'id'            => 'layout_sample_google_map',
-						'title'         => __( 'Sample Google Map', 'simple-theme-options' ),
-						'description'   => __( 'Map, Places search, and structured address fields stored as one JSON object in sto_options. Enable the map with add_filter( \'sto_google_maps_api_key\', fn () => \'YOUR_KEY\' ); (Maps JavaScript API + Places API). Theme helper: sto_get_google_map_field().', 'simple-theme-options' ),
+						'title'         => __( 'Sample location map', 'simple-theme-options' ),
+						'description'   => __( 'Map (OpenStreetMap), search (Enter) fills fields; fields and search line stay in sync; coordinates trigger reverse lookup. One JSON in sto_options. Theme helper: sto_get_google_map_field().', 'simple-theme-options' ),
 						'default'       => array(
 							'formatted_address' => '1600 Pennsylvania Avenue NW, Washington, DC 20500, USA',
 							'address'           => '1600',
@@ -390,6 +454,11 @@ final class General {
 							'country'           => 'United States',
 							'lat'               => '38.8976763',
 							'lng'               => '-77.0365298',
+						),
+						// image tooltip
+						'tooltip' => array(
+							'image' => 'http://woodmart-theme-options.local/wp-content/uploads/2013/09/dsc20040724_152504_532.jpg',
+							'preloader' => 'https://example.com/loader.mp4',
 						),
 					),
 					array(
@@ -417,6 +486,14 @@ final class General {
 							'center' => 'center',
 							'right'  => 'flex-end',
 						),
+					),
+					array(
+						'type'          => 'icon_select',
+						'id'            => 'layout_sample_icon',
+						'title'         => __( 'Sample icon', 'simple-theme-options' ),
+						'description'   => __( 'Font Awesome picker from the plugin manifest (solid / regular / light / brands). Theme: output the class string with sto_get_icon_select_field( \'layout_sample_icon\' ).', 'simple-theme-options' ),
+						'default'       => 'fa-light fa-star',
+						'allow_clear'   => true,
 					),
 					array(
 						'type'          => 'textarea',
@@ -489,14 +566,6 @@ final class General {
 							'tooltip' => __( 'Insert a Read More tag after the kitchen-sink row.', 'simple-theme-options' ),
 							'snippet' => '<!--more-->',
 						),
-					),
-					array(
-						'type'            => 'email',
-						'id'              => 'layout_contact_email',
-						'title'           => __( 'Contact email', 'simple-theme-options' ),
-						'description'     => __( 'Stored with sanitize_email.', 'simple-theme-options' ),
-						'default'         => '',
-						'placeholder'     => 'name@example.com',
 					),
 					array(
 						'type'            => 'phone',

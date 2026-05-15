@@ -21,7 +21,10 @@ use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
+use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
+use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
@@ -453,6 +456,9 @@ final class Tabs {
 		if ( isset( $inner['type'] ) && sanitize_key( (string) $inner['type'] ) === 'button_group' ) {
 			return false;
 		}
+		if ( isset( $inner['type'] ) && sanitize_key( (string) $inner['type'] ) === 'radio_lists' ) {
+			return false;
+		}
 		if ( isset( $inner['type'] ) && sanitize_key( (string) $inner['type'] ) === 'input' ) {
 			$it = isset( $inner['input_type'] ) ? sanitize_key( (string) $inner['input_type'] ) : '';
 
@@ -559,10 +565,25 @@ final class Tabs {
 
 			return Dimension::get_field( $section, $fid ) ? 'dimension' : '';
 		}
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'icon_select' ) {
+			IconSelect::register( $clone_reg );
+
+			return IconSelect::get_field( $section, $fid ) ? 'icon_select' : '';
+		}
 		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'gallery' ) {
 			GalleryControl::register( $clone_reg );
 
 			return GalleryControl::get_field( $section, $fid ) ? 'gallery' : '';
+		}
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'multi_text' ) {
+			MultiTextControl::register( $clone_reg );
+
+			return MultiTextControl::get_field( $section, $fid ) ? 'multi_text' : '';
+		}
+		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'radio_lists' && ! empty( $clone_reg['options'] ) && is_array( $clone_reg['options'] ) ) {
+			RadioListsControl::register( $clone_reg );
+
+			return RadioListsControl::get_field( $section, $fid ) ? 'radio_lists' : '';
 		}
 		if ( isset( $clone_reg['type'] ) && sanitize_key( (string) $clone_reg['type'] ) === 'google_map' ) {
 			GoogleMapControl::register( $clone_reg );
@@ -1042,11 +1063,32 @@ final class Tabs {
 					Dimension::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
+			case 'icon_select':
+				$f = IconSelect::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
+					IconSelect::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
 			case 'gallery':
 				$f = GalleryControl::get_field( $section_slug, $composite_id );
 				if ( $f ) {
 					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
 					GalleryControl::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
+			case 'multi_text':
+				$f = MultiTextControl::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
+					MultiTextControl::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
+			case 'radio_lists':
+				$f = RadioListsControl::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
+					RadioListsControl::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
 			case 'google_map':

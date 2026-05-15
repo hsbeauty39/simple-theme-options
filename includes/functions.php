@@ -10,11 +10,16 @@ defined( 'ABSPATH' ) || exit;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
+use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
+use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\ViewportOptions;
+
+use SimpleThemeOptions\Admin\ThemeSettingsMetabox;
 
 /**
  * Full saved option map (`sto_options`).
@@ -25,6 +30,38 @@ function sto_get_options() {
 	$raw = get_option( 'sto_options', array() );
 
 	return is_array( $raw ) ? $raw : array();
+}
+
+/**
+ * Option keys saved from the Theme Settings post editor metabox for one post (merged over global `sto_options` when reading with {@see sto_get_effective_options_for_post()}).
+ *
+ * @param int|null $post_id Post ID or null for current post in the loop.
+ * @return array<string, mixed>
+ */
+function sto_get_post_theme_setting_overrides( $post_id = null ) {
+	$post_id = null !== $post_id ? (int) $post_id : (int) get_the_ID();
+	if ( $post_id <= 0 ) {
+		return array();
+	}
+	$m = get_post_meta( $post_id, ThemeSettingsMetabox::POST_SETTINGS_META_KEY, true );
+
+	return is_array( $m ) ? $m : array();
+}
+
+/**
+ * Global Theme Settings map merged with this post’s metabox overrides (post wins on overlapping keys).
+ *
+ * @param int|null $post_id Post ID or null for current post in the loop.
+ * @return array<string, mixed>
+ */
+function sto_get_effective_options_for_post( $post_id = null ) {
+	$base = sto_get_options();
+	$post_id = null !== $post_id ? (int) $post_id : (int) get_the_ID();
+	if ( $post_id <= 0 ) {
+		return $base;
+	}
+
+	return array_merge( $base, sto_get_post_theme_setting_overrides( $post_id ) );
 }
 
 /**
@@ -161,6 +198,22 @@ function sto_get_dimension_shorthand( $field_id, $json_or_scalar = null ) {
 }
 
 /**
+ * Sanitized Font Awesome class string for a registered **Icon select** field.
+ *
+ * @param string      $field_id       Option key in `sto_options`.
+ * @param string|null $scalar_or_null When non-null, coerce this string instead of reading options.
+ * @return string e.g. `fa-light fa-house`.
+ */
+function sto_get_icon_select_field( $field_id, $scalar_or_null = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return '';
+	}
+
+	return IconSelect::instance()->get_icon_class_for_field( $field_id, $scalar_or_null );
+}
+
+/**
  * CSS fragment from a registered **Alignment** field’s **`css_map`** for the current (or overridden) stored key.
  *
  * @param string      $field_id       Option key in `sto_options`.
@@ -193,7 +246,39 @@ function sto_get_gallery_attachment_ids( $field_id, $json_or_scalar = null ) {
 }
 
 /**
- * Location payload from a registered **Google map** field (`sto_options[id]` JSON or per-breakpoint map).
+ * Lines from a registered **`multi_text`** field (`sto_options[id]` JSON array of strings).
+ *
+ * @param string      $field_id       Option key in `sto_options`.
+ * @param string|null $json_or_scalar When non-null, parse this JSON string instead of reading `sto_options`.
+ * @return array<int, string> Ordered lines (empty strings omitted).
+ */
+function sto_get_multi_text_lines( $field_id, $json_or_scalar = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return array();
+	}
+
+	return MultiTextControl::instance()->get_lines_for_field( $field_id, $json_or_scalar );
+}
+
+/**
+ * Rows from a registered **`radio_lists`** field (`sto_options[id]` JSON array of `{ title, value }`).
+ *
+ * @param string      $field_id       Option key in `sto_options`.
+ * @param string|null $json_or_scalar When non-null, parse this JSON string instead of reading `sto_options`.
+ * @return array<int, array{title: string, value: string}> Ordered rows (`value` is a registered option key).
+ */
+function sto_get_radio_lists_rows( $field_id, $json_or_scalar = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return array();
+	}
+
+	return RadioListsControl::instance()->get_rows_for_field( $field_id, $json_or_scalar );
+}
+
+/**
+ * Location payload from a registered **`google_map`** field (`sto_options[id]` JSON or per-breakpoint map). Map data comes from OpenStreetMap / Nominatim in admin; the stored shape is the same for themes.
  *
  * @param string      $field_id       Option key in `sto_options`.
  * @param string|null $json_or_scalar When non-null, parse this JSON string instead of reading `sto_options` (preview / import).

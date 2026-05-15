@@ -1083,6 +1083,8 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 						<li class="sto-docs-nav__nest"><a href="#f-dimension">6.10.3 Dimensions</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-icon-select">6.10.3a Icon select</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-gallery">6.10.4 Gallery</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-multi-text">6.10.4a Multi text list</a></li>
+						<li class="sto-docs-nav__nest"><a href="#f-radio-lists">6.10.4b Radio lists</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-google-map">6.10.5 Google map</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-alignment">6.10.6 Alignment</a></li>
 						<li class="sto-docs-nav__nest"><a href="#f-typo">6.11 Typography</a></li>
@@ -1270,8 +1272,9 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-dynamic_object">PHP →</a></p>
 
 			<hr class="sep" />
-			<h3 id="f-input">6.3 Input (text, number, textarea, editor, email, phone, search)</h3>
+			<h3 id="f-input">6.3 Input (text, number, textarea, editor, email, phone, search, password)</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-input">PHP →</a></p>
+			<p>Register with <code>Input::register()</code> or as a <strong>Group</strong> / <strong>Tabs</strong> / <strong>Accordion</strong> inner item. Supported <code>input_type</code> / <code>type</code> values include <code>password</code>: masked field plus optional visibility toggle (Dashicon); stored as a plain string in <code>sto_options[id]</code> with <code>sanitize_text_field</code> like <code>text</code> (add your own encryption or secrets handling in the theme if needed).</p>
 
 			<hr class="sep" />
 			<h3 id="f-switcher">6.4 Switcher</h3>
@@ -1325,7 +1328,17 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 			<hr class="sep" />
 			<h3 id="f-gallery">6.10.4 GalleryControl</h3>
 <p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-gallery">PHP →</a></p>
-			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'gallery'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, optional <code>default</code> as a plain PHP list of attachment IDs, e.g. <code>array( 101, 102, 103 )</code> (image attachments only; invalid IDs dropped), optional <code>max</code> (int <strong>0</strong> = unlimited, hard cap <strong>100</strong> at save), <code>html_required</code>, conditional <code>required</code>, <code>tooltip</code>, optional <code>responsive</code> / <code>device</code>. Stored as JSON array of ID strings in a hidden <code>sto_options[id]</code> field (or per-breakpoint map). Boot <code>GalleryControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_gallery_attachment_ids( 'option_id' )</code> returns ordered integers. Hook <strong>19.43</strong> (after <strong>Dimension</strong> <strong>19.42</strong>, before <strong>AlignmentControl</strong> <strong>19.44</strong>). Assets <code>sto-gallery-field</code> (depends on <code>jquery-ui-sortable</code> + <code>media-editor</code>); <code>main.js</code> calls <code>stoInitGalleryFields</code>. Admin: <strong>wp.media</strong> multi-select, thumbnails, drag reorder, per-thumb remove, clear-all.</p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'gallery'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, optional <code>default</code> as a plain PHP list of attachment IDs, e.g. <code>array( 101, 102, 103 )</code> (image attachments only; invalid IDs dropped), optional <code>max</code> (int <strong>0</strong> = unlimited, hard cap <strong>100</strong> at save), <code>html_required</code>, conditional <code>required</code>, <code>tooltip</code>, optional <code>responsive</code> / <code>device</code>. Stored as JSON array of ID strings in a hidden <code>sto_options[id]</code> field (or per-breakpoint map). Boot <code>GalleryControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_gallery_attachment_ids( 'option_id' )</code> returns ordered integers. Hook <strong>19.43</strong> (after <strong>MultiTextControl</strong> <strong>19.435</strong>, before <strong>AlignmentControl</strong> <strong>19.44</strong>). Assets <code>sto-gallery-field</code> (depends on <code>jquery-ui-sortable</code> + <code>media-editor</code>); <code>main.js</code> calls <code>stoInitGalleryFields</code>. Admin: <strong>wp.media</strong> multi-select, thumbnails, drag reorder, per-thumb remove, clear-all.</p>
+
+			<hr class="sep" />
+			<h3 id="f-multi-text">6.10.4a Multi text list (<code>multi_text</code>)</h3>
+<p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-multi_text">PHP →</a></p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'multi_text'</code> plus <code>id</code>, <code>title</code>, optional <code>description</code>, optional <code>default</code> as <code>array( 'Line 1', 'Line 2' )</code> (used to seed the admin list when <code>sto_options[id]</code> has never been saved yet), optional <code>max</code> (int <strong>0</strong> = unlimited, hard cap <strong>100</strong> at save), optional <code>placeholder</code> for each row&rsquo;s text input, <code>html_required</code>, conditional <code>required</code>, <code>tooltip</code>. Stored as JSON array of strings in hidden <code>sto_options[id]</code> (no per-breakpoint map on this type). Boot <code>MultiTextControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_multi_text_lines( 'option_id' )</code> returns non-empty trimmed lines in order. Hook <strong>19.435</strong> (after <strong>Dimension</strong> <strong>19.42</strong>, before <strong>GalleryControl</strong> <strong>19.43</strong>). Assets <code>sto-multi-text-field</code> (depends on <code>jquery-ui-sortable</code>); <code>main.js</code> calls <code>stoInitMultiTextFields</code>. Admin: <strong>Add more</strong>, drag handle reorder, per-row delete.</p>
+
+			<hr class="sep" />
+			<h3 id="f-radio-lists">6.10.4b Radio lists (<code>radio_lists</code>)</h3>
+<p class="sto-docs-php-jump"><a class="sto-docs-php-jump__a" href="#php-radio_lists">PHP →</a></p>
+			<p>Group / Tabs / Accordion inner item: <code>'type' =&gt; 'radio_lists'</code> plus <code>id</code>, <code>title</code>, required <code>options</code> (same map as <strong>ButtonGroup</strong>: value =&gt; label string or array with <code>label</code>, optional <code>tooltip</code>, <code>preview_image</code>), optional <code>default</code> as <code>array( array( 'title' =&gt; '…', 'value' =&gt; 'key' ), … )</code> (seeds rows before first save), optional <code>max</code> (int <strong>0</strong> = unlimited, hard cap <strong>50</strong> at save), optional <code>show_row_titles</code> (bool, default true), optional <code>radio_layout</code> (<strong>stack</strong> or <strong>inline</strong>), <code>html_required</code>, conditional <code>required</code>, <code>tooltip</code>. Stored as JSON array of <code>{ title, value }</code> in hidden <code>sto_options[id]</code> (no per-breakpoint map — same carve-out as <code>multi_text</code> in project rules). Boot <code>RadioListsControl::instance()</code> before <code>Group::register()</code>. Theme: <code>sto_get_radio_lists_rows( 'option_id' )</code>. Standalone hook <strong>17.55</strong> (after <strong>ButtonGroup</strong> <strong>17.5</strong>, before <strong>Select</strong> <strong>18</strong>). Assets <code>sto-radio-lists-field</code> (depends on <code>jquery-ui-sortable</code>); <code>main.js</code> calls <code>stoInitRadioListsFields</code>. Admin: <strong>Add list</strong>, drag reorder (Sortable <code>cancel: 'input,textarea,select,option'</code> so the grip button works), per-row delete; custom tile radios (not native OS controls).</p>
 
 			<hr class="sep" />
 			<h3 id="f-google-map">6.10.5 Location map (<code>google_map</code>)</h3>
@@ -1417,6 +1430,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 					<tr><td>19.38</td><td>DateField</td></tr>
 					<tr><td>19.39</td><td>DateTimeField</td></tr>
 					<tr><td>19.42</td><td>Dimension</td></tr>
+					<tr><td>19.435</td><td>MultiTextControl</td></tr>
 					<tr><td>19.43</td><td>GalleryControl</td></tr>
 					<tr><td>19.44</td><td>AlignmentControl</td></tr>
 					<tr><td>19.441</td><td>GoogleMapControl</td></tr>
@@ -1816,6 +1830,17 @@ Input::register(
 Input::register(
 	array(
 		'section_slug'  => 'misc',
+		'id'            => 'third_party_api_secret',
+		'title'         => __( 'API secret', 'simple-theme-options' ),
+		'input_type'    => 'password',
+		'default'       => '',
+		'placeholder'   => __( 'Paste key…', 'simple-theme-options' ),
+	)
+);
+
+Input::register(
+	array(
+		'section_slug'  => 'misc',
 		'id'            => 'support_phone',
 		'title'         => __( 'Support phone', 'simple-theme-options' ),
 		'input_type'    => 'phone',
@@ -2090,6 +2115,52 @@ Input::register(
 		),
 		'max'          => 12,
 		'responsive'   => true,
+	)
+);</code></pre>
+				</section>
+				<section class="sto-php-snippet" id="php-multi_text" aria-labelledby="php-h-multi_text">
+					<div class="sto-php-snippet__bar" id="php-h-multi_text">
+						<span class="sto-php-snippet__pill">PHP</span>
+						<span class="sto-php-snippet__label">multi_text</span>
+						<a class="sto-php-snippet__back" href="#f-multi-text">↑ Docs</a>
+					</div>
+					<pre class="sto-php-snippet__pre"><code class="language-php">MultiTextControl::register(
+	array(
+		'section_slug' => 'misc',
+		'id'             => 'taglines',
+		'title'          => __( 'Taglines', 'simple-theme-options' ),
+		'description'    => __( 'Repeating single-line strings.', 'simple-theme-options' ),
+		'default'        => array(
+			__( 'First line', 'simple-theme-options' ),
+		),
+		'max'            => 20,
+	)
+);</code></pre>
+				</section>
+				<section class="sto-php-snippet" id="php-radio_lists" aria-labelledby="php-h-radio_lists">
+					<div class="sto-php-snippet__bar" id="php-h-radio_lists">
+						<span class="sto-php-snippet__pill">PHP</span>
+						<span class="sto-php-snippet__label">radio_lists</span>
+						<a class="sto-php-snippet__back" href="#f-radio-lists">↑ Docs</a>
+					</div>
+					<pre class="sto-php-snippet__pre"><code class="language-php">RadioListsControl::register(
+	array(
+		'section_slug' => 'misc',
+		'id'             => 'density_sets',
+		'title'          => __( 'Density presets', 'simple-theme-options' ),
+		'description'    => __( 'Each row: optional label + one choice.', 'simple-theme-options' ),
+		'radio_layout'   => 'inline',
+		'default'        => array(
+			array( 'title' => __( 'Header', 'simple-theme-options' ), 'value' => 'compact' ),
+		),
+		'max'            => 12,
+		'options'        => array(
+			'compact'     => __( 'Compact', 'simple-theme-options' ),
+			'comfortable' => array(
+				'label'   => __( 'Comfortable', 'simple-theme-options' ),
+				'tooltip' => __( 'More padding.', 'simple-theme-options' ),
+			),
+		),
 	)
 );</code></pre>
 				</section>

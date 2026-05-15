@@ -23,6 +23,7 @@ use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\ImportExport\ThemeSettingsImportExport;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
+use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
@@ -757,6 +758,7 @@ final class Menu {
             IconSelect::get_field_ids_for_section( $section_slug ),
             GalleryControl::get_field_ids_for_section( $section_slug ),
             MultiTextControl::get_field_ids_for_section( $section_slug ),
+            RadioListsControl::get_field_ids_for_section( $section_slug ),
             GoogleMapControl::get_field_ids_for_section( $section_slug ),
             AlignmentControl::get_field_ids_for_section( $section_slug ),
             Range::get_field_ids_for_section( $section_slug ),
@@ -937,6 +939,12 @@ final class Menu {
                 continue;
             }
 
+            if ( RadioListsControl::is_registered_field_id( $option_key ) ) {
+                $raw_rl = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
+                $sanitized_options[ $option_key ] = RadioListsControl::sanitize_posted_value( $option_key, $raw_rl );
+                continue;
+            }
+
             if ( GoogleMapControl::is_registered_field_id( $option_key ) ) {
                 $raw_map = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
                 $sanitized_options[ $option_key ] = GoogleMapControl::sanitize_posted_value( $option_key, $raw_map );
@@ -1025,6 +1033,7 @@ final class Menu {
                 IconSelect::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 GalleryControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 MultiTextControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+                RadioListsControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 GoogleMapControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 AlignmentControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options )
             ),
@@ -1260,6 +1269,7 @@ final class Menu {
             IconSelect::get_all_fields_for_search(),
             GalleryControl::get_all_fields_for_search(),
             MultiTextControl::get_all_fields_for_search(),
+            RadioListsControl::get_all_fields_for_search(),
             GoogleMapControl::get_all_fields_for_search(),
             AlignmentControl::get_all_fields_for_search(),
             Range::get_all_fields_for_search(),

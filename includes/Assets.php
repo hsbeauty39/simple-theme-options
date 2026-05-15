@@ -7,6 +7,7 @@ use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\ImportExport\ThemeSettingsImportExport;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
+use SimpleThemeOptions\Admin\ThemeSettingsMetabox;
 use SimpleThemeOptions\ViewportOptions;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
@@ -31,18 +32,67 @@ final class Assets {
 			return false;
 		}
 
-		if ( is_string( $hook_suffix ) && strpos( $hook_suffix, 'theme-settings' ) !== false ) {
+		if ( is_string( $hook_suffix ) && $hook_suffix !== '' && $hook_suffix === 'tools_page_' . ThemeSettingsImportExport::SETTINGS_ADVANCE_PAGE ) {
 			return true;
+		}
+
+		$slugs = OptionsMenu::instance()->get_registered_menu_slugs();
+		foreach ( $slugs as $slug ) {
+			if ( is_string( $hook_suffix ) && $hook_suffix !== '' && strpos( $hook_suffix, (string) $slug ) !== false ) {
+				return true;
+			}
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 
-		return 'theme-settings' === $page;
+		return $page !== '' && in_array( $page, $slugs, true );
+	}
+
+	/**
+	 * Post / page editor when at least one Theme Settings root registered a metabox for this post type.
+	 *
+	 * @param string $hook_suffix Current admin page hook.
+	 */
+	private function is_sto_theme_settings_metabox_screen( $hook_suffix = '' ): bool {
+		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return false;
+		}
+
+		if ( ! OptionsMenu::instance()->should_show_theme_settings_metaboxes() ) {
+			return false;
+		}
+
+		if ( ! is_string( $hook_suffix ) || ( $hook_suffix !== 'post.php' && $hook_suffix !== 'post-new.php' ) ) {
+			return false;
+		}
+
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$post_type = ( $screen && isset( $screen->post_type ) ) ? sanitize_key( (string) $screen->post_type ) : '';
+		if ( $post_type === '' ) {
+			return false;
+		}
+
+		foreach ( ThemeSettingsMetabox::instance()->get_roots() as $menu_slug => $cfg ) {
+			if ( ThemeSettingsMetabox::instance()->menu_root_allows_post_type( (string) $menu_slug, $post_type ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Theme Settings admin page, backup tools screen, or post editor metabox.
+	 *
+	 * @param string $hook_suffix Current admin page hook.
+	 */
+	private function should_enqueue_theme_settings_assets( $hook_suffix = '' ): bool {
+		return $this->is_sto_options_screen( $hook_suffix ) || $this->is_sto_theme_settings_metabox_screen( $hook_suffix );
 	}
 
 	public function enqueue_styles( $hook_suffix = '' ) {
-		if ( ! $this->is_sto_options_screen( $hook_suffix ) ) {
+		if ( ! $this->should_enqueue_theme_settings_assets( $hook_suffix ) ) {
 			return;
 		}
 
@@ -136,7 +186,7 @@ final class Assets {
 			),
 			'sto-select2' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-select2.css',
-				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-range', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field', 'sto-google-map-field', 'sto-icon-select-field', 'sto-tabs', 'sto-accordion', 'sto-import-export' ),
+				'deps'    => array( 'sto-select2-vendor', 'sto-style', 'sto-switcher', 'sto-image-select', 'sto-button-group', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-range', 'sto-dimension-field', 'sto-gallery-field', 'sto-multi-text-field', 'sto-radio-lists-field', 'sto-alignment-field', 'sto-google-map-field', 'sto-icon-select-field', 'sto-tabs', 'sto-accordion', 'sto-import-export' ),
 				'version' => STO_VERSION,
 			),
 			'sto-typography' => array(
@@ -176,7 +226,7 @@ final class Assets {
 			),
 			'sto-input' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-input.css',
-				'deps'    => array( 'sto-style', 'editor-buttons' ),
+				'deps'    => array( 'sto-style', 'editor-buttons', 'dashicons' ),
 				'version' => STO_VERSION,
 			),
 			'sto-date-field' => array(
@@ -202,6 +252,16 @@ final class Assets {
 			'sto-gallery-field' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-gallery-field.css',
 				'deps'    => array( 'sto-style', 'sto-switcher' ),
+				'version' => STO_VERSION,
+			),
+			'sto-multi-text-field' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-multi-text-field.css',
+				'deps'    => array( 'sto-style', 'sto-input' ),
+				'version' => STO_VERSION,
+			),
+			'sto-radio-lists-field' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-radio-lists-field.css',
+				'deps'    => array( 'sto-style', 'sto-input' ),
 				'version' => STO_VERSION,
 			),
 			'sto-alignment-field' => array(
@@ -252,7 +312,7 @@ final class Assets {
 	}
 
 	public function enqueue_scripts( $hook_suffix = '' ) {
-		if ( ! $this->is_sto_options_screen( $hook_suffix ) ) {
+		if ( ! $this->should_enqueue_theme_settings_assets( $hook_suffix ) ) {
 			return;
 		}
 
@@ -266,18 +326,52 @@ final class Assets {
 			wp_enqueue_script( $handle, $script['src'], $script['deps'], $version, $script['in_footer'] );
 		}
 
+		wp_localize_script(
+			'sto-input-password',
+			'stoInputPassword',
+			array(
+				'show' => __( 'Show password', 'simple-theme-options' ),
+				'hide' => __( 'Hide password', 'simple-theme-options' ),
+			)
+		);
+
 		if ( function_exists( 'wp_localize_jquery_ui_datepicker' ) ) {
 			wp_localize_jquery_ui_datepicker();
 		}
 
-		$page_slug = OptionsMenu::instance()->get_parent_menu_slug();
+		$page_slug = OptionsMenu::instance()->get_request_options_menu_slug();
 		if ( ! $page_slug ) {
-			$page_slug = 'theme-settings';
+			$slugs     = OptionsMenu::instance()->get_registered_menu_slugs();
+			$page_slug = ! empty( $slugs[0] ) ? (string) $slugs[0] : 'theme-settings';
 		}
+
+		$on_post_metabox  = $this->is_sto_theme_settings_metabox_screen( $hook_suffix );
+		$metabox_post_id = 0;
+		if ( $on_post_metabox ) {
+			global $post;
+			$screen    = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+			$post_type = ( $screen && isset( $screen->post_type ) ) ? sanitize_key( (string) $screen->post_type ) : '';
+			$picked    = '';
+			foreach ( ThemeSettingsMetabox::instance()->get_roots() as $mslug => $cfg ) {
+				$mslug = sanitize_key( (string) $mslug );
+				if ( $mslug !== '' && ThemeSettingsMetabox::instance()->menu_root_allows_post_type( $mslug, $post_type ) ) {
+					$picked = $mslug;
+					break;
+				}
+			}
+			if ( $picked !== '' ) {
+				$page_slug = $picked;
+			}
+			if ( $post instanceof \WP_Post ) {
+				$metabox_post_id = (int) $post->ID;
+			}
+		}
+
+		$on_backup_settings = is_string( $hook_suffix ) && $hook_suffix === 'tools_page_' . ThemeSettingsImportExport::SETTINGS_ADVANCE_PAGE;
 
 		$options_menu        = OptionsMenu::instance();
 		$wp_submenu_for_leaf = array();
-		foreach ( $options_menu->get_leaf_sections() as $leaf_row ) {
+		foreach ( $options_menu->get_leaf_sections_for_navigation_for_menu_page( $page_slug ) as $leaf_row ) {
 			if ( empty( $leaf_row['slug'] ) ) {
 				continue;
 			}
@@ -288,6 +382,25 @@ final class Assets {
 			$wp_submenu_for_leaf[ $leaf_key ] = $options_menu->get_wp_submenu_highlight_slug_for_leaf( $leaf_key );
 		}
 
+		$metabox_js = array(
+			'active' => $on_post_metabox ? 1 : 0,
+		);
+		if ( $on_post_metabox && $metabox_post_id > 0 ) {
+			$raw_base = get_edit_post_link( $metabox_post_id, 'raw' );
+			$base     = is_string( $raw_base ) && $raw_base !== ''
+				? remove_query_arg( array( 'sto_saved', 'sto_imported', 'sto_validation_error', 'sto-metabox-saved', 'message' ), $raw_base )
+				: '';
+			$metabox_js['post_id']          = $metabox_post_id;
+			$metabox_js['menu_page']        = $page_slug;
+			$metabox_js['post_edit_base']   = $base;
+			$metabox_js['ajax_save_nonce']  = wp_create_nonce( 'sto_save_theme_options_metabox' );
+			$metabox_js['ajax_action']      = 'sto_save_theme_options_metabox';
+			$metabox_js['i18n']             = array(
+				'saved'       => __( 'Settings saved.', 'simple-theme-options' ),
+				'save_failed' => __( 'Could not save settings.', 'simple-theme-options' ),
+			);
+		}
+
 		wp_localize_script(
 			'display-section-on-menu',
 			'simple_theme_options',
@@ -295,15 +408,16 @@ final class Assets {
 				'ajax_url'   => admin_url( 'admin-ajax.php' ),
 				'nonce'      => wp_create_nonce( 'sto_display_section_on_menu' ),
 				'sto_nav'    => array(
-					'default_leaf'            => $options_menu->get_default_leaf_section_slug(),
-					'wp_submenu_for_leaf'     => $wp_submenu_for_leaf,
+					'default_leaf'        => $options_menu->get_default_leaf_section_slug_for_menu_page( $page_slug ),
+					'wp_submenu_for_leaf' => $wp_submenu_for_leaf,
 				),
 				'sto_search' => array(
-					'items'       => $options_menu->get_search_items(),
+					'items'       => $options_menu->get_search_items_for_menu_page( $page_slug ),
 					'admin_base'  => admin_url( 'admin.php' ),
 					'page'        => $page_slug,
 					'max_results' => 50,
 				),
+				'sto_metabox' => $metabox_js,
 				'sto_typography' => array(
 					'ajax_url' => admin_url( 'admin-ajax.php' ),
 					'action'   => 'sto_typography_fonts',
@@ -364,23 +478,29 @@ final class Assets {
 				'nonce'        => wp_create_nonce( 'sto_theme_settings_import_export' ),
 				'actionExport' => 'sto_theme_settings_export',
 				'actionImport' => 'sto_theme_settings_import',
-				'actionSetUiDemo'           => 'sto_theme_settings_set_ui_demo',
-				'actionImportKeyRemove'   => 'sto_theme_settings_import_key_remove',
-				'actionImportKeysRemoveAll' => 'sto_theme_settings_import_keys_remove_all',
-				'actionImportSubsetExport' => 'sto_theme_settings_import_subset_export',
-				'actionImportLogDismiss'   => 'sto_theme_settings_import_log_dismiss',
-				'demoCapability'           => $options_menu->is_demo_capability_allowed() ? 1 : 0,
-				'sectionSlug'              => ThemeSettingsImportExport::SECTION_SLUG,
+				'actionSetUiDemo'            => 'sto_theme_settings_set_ui_demo',
+				'actionSetUiMetabox'        => 'sto_theme_settings_set_ui_metabox',
+				'actionImportEntryRemove'    => 'sto_theme_settings_import_entry_remove',
+				'actionImportEntryExport'    => 'sto_theme_settings_import_entry_export',
+				'actionImportEntriesRemove'  => 'sto_theme_settings_import_entries_remove',
+				'importReloadUrl'            => $on_backup_settings ? admin_url( 'tools.php?page=' . rawurlencode( ThemeSettingsImportExport::SETTINGS_ADVANCE_PAGE ) ) : '',
+				'demoCapability'             => ( $options_menu->is_demo_capability_allowed() && ( $on_backup_settings || ! $options_menu->is_packaged_demo_menu() ) ) ? 1 : 0,
+				'metaboxUiAvailable'         => ( ThemeSettingsMetabox::instance()->get_roots() !== array()
+					&& ( ! $options_menu->is_packaged_demo_menu() || $options_menu->is_demo_mode_enabled() ) ) ? 1 : 0,
+				'sectionSlug'              => ThemeSettingsImportExport::get_advance_section_slug_for_menu_page( $options_menu, $options_menu->get_request_options_menu_slug() ),
 				'i18n'                     => array(
-					'confirmImport'          => __( 'Replace all Theme Settings on this site with this backup? You cannot undo this.', 'simple-theme-options' ),
-					'confirmRemoveKey'       => __( 'Remove this option key from Theme Settings on this site?', 'simple-theme-options' ),
-					'confirmRemoveAllKeys'   => __( 'Remove every key listed in this import log from Theme Settings? This cannot be undone.', 'simple-theme-options' ),
-					'confirmDismissLog'      => __( 'Hide this import log without changing any saved options?', 'simple-theme-options' ),
+					'confirmImport'          => __( 'Merge these keys into your existing Theme Settings storage? Values in the file overwrite matching keys. Other keys on the site are left as they are. You cannot undo this.', 'simple-theme-options' ),
+					'confirmImportReplace'   => __( 'Replace the entire Theme Settings option store with only the keys in this file? Every other stored key will be removed. You cannot undo this.', 'simple-theme-options' ),
+					'confirmDeleteImport'    => __( 'Delete this import from the log and permanently remove every Theme Settings option key that was applied with this file from the database? This cannot be undone.', 'simple-theme-options' ),
+					'confirmBulkDeleteImport' => __( 'Delete the selected imports from the log and permanently remove every Theme Settings option key that was applied with those files from the database? This cannot be undone.', 'simple-theme-options' ),
+					'pasteImportLabel'       => __( 'pasted-backup.json', 'simple-theme-options' ),
 					'savingDemo'             => __( 'Saving…', 'simple-theme-options' ),
 					'demoSaveFailed'         => __( 'Could not save demo mode. Try again.', 'simple-theme-options' ),
+					'metaboxSaveFailed'      => __( 'Could not save meta box preference. Try again.', 'simple-theme-options' ),
 					'fileDownloaded'         => __( 'JSON file download started.', 'simple-theme-options' ),
 					'clipboardCopied'        => __( 'Backup JSON copied to the clipboard.', 'simple-theme-options' ),
 					'clipboardDenied'        => __( 'Your browser blocked clipboard access. Copy from the downloaded file instead.', 'simple-theme-options' ),
+					'clipboardManualHint'    => __( 'Backup JSON is in the import box below — select all (Ctrl+A) and copy (Ctrl+C), or use Download JSON file.', 'simple-theme-options' ),
 					'exportFailed'           => __( 'Could not create the export. Try again.', 'simple-theme-options' ),
 					'importFailed'           => __( 'Import failed.', 'simple-theme-options' ),
 					'emptyPayload'           => __( 'Add a JSON file or paste export text before importing.', 'simple-theme-options' ),
@@ -435,9 +555,15 @@ final class Assets {
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),
+			'sto-input-password' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-input-password.js',
+				'deps'      => array( 'jquery' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
 			'display-section-on-menu' => array(
 				'src'       => STO_URL . 'assets/admin/js/main.js',
-				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox', 'sto-date-field', 'sto-datetime-field', 'sto-dimension-field', 'sto-gallery-field', 'sto-alignment-field', 'sto-google-map-field', 'sto-icon-select-field', 'sto-import-export' ),
+				'deps'      => array( 'jquery', 'sto-select2-vendor', 'sto-checkbox', 'sto-input-password', 'sto-date-field', 'sto-datetime-field', 'sto-dimension-field', 'sto-gallery-field', 'sto-multi-text-field', 'sto-radio-lists-field', 'sto-alignment-field', 'sto-google-map-field', 'sto-icon-select-field', 'sto-import-export' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),
@@ -504,6 +630,18 @@ final class Assets {
 			'sto-gallery-field' => array(
 				'src'       => STO_URL . 'assets/admin/js/sto-gallery-field.js',
 				'deps'      => array( 'jquery', 'jquery-ui-sortable', 'media-editor' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
+			'sto-multi-text-field' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-multi-text-field.js',
+				'deps'      => array( 'jquery', 'jquery-ui-sortable' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
+			'sto-radio-lists-field' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-radio-lists-field.js',
+				'deps'      => array( 'jquery', 'jquery-ui-sortable' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),

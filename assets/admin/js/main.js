@@ -284,6 +284,9 @@
                     if (typeof window.stoInitMultiTextFields === 'function') {
                         window.stoInitMultiTextFields($ap);
                     }
+                    if (typeof window.stoInitRadioListsFields === 'function') {
+                        window.stoInitRadioListsFields($ap);
+                    }
                     if (typeof window.stoInitGoogleMapFields === 'function') {
                         window.stoInitGoogleMapFields($ap);
                     }
@@ -775,6 +778,9 @@
             }
             if (typeof window.stoInitMultiTextFields === 'function') {
                 window.stoInitMultiTextFields($activePanel);
+            }
+            if (typeof window.stoInitRadioListsFields === 'function') {
+                window.stoInitRadioListsFields($activePanel);
             }
             if (typeof window.stoInitGoogleMapFields === 'function') {
                 window.stoInitGoogleMapFields($activePanel);
