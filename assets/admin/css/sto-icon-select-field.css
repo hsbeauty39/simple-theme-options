@@ -1,5 +1,7 @@
 /**
  * Icon select field — preview + modal library (Theme Settings).
+ * **`.sto-field-row-icon-select`** must wrap **`.sto-icon-select`**: standalone fields use **`sto-field-row`** + this class;
+ * **`AdvancedRepeaterControl`** repeats **`sto-field-row-icon-select`** on **`.sto-adv-rep__field--icon-select`** so fullscreen modal rules apply.
  */
 
 .sto-option-panel-wrapper .sto-field-row-icon-select .sto-icon-select {

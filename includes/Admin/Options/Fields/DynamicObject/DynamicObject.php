@@ -7,6 +7,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveControl;
 use SimpleThemeOptions\Traits\SingletonTrait;
@@ -745,7 +746,8 @@ final class DynamicObject {
 				<?php FieldTitle::render_heading( $title, $context, $tooltip, $field_id, $is_inner, $toolbar_markup ); ?>
 			<?php endif; ?>
 
-			<?php if ( $tabs_pane_bp !== '' && $bps_storage ) : ?>
+			<?php if ( PremiumFieldGate::render_controls_or_locked_placeholder( $title, 'dynamic_object' ) ) : ?>
+			<?php elseif ( $tabs_pane_bp !== '' && $bps_storage ) : ?>
 				<?php
 				$select_name_bp = $multiple
 					? 'sto_options[' . $field_id . '][' . $tabs_pane_bp . "][]"
@@ -905,7 +907,7 @@ final class DynamicObject {
 			</div>
 			<?php endif; ?>
 
-			<?php if ( $description ) : ?>
+			<?php if ( $description && ! PremiumFieldGate::is_locked() ) : ?>
 				<p class="sto-field-description"><?php echo esc_html( $description ); ?></p>
 			<?php endif; ?>
 		</div>

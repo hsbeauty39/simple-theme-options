@@ -19,7 +19,10 @@ yarn-error.log*
 
 # Dependencies (re-build with package manager)
 node_modules/
-vendor/
+/vendor/
+# Bundled admin vendors (Select2, wp-color-picker-alpha) must ship in the repo:
+!assets/admin/vendor/
+!assets/admin/vendor/**
 
 # Build / cache artefacts
 build/

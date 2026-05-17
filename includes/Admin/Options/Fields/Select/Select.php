@@ -57,6 +57,7 @@ final class Select {
 	 * - max (optional int) — when `multiple` is true, max simultaneous selections (0 = unlimited; capped at 100).
 	 * - tooltip: array( 'image' => URL ) — optional `'preloader'` only if you want a custom image/video instead of the built-in CSS spinner while loading; or shorthand `tooltip_image` / optional `tooltip_preloader`
 	 * - optional **responsive** => `true` or non-empty array (opts in to per-breakpoint storage)
+	 * - optional **responsive_defaults** => map of breakpoint slug => default option value (admin UI + reads before first save)
 	 * - optional **device** => list of extra canonical breakpoint slugs; tabs = **union** of the default trio (`xxl`, `md`, `mobile`) and these keys (de-duplicated, **xxl → mobile** order). Omit or empty array for the default trio only.
 	 *
 	 * @param array<string, mixed> $field
@@ -688,12 +689,18 @@ final class Select {
 	 * @return array<string, string>
 	 */
 	private function get_value_map( $field_id, $default_value, array $breakpoints ) {
-		$saved_options = get_option( 'sto_options', array() );
-		if ( ! is_array( $saved_options ) || ! isset( $saved_options[ $field_id ] ) ) {
-			return ResponsiveConfig::coerce_map( null, $breakpoints, (string) $default_value );
+		$per_breakpoint_defaults = array();
+		$field_config            = $this->fields_by_id[ $field_id ] ?? null;
+		if ( is_array( $field_config ) && isset( $field_config['responsive_defaults'] ) && is_array( $field_config['responsive_defaults'] ) ) {
+			$per_breakpoint_defaults = $field_config['responsive_defaults'];
 		}
 
-		return ResponsiveConfig::coerce_map( $saved_options[ $field_id ], $breakpoints, (string) $default_value );
+		$saved_options = get_option( 'sto_options', array() );
+		if ( ! is_array( $saved_options ) || ! isset( $saved_options[ $field_id ] ) ) {
+			return ResponsiveConfig::coerce_map( null, $breakpoints, (string) $default_value, $per_breakpoint_defaults );
+		}
+
+		return ResponsiveConfig::coerce_map( $saved_options[ $field_id ], $breakpoints, (string) $default_value, $per_breakpoint_defaults );
 	}
 
 	/**

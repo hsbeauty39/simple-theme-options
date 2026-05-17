@@ -179,40 +179,37 @@ final class Color {
 			return '';
 		}
 
-		// rgba( n, n, n, a ) or rgb( n, n, n )
-		if ( preg_match( '/^rgba?\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*(?:,\s*([0-9]*\.?[0-9]+)\s*)?\)$/i', $value, $m ) ) {
+		// rgba( n, n, n, a ) / rgb — comma syntax; alpha unitless **or** `%` (`50%`).
+		if ( preg_match( '/^rgba?\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*(?:,\s*((?:[0-9]*\.?[0-9]+)%|[0-9]*\.?[0-9]+)\s*)?\)$/i', $value, $m ) ) {
 			$r = max( 0, min( 255, (int) $m[1] ) );
 			$g = max( 0, min( 255, (int) $m[2] ) );
 			$b = max( 0, min( 255, (int) $m[3] ) );
-			$a = isset( $m[4] ) && $m[4] !== '' ? (float) $m[4] : 1.0;
-			$a = max( 0.0, min( 1.0, $a ) );
+			$a = isset( $m[4] ) ? self::css_alpha_fragment_to_unit_interval( $m[4] ) : 1.0;
 
-			if ( $a >= 0.999 ) {
-				return sprintf( 'rgb(%d,%d,%d)', $r, $g, $b );
-			}
-
-			$as = (string) round( $a, 3 );
-			$as = rtrim( rtrim( $as, '0' ), '.' );
-
-			return sprintf( 'rgba(%d,%d,%d,%s)', $r, $g, $b, $as === '' ? '0' : $as );
+			return self::rgb_channels_to_normalized_string( $r, $g, $b, $a );
 		}
 
-		// #RRGGBBAA (wp-color-picker-alpha / octohex)
-		if ( preg_match( '/^#([0-9a-f]{8})$/i', $value, $m ) ) {
-			$full  = $m[1];
-			$rgb   = substr( $full, 0, 6 );
-			$alpha = hexdec( substr( $full, 6, 2 ) );
-			$a     = max( 0.0, min( 1.0, $alpha / 255 ) );
-			$r     = hexdec( substr( $rgb, 0, 2 ) );
-			$g     = hexdec( substr( $rgb, 2, 2 ) );
-			$b     = hexdec( substr( $rgb, 4, 2 ) );
-			if ( $a >= 0.999 ) {
-				return '#' . strtolower( $rgb );
-			}
-			$as = (string) round( $a, 3 );
-			$as = rtrim( rtrim( $as, '0' ), '.' );
+		// rgb( R G B ) or rgb( R G B / A ) — CSS Color Level 4 (spaces); alpha unitless **or** `%`.
+		if ( preg_match( '/^rgba?\(\s*([0-9]{1,3})\s+([0-9]{1,3})\s+([0-9]{1,3})\s*(?:\/\s*((?:[0-9]*\.?[0-9]+)%|[0-9]*\.?[0-9]+))?\s*\)$/i', $value, $m ) ) {
+			$r = max( 0, min( 255, (int) $m[1] ) );
+			$g = max( 0, min( 255, (int) $m[2] ) );
+			$b = max( 0, min( 255, (int) $m[3] ) );
+			$a = isset( $m[4] ) ? self::css_alpha_fragment_to_unit_interval( $m[4] ) : 1.0;
 
-			return sprintf( 'rgba(%d,%d,%d,%s)', $r, $g, $b, $as === '' ? '0' : $as );
+			return self::rgb_channels_to_normalized_string( $r, $g, $b, $a );
+		}
+
+		// #RRGGBBAA (wp-color-picker-alpha / octohex).
+		if ( preg_match( '/^#([0-9a-f]{8})$/i', $value, $m ) ) {
+			return self::stored_value_from_rrggbbaa_digits( strtolower( $m[1] ) );
+		}
+
+		// #RGBA shorthand (#f90a → #ff9900aa) before #RGB shorthand.
+		if ( preg_match( '/^#([0-9a-f]{4})$/i', $value, $m ) ) {
+			$h      = strtolower( $m[1] );
+			$full64 = '#' . $h[0] . $h[0] . $h[1] . $h[1] . $h[2] . $h[2] . $h[3] . $h[3];
+
+			return $this->sanitize_stored_value( $full64 );
 		}
 
 		if ( preg_match( '/^#([0-9a-f]{3})$/i', $value, $m ) ) {
@@ -223,6 +220,59 @@ final class Color {
 		$san = sanitize_hex_color( $value );
 
 		return $san ? strtolower( $san ) : '';
+	}
+
+	/**
+	 * Parses `0.42`, `.5`, `50%`, `100 %` → 0..1.
+	 *
+	 * @param mixed $raw
+	 */
+	private static function css_alpha_fragment_to_unit_interval( $raw ): float {
+		if ( ! is_string( $raw ) ) {
+			return 1.0;
+		}
+		$raw = strtolower( trim( $raw ) );
+		if ( $raw === '' ) {
+			return 1.0;
+		}
+
+		return substr( $raw, -1 ) === '%'
+			? max( 0.0, min( 1.0, (float) trim( substr( $raw, 0, -1 ) ) / 100.0 ) )
+			: max( 0.0, min( 1.0, (float) $raw ) );
+	}
+
+	private static function rgb_channels_to_normalized_string( int $r, int $g, int $b, float $a ): string {
+		if ( $a >= 0.999 ) {
+			return sprintf( 'rgb(%d,%d,%d)', $r, $g, $b );
+		}
+
+		$as = (string) round( $a, 3 );
+		$as = rtrim( rtrim( $as, '0' ), '.' );
+
+		return sprintf( 'rgba(%d,%d,%d,%s)', $r, $g, $b, $as === '' ? '0' : $as );
+	}
+
+	private static function stored_value_from_rrggbbaa_digits( string $digits8 ): string {
+		$digits8 = strtolower( $digits8 );
+		if ( strlen( $digits8 ) !== 8 || ! ctype_xdigit( $digits8 ) ) {
+			return '';
+		}
+		$rgb      = substr( $digits8, 0, 6 );
+		$alpha_xy = substr( $digits8, 6, 2 );
+		$r        = hexdec( substr( $rgb, 0, 2 ) );
+		$g        = hexdec( substr( $rgb, 2, 2 ) );
+		$b        = hexdec( substr( $rgb, 4, 2 ) );
+		$a_raw    = max( 0, min( 255, hexdec( $alpha_xy ) ) );
+		$a        = max( 0.0, min( 1.0, $a_raw / 255.0 ) );
+
+		if ( $a >= 0.999 ) {
+			return '#' . $rgb;
+		}
+
+		$as = (string) round( $a, 3 );
+		$as = rtrim( rtrim( $as, '0' ), '.' );
+
+		return sprintf( 'rgba(%d,%d,%d,%s)', $r, $g, $b, $as === '' ? '0' : $as );
 	}
 
 	/**
@@ -473,6 +523,7 @@ final class Color {
 					data-sto-default="<?php echo esc_attr( $default_color ); ?>"
 					<?php if ( $use_alpha ) : ?>
 						data-alpha-enabled="true"
+						data-alpha-color-type="octohex"
 						data-type="full"
 						data-alpha-custom-width="0"
 					<?php endif; ?>

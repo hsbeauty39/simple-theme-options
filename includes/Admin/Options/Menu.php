@@ -1,6 +1,7 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
 use SimpleThemeOptions\Admin\Options\Fields\ImageSelect\ImageSelect;
@@ -512,6 +513,7 @@ final class Menu {
 			add_action( 'admin_init', array( $this, 'redirect_legacy_tools_backup_page_slug' ), 0 );
 			add_action( 'admin_init', array( $this, 'redirect_packaged_demo_blocked_screen' ), 0 );
 			add_action( 'admin_init', array( $this, 'maybe_handle_save_request' ) );
+			add_action( 'admin_init', array( $this, 'maybe_handle_reset_request' ) );
 			add_action( 'admin_init', array( $this, 'redirect_theme_settings_to_canonical_leaf' ), 1 );
 		}
 
@@ -1207,6 +1209,7 @@ final class Menu {
         $validation_errors = apply_filters(
             'sto_theme_settings_validation_errors',
             array_merge(
+                CodeEditor::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 Input::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 DateField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
                 DateTimeField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
@@ -1337,6 +1340,97 @@ final class Menu {
         $redirect_url = add_query_arg( 'sto_saved', '1', $redirect_url );
         wp_safe_redirect( $redirect_url );
         exit;
+    }
+
+    /**
+     * Reset current section or all registered fields to registration defaults (POST + confirm in UI).
+     */
+    public function maybe_handle_reset_request() {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $reset_section = isset( $_POST['sto_reset_section'] ) && (string) wp_unslash( $_POST['sto_reset_section'] ) === '1';
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $reset_all = isset( $_POST['sto_reset_all'] ) && (string) wp_unslash( $_POST['sto_reset_all'] ) === '1';
+
+        if ( ! $reset_section && ! $reset_all ) {
+            return;
+        }
+
+        global $pagenow;
+        if ( $pagenow === 'post.php' || $pagenow === 'post-new.php' || $pagenow === 'term.php' || $pagenow === 'edit-tags.php' ) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        if ( $page === '' && isset( $_POST['sto_ts_page'] ) ) {
+            $page = sanitize_key( wp_unslash( $_POST['sto_ts_page'] ) );
+        }
+        if ( $page === '' || ! in_array( $page, $this->registered_menu_slugs, true ) ) {
+            return;
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        check_admin_referer( 'sto_save_options_action', 'sto_save_options_nonce' );
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $section_slug = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'] ) ) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        if ( $section_slug === '' && isset( $_POST['sto_ts_section'] ) ) {
+            $section_slug = sanitize_key( wp_unslash( $_POST['sto_ts_section'] ) );
+        }
+
+        if ( $reset_all ) {
+            $keys = $this->get_exportable_registered_option_keys_for_menu_pages( array( $page ) );
+            $this->apply_registered_defaults_to_option_keys( $keys, '' );
+            $redirect_url = admin_url( 'admin.php?page=' . rawurlencode( $page ) );
+            $redirect_url = add_query_arg( 'sto_reset_all', '1', $redirect_url );
+            wp_safe_redirect( $redirect_url );
+            exit;
+        }
+
+        $leaf = $this->resolve_canonical_leaf_for_menu_and_section( $page, $section_slug );
+        if ( ! $leaf ) {
+            return;
+        }
+
+        $keys = $this->get_registered_option_keys_for_leaf_section( $leaf );
+        $this->apply_registered_defaults_to_option_keys( $keys, $leaf );
+
+        $redirect_url = admin_url( 'admin.php?page=' . rawurlencode( $page ) );
+        $redirect_url = add_query_arg( 'section', $leaf, $redirect_url );
+        $redirect_url = add_query_arg( 'sto_reset_section', '1', $redirect_url );
+        wp_safe_redirect( $redirect_url );
+        exit;
+    }
+
+    /**
+     * @param array<int, string> $option_keys
+     * @param string             $prefer_section_slug Hint when resolving field config.
+     */
+    private function apply_registered_defaults_to_option_keys( array $option_keys, string $prefer_section_slug = '' ): void {
+        $stored = get_option( 'sto_options', array() );
+        if ( ! is_array( $stored ) ) {
+            $stored = array();
+        }
+
+        foreach ( $option_keys as $option_key ) {
+            $option_key = sanitize_key( (string) $option_key );
+            if ( $option_key === '' ) {
+                continue;
+            }
+
+            $stored[ $option_key ] = ThemeSettingsDefaults::sanitized_default_for_option_key(
+                $option_key,
+                $this,
+                $prefer_section_slug
+            );
+        }
+
+        update_option( 'sto_options', $stored );
     }
 
     /**
@@ -1998,6 +2092,7 @@ final class Menu {
              *
              * Developers can hook here and output section-specific fields/UI.
              */
+            PremiumFieldGate::begin_section_render( (string) $section['slug'] );
             do_action( 'sto_render_section_content', $section['slug'], $section, $this );
             if ( ! has_action( 'sto_render_section_content' ) ) :
                 ?>
@@ -2175,6 +2270,12 @@ final class Menu {
                             <?php if ( isset( $_GET['sto_imported'] ) && sanitize_text_field( wp_unslash( $_GET['sto_imported'] ) ) === '1' ) { ?>
                                 <div class="sto-save-notice"><?php esc_html_e( 'Settings were imported from your backup.', 'simple-theme-options' ); ?></div>
                             <?php } ?>
+                            <?php if ( isset( $_GET['sto_reset_section'] ) && sanitize_text_field( wp_unslash( $_GET['sto_reset_section'] ) ) === '1' ) { ?>
+                                <div class="sto-save-notice"><?php esc_html_e( 'This section was reset to its default values.', 'simple-theme-options' ); ?></div>
+                            <?php } ?>
+                            <?php if ( isset( $_GET['sto_reset_all'] ) && sanitize_text_field( wp_unslash( $_GET['sto_reset_all'] ) ) === '1' ) { ?>
+                                <div class="sto-save-notice"><?php esc_html_e( 'All Theme Settings fields were reset to their default values.', 'simple-theme-options' ); ?></div>
+                            <?php } ?>
                             <?php
                             $sto_val_err = isset( $_GET['sto_validation_error'] ) ? sanitize_text_field( wp_unslash( $_GET['sto_validation_error'] ) ) : '';
                             if ( $sto_val_err === '1' ) {
@@ -2199,7 +2300,7 @@ final class Menu {
                             ?>
                             <?php
                             $sto_form_action = $this->get_theme_settings_url( $current_section_slug, $req );
-                            $sto_form_action = remove_query_arg( array( 'sto_saved', 'sto_imported', 'sto_validation_error' ), $sto_form_action );
+                            $sto_form_action = remove_query_arg( array( 'sto_saved', 'sto_imported', 'sto_validation_error', 'sto_reset_section', 'sto_reset_all' ), $sto_form_action );
                             ?>
                             <form id="sto-theme-settings-options-form" method="post" class="sto-options-form" action="<?php echo esc_url( $sto_form_action ); ?>">
                                 <?php wp_nonce_field( 'sto_save_options_action', 'sto_save_options_nonce' ); ?>
@@ -2211,11 +2312,41 @@ final class Menu {
                                     <?php } ?>
                                 </div>
                                 <?php if ( ! ThemeSettingsImportExport::is_advance_leaf_slug( $current_section_slug ) ) : ?>
+                                <?php
+                                $sto_reset_section_confirm = esc_js(
+                                    __( 'Reset every field in this section to its default value? This cannot be undone.', 'simple-theme-options' )
+                                );
+                                $sto_reset_all_confirm     = esc_js(
+                                    __( 'Reset ALL Theme Settings fields on this page to their default values? This cannot be undone.', 'simple-theme-options' )
+                                );
+                                ?>
                                 <div class="sto-options-form-footer sto-section-actions">
-                                    <button type="submit" form="sto-theme-settings-options-form" name="sto_save_options" value="1" class="button button-primary">
-                                        <i class="fa-light fa-floppy-disk" aria-hidden="true"></i>
-                                        <?php esc_html_e( 'Save options', 'simple-theme-options' ); ?>
-                                    </button>
+                                    <div class="sto-options-form-footer__actions">
+                                        <button type="submit" form="sto-theme-settings-options-form" name="sto_save_options" value="1" class="button button-primary">
+                                            <i class="fa-light fa-floppy-disk" aria-hidden="true"></i>
+                                            <?php esc_html_e( 'Save options', 'simple-theme-options' ); ?>
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            form="sto-theme-settings-options-form"
+                                            name="sto_reset_section"
+                                            value="1"
+                                            class="button"
+                                            onclick="return window.confirm('<?php echo $sto_reset_section_confirm; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>');"
+                                        >
+                                            <?php esc_html_e( 'Reset section', 'simple-theme-options' ); ?>
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            form="sto-theme-settings-options-form"
+                                            name="sto_reset_all"
+                                            value="1"
+                                            class="button"
+                                            onclick="return window.confirm('<?php echo $sto_reset_all_confirm; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>');"
+                                        >
+                                            <?php esc_html_e( 'Reset all fields', 'simple-theme-options' ); ?>
+                                        </button>
+                                    </div>
                                 </div>
                                 <?php endif; ?>
                             </form>

@@ -12,6 +12,9 @@
  *     calls `cm.showHint()` with the mode-specific provider from `CodeMirror.hint.*` and falls
  *     back to `CodeMirror.hint.anyword` so plain-text / unsupported modes still get word
  *     completion against the buffer.
+ *   - **Word wrap** — **Alt+Z** (Option+Z on macOS) toggles **`lineWrapping`** (`cm.addKeyMap`)
+ *     without overwriting autocomplete **`extraKeys`**. Plain‑textarea fallback toggles **`wrap`**
+ *     soft/on versus **`wrap`** off.
  *   - **Submit safety net** — flushes every CodeMirror buffer back into its `<textarea>` on
  *     `submit` of the options form.
  *
@@ -22,7 +25,7 @@
  *     at 0 until first paint).
  *
  * Fallback: when `wp.codeEditor` is unavailable the raw `<textarea>` stays in place with
- * monospaced font; the chrome bar still works (fullscreen toggle + submit flush).
+ * monospaced font; the chrome bar still works (fullscreen toggle + **Alt+Z** wrap toggle + submit flush).
  */
 (function ($) {
     'use strict';
@@ -73,6 +76,7 @@
         if (!window.wp || !window.wp.codeEditor || typeof window.wp.codeEditor.initialize !== 'function') {
             attachLanguageSwitcher($wrap, null);
             attachFullscreenToggle($wrap);
+            attachPlainTextareaWrapToggle($wrap, $ta);
             $wrap.data(INIT_KEY, true);
             return;
         }
@@ -83,6 +87,7 @@
         } catch (err) {
             attachLanguageSwitcher($wrap, null);
             attachFullscreenToggle($wrap);
+            attachPlainTextareaWrapToggle($wrap, $ta);
             $wrap.data(INIT_KEY, true);
             return;
         }
@@ -90,6 +95,7 @@
         if (!initResult || !initResult.codemirror) {
             attachLanguageSwitcher($wrap, null);
             attachFullscreenToggle($wrap);
+            attachPlainTextareaWrapToggle($wrap, $ta);
             $wrap.data(INIT_KEY, true);
             return;
         }
@@ -98,6 +104,8 @@
         $wrap.addClass('sto-code-editor--initialized');
         $wrap.data('stoCm', cm);
         $wrap.data(INIT_KEY, true);
+
+        attachCmWrapToggleKeymap($wrap, cm);
 
         try {
             cm.setSize('100%', height);
@@ -154,6 +162,92 @@
                 cm.refresh();
             } catch (err) { /* non-fatal */ }
         }, 50);
+    }
+
+    /**
+     * Toggle CodeMirror line wrapping with Alt-Z — layered alongside autocomplete Ctrl/Cmd+Space
+     * bindings (`extraKeys`) via **`cm.addKeyMap()`**.
+     */
+    function attachCmWrapToggleKeymap($wrap, cm) {
+        if (!cm || typeof cm.addKeyMap !== 'function') {
+            return;
+        }
+        if ($wrap.data('stoCmWrapKeymap')) {
+            return;
+        }
+        $wrap.data('stoCmWrapKeymap', true);
+
+        cm.addKeyMap({
+            'Alt-Z': function toggleCmWrap(inst) {
+                var next = !inst.getOption('lineWrapping');
+                try {
+                    inst.setOption('lineWrapping', next);
+                } catch (errLw) {
+                    /* non-fatal */
+                }
+                $wrap.toggleClass('sto-code-editor--line-wrap-on', next);
+                updateWrapHintChip($wrap, next);
+                window.setTimeout(function () {
+                    try {
+                        inst.refresh();
+                    } catch (errRf) {
+                        /* non-fatal */
+                    }
+                }, 10);
+            },
+        });
+
+        var lwInitial = !!cm.getOption('lineWrapping');
+        $wrap.toggleClass('sto-code-editor--line-wrap-on', lwInitial);
+        updateWrapHintChip($wrap, lwInitial);
+    }
+
+    /**
+     * Fallback **textarea**: Toggle **`wrap="soft"` ↔ **`wrap="off"`**.
+     */
+    function attachPlainTextareaWrapToggle($wrap, $ta) {
+        if (!$wrap.length || !$ta.length || !$ta[0] || $wrap.data('stoTaWrapBound')) {
+            return;
+        }
+        $wrap.data('stoTaWrapBound', true);
+
+        var wrapAttr = String($ta.attr('wrap') || 'off').toLowerCase();
+        var isSoft = wrapAttr === 'soft' || wrapAttr === 'virtual';
+        $wrap.toggleClass('sto-code-editor--textarea-soft-wrap', isSoft);
+        $wrap.toggleClass('sto-code-editor--line-wrap-on', isSoft);
+        updateWrapHintChip($wrap, isSoft);
+
+        $ta.on('keydown.stoTaWrap', function (event) {
+            if (event.repeat || !event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+                return;
+            }
+            var key = event.key;
+            if (key !== 'z' && key !== 'Z') {
+                return;
+            }
+            event.preventDefault();
+
+            var cur = String($ta.attr('wrap') || 'off').toLowerCase();
+            var nextOn = !(cur === 'soft' || cur === 'virtual');
+            $ta.attr('wrap', nextOn ? 'soft' : 'off');
+            $wrap.toggleClass('sto-code-editor--textarea-soft-wrap', nextOn);
+            $wrap.toggleClass('sto-code-editor--line-wrap-on', nextOn);
+            updateWrapHintChip($wrap, nextOn);
+        });
+    }
+
+    function updateWrapHintChip($wrap, isOn) {
+        var $hint = $wrap.find('[data-sto-code-wrap-hint]').first();
+        if (!$hint.length) {
+            return;
+        }
+        $hint.attr('data-sto-wrap-active', isOn ? '1' : '0');
+        $hint.attr(
+            'title',
+            isOn
+                ? 'Word wrap On — Alt + Z (Option + Z on macOS) to unwrap.'
+                : 'Word wrap Off — Alt + Z (Option + Z on macOS) to wrap.'
+        );
     }
 
     /* ----------------------------------------------------------------------------------- */

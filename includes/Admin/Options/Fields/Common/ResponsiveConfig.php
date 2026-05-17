@@ -278,27 +278,47 @@ final class ResponsiveConfig {
 	}
 
 	/**
-	 * @param mixed                $stored Value from `sto_options`
-	 * @param array<int, string>   $breakpoints
-	 * @param string               $default_scalar Default for each missing key
+	 * @param mixed                              $stored Value from `sto_options`
+	 * @param array<int, string>                 $breakpoints
+	 * @param string                             $default_scalar Fallback when a breakpoint has no stored value and no per-key default
+	 * @param array<string, string|int|float>    $defaults_per_breakpoint Optional per-slug defaults (field registration `responsive_defaults`)
 	 * @return array<string, string>
 	 */
-	public static function coerce_map( $stored, array $breakpoints, $default_scalar ) {
+	public static function coerce_map( $stored, array $breakpoints, $default_scalar, array $defaults_per_breakpoint = array() ) {
 		$default_scalar = (string) $default_scalar;
-		$out            = array();
+		$per_bp         = array();
+		foreach ( $defaults_per_breakpoint as $bp => $val ) {
+			$bp = sanitize_key( (string) $bp );
+			if ( $bp !== '' && is_scalar( $val ) ) {
+				$per_bp[ $bp ] = trim( (string) $val );
+			}
+		}
+
+		$fallback_for = static function ( $bp ) use ( $per_bp, $default_scalar ) {
+			$bp = sanitize_key( (string) $bp );
+
+			return isset( $per_bp[ $bp ] ) && $per_bp[ $bp ] !== '' ? $per_bp[ $bp ] : $default_scalar;
+		};
+
+		$out = array();
 		if ( is_array( $stored ) && self::is_breakpoint_value_map( $stored ) ) {
 			foreach ( $breakpoints as $bp ) {
-				$bp = sanitize_key( (string) $bp );
-				$rv = self::raw_value_at_breakpoint( $stored, $bp );
-				$out[ $bp ] = null !== $rv ? (string) $rv : $default_scalar;
+				$bp         = sanitize_key( (string) $bp );
+				$rv         = self::raw_value_at_breakpoint( $stored, $bp );
+				$out[ $bp ] = null !== $rv ? (string) $rv : $fallback_for( $bp );
 			}
 
 			return $out;
 		}
 
-		$scalar = is_scalar( $stored ) ? (string) $stored : $default_scalar;
+		$scalar = is_scalar( $stored ) ? trim( (string) $stored ) : '';
 		foreach ( $breakpoints as $bp ) {
-			$out[ sanitize_key( (string) $bp ) ] = $scalar;
+			$bp = sanitize_key( (string) $bp );
+			if ( '' !== $scalar ) {
+				$out[ $bp ] = $scalar;
+			} else {
+				$out[ $bp ] = $fallback_for( $bp );
+			}
 		}
 
 		return $out;

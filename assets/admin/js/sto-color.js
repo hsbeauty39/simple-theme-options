@@ -72,6 +72,9 @@
         s = String(s || '').trim();
         var m = s.toLowerCase().match(/^rgba?\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})/);
         if (!m) {
+            m = s.toLowerCase().match(/^rgba?\(\s*([0-9]{1,3})\s+([0-9]{1,3})\s+([0-9]{1,3})(?:\s*\/|\s*\))/);
+        }
+        if (!m) {
             return '';
         }
         var r = clampByte(m[1]);

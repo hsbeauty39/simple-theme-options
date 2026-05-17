@@ -1059,6 +1059,7 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 						<li class="sto-docs-nav__nest"><a href="#doc-advance-import-export">2.1b Advance backup</a></li>
 						<li class="sto-docs-nav__nest"><a href="#doc-demo-mode">2.1c Demo mode</a></li>
 						<li class="sto-docs-nav__nest"><a href="#doc-nav_sections">2.2 Sections.php</a></li>
+						<li><a href="#reading-theme-options">Reading options (themes)</a></li>
 						<li><a href="#responsive">3. Responsive</a></li>
 						<li class="sto-docs-nav__nest"><a href="#doc-responsive_select">3.5 Sample</a></li>
 						<li><a href="#required">4. required</a></li>
@@ -1195,6 +1196,16 @@ hr.sep { border: 0; border-top: 1px dashed #c3c4c7; margin: 28px 0; }
 				<strong>Register fields on the leaf</strong>
 				Use <code>'section_slug' =&gt; 'brand-logo'</code> (child), not <code>'brand'</code> (parent), unless the parent has no children.
 			</div>
+		</section>
+
+		<section class="sto-docs-section" id="reading-theme-options">
+			<h2>Reading options in themes</h2>
+			<p id="doc-sto-get-option"><code>includes/functions.php</code> loads global helpers whenever the plugin is active. <strong><code>sto_get_option( &#39;field_id&#39;, $default )</code></strong> returns one saved Theme Settings field by its registered <code>id</code> (stored under <code>sto_options[&#39;field_id&#39;]</code>) — same idea as Redux-style <code>get( &#39;opt_name&#39;, &#39;field_key&#39; )</code>, except STO uses a single flat <code>sto_options</code> map, so you only pass the field key. Missing keys return your default.</p>
+			<p><strong><code>sto_option_is_on( &#39;switcher_id&#39;, false )</code></strong> is true when the stored value is one of <code>1</code>, <code>true</code>, <code>on</code>, <code>yes</code> (typical switcher / checkbox tiles).</p>
+			<p><strong><code>sto_color_field_background_css( &#39;color_field_id&#39;, &#39;#ffffff&#39; )</code></strong> and <strong><code>sto_color_string_to_background_css( $stored, &#39;#ffffff&#39; )</code></strong> normalize <strong>Color</strong> values to comma <code>rgb()</code> / <code>rgba()</code> for inline <code>style=&quot;background-color: …&quot;</code> with <code>esc_attr()</code>.</p>
+			<p>For <strong>responsive</strong> fields, <code>sto_get_option()</code> returns the full breakpoint map — use <strong><code>sto_get_responsive_option( $id, $viewport_width, $default )</code></strong> to resolve one slice (see <a href="#responsive">§3 Responsive</a> and <code>README.md</code>). Full map helpers such as <code>sto_get_options()</code>, <code>sto_get_effective_options_for_post()</code>, etc. remain for advanced use.</p>
+			<p>In Theme Settings admin, alpha-enabled Color rows use wp-color-picker-alpha with <strong><code>data-alpha-color-type=&quot;octohex&quot;</code></strong> so saves stay <strong>#RRGGBBAA</strong>; default vendor <code>hex</code> alone collapses alpha.</p>
+			<p>Always guard with <code>function_exists( &#39;sto_get_option&#39; )</code> if your theme template must tolerate the plugin being deactivated.</p>
 		</section>
 
 		<section id="responsive">

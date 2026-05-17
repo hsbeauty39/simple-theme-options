@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
+use SimpleThemeOptions\Admin\Options\Fields\AdvancedRepeaterControl\AdvancedRepeaterControl;
 use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
@@ -201,6 +202,11 @@ final class Assets {
 			'sto-style' => array(
 				'src'     => STO_URL . 'assets/admin/css/style.css',
 				'deps'    => array( 'sto-fontawesome' ),
+				'version' => STO_VERSION,
+			),
+			'sto-premium-locked' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-premium-locked.css',
+				'deps'    => array( 'sto-style' ),
 				'version' => STO_VERSION,
 			),
 			'sto-responsive' => array(
@@ -561,7 +567,7 @@ final class Assets {
 			);
 		}
 
-		if ( IconSelect::instance()->registry_has_fields() ) {
+		if ( IconSelect::instance()->registry_has_fields() || AdvancedRepeaterControl::instance()->registry_schema_contains_icon_select() ) {
 			wp_localize_script(
 				'sto-icon-select-field',
 				'stoIconSelectField',

@@ -9,6 +9,7 @@ use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
 use SimpleThemeOptions\Admin\Options\Fields\Common\LayoutWidth;
@@ -942,12 +943,24 @@ final class Group {
 	 * @param string               $section_slug
 	 * @param array<string, mixed> $section
 	 */
+	public function section_has_groups( string $section_slug ): bool {
+		$section_slug = sanitize_key( $section_slug );
+
+		return ! empty( $this->groups_by_section[ $section_slug ] );
+	}
+
+	/**
+	 * @param string               $section_slug
+	 * @param array<string, mixed> $section
+	 */
 	public function render_groups( $section_slug, $section ) {
 		$section_slug = sanitize_key( (string) $section_slug );
 
 		if ( empty( $this->groups_by_section[ $section_slug ] ) ) {
 			return;
 		}
+
+		PremiumFieldGate::begin_section_render( $section_slug );
 
 		foreach ( $this->groups_by_section[ $section_slug ] as $root ) {
 			$this->render_group_branch( $section_slug, $root, 0 );

@@ -571,10 +571,14 @@ final class ButtonGroup {
 		if ( isset( $saved_options[ $field_id ] ) ) {
 			$st = $saved_options[ $field_id ];
 			if ( is_array( $st ) && ResponsiveConfig::is_breakpoint_value_map( $st ) ) {
-				return $this->coerce_value( ResponsiveConfig::value_for_required_eval( $st ), $allowed_keys );
+				$coerced = $this->coerce_value( ResponsiveConfig::value_for_required_eval( $st ), $allowed_keys );
+
+				return $coerced !== '' ? $coerced : $this->coerce_value( $default_value, $allowed_keys );
 			}
 
-			return $this->coerce_value( (string) $st, $allowed_keys );
+			$coerced = $this->coerce_value( (string) $st, $allowed_keys );
+
+			return $coerced !== '' ? $coerced : $this->coerce_value( $default_value, $allowed_keys );
 		}
 
 		return $this->coerce_value( $default_value, $allowed_keys );

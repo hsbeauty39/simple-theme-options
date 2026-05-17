@@ -1,6 +1,7 @@
 <?php
 namespace SimpleThemeOptions\Admin\Sample;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\ImportExport\ThemeSettingsImportExport;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
 use SimpleThemeOptions\Traits\SingletonTrait;
@@ -75,6 +76,21 @@ final class Sections {
 			: array( $advance_leaf );
 
 		if ( in_array( $section_slug, $leaves, true ) ) {
+			return;
+		}
+
+		if ( PremiumFieldGate::section_has_registered_groups( $section_slug ) ) {
+			return;
+		}
+
+		/**
+		 * Skip the generic placeholder when another module registered section content.
+		 *
+		 * @param bool   $skip           Default false.
+		 * @param string $section_slug   Leaf section slug.
+		 * @param array  $section        Section meta from Menu.
+		 */
+		if ( apply_filters( 'sto_section_skip_generic_placeholder', false, $section_slug, $section ) ) {
 			return;
 		}
 

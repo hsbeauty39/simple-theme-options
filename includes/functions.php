@@ -7,6 +7,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
@@ -33,6 +34,193 @@ function sto_get_options() {
 	$raw = get_option( 'sto_options', array() );
 
 	return is_array( $raw ) ? $raw : array();
+}
+
+/**
+ * Whether this site may use premium STO field types (Freemius Pro / trial).
+ */
+function sto_can_use_premium_fields(): bool {
+	return PremiumFieldGate::can_use_premium();
+}
+
+/**
+ * One Theme Settings field by id (saved under `sto_options[ $field_id ]`).
+ *
+ * Same idea as Redux `get_option( 'opt_name', 'field_key' )` — STO uses one global map, so you only pass the field key.
+ *
+ * @param string $field_id Registered field `id` (e.g. from `Color::register`, `Input::register`, inner group `id`).
+ * @param mixed  $default  Returned when the key is absent.
+ * @return mixed Stored scalar, breakpoint map (`array`), JSON string for composite fields — whatever was saved.
+ */
+function sto_get_option( $field_id, $default = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return $default;
+	}
+	$opts = sto_get_options();
+
+	return array_key_exists( $field_id, $opts ) ? $opts[ $field_id ] : $default;
+}
+
+/**
+ * True when a **switcher / checkbox-like** STO value reads as enabled (`1`, `true`, `on`, `yes`).
+ *
+ * @param string $field_id Registered field id.
+ * @param bool   $default  When the key does not exist in `sto_options`.
+ */
+function sto_option_is_on( $field_id, $default = false ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return (bool) $default;
+	}
+	$opts = sto_get_options();
+	if ( ! array_key_exists( $field_id, $opts ) ) {
+		return (bool) $default;
+	}
+
+	return in_array( (string) $opts[ $field_id ], array( '1', 'true', 'on', 'yes' ), true );
+}
+
+/**
+ * Format a saved **color** field value for inline `background-color` (comma `rgb()` / `rgba()`, safe for `esc_attr()`).
+ *
+ * @param mixed  $stored       Value from `{@see sto_get_option()}`, or null / non-string falls back.
+ * @param string $fallback_hex Hex fallback when `$stored` is empty or unrecognized (must be `#rgb` or `#rrggbb`).
+ */
+function sto_color_string_to_background_css( $stored, $fallback_hex = '#ffffff' ) {
+	$fallback_hex = is_string( $fallback_hex ) ? trim( $fallback_hex ) : '#ffffff';
+
+	$parse_css_alpha = static function ( $raw ) {
+		if ( ! is_string( $raw ) ) {
+			return 1.0;
+		}
+		$raw = strtolower( trim( $raw ) );
+		if ( $raw === '' ) {
+			return 1.0;
+		}
+
+		return substr( $raw, -1 ) === '%'
+			? max( 0.0, min( 1.0, (float) trim( substr( $raw, 0, -1 ) ) / 100.0 ) )
+			: max( 0.0, min( 1.0, (float) $raw ) );
+	};
+
+	$emit_rgb_or_rgba = static function ( $r, $g, $b, $a ) use ( $parse_css_alpha ) {
+		if ( null === $a ) {
+			$a_u = 1.0;
+		} elseif ( is_string( $a ) ) {
+			$a_u = $parse_css_alpha( $a );
+		} else {
+			$a_u = max( 0.0, min( 1.0, (float) $a ) );
+		}
+
+		if ( $a_u >= 0.999 ) {
+			return sprintf( 'rgb(%d,%d,%d)', $r, $g, $b );
+		}
+
+		$as = (string) round( $a_u, 3 );
+		$as = rtrim( rtrim( $as, '0' ), '.' );
+
+		return sprintf( 'rgba(%d,%d,%d,%s)', $r, $g, $b, $as === '' ? '0' : $as );
+	};
+
+	$hex_fallback_to_rgb = static function ( $hx ) {
+		$hx = trim( (string) $hx );
+		if ( $hx === '' || ! preg_match( '/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $hx ) ) {
+			return '';
+		}
+		$d = substr( $hx, 1 );
+		if ( strlen( $d ) === 3 ) {
+			$r = hexdec( str_repeat( $d[0], 2 ) );
+			$g = hexdec( str_repeat( $d[1], 2 ) );
+			$b = hexdec( str_repeat( $d[2], 2 ) );
+		} else {
+			$r = hexdec( substr( $d, 0, 2 ) );
+			$g = hexdec( substr( $d, 2, 2 ) );
+			$b = hexdec( substr( $d, 4, 2 ) );
+		}
+
+		return sprintf( 'rgb(%d,%d,%d)', $r, $g, $b );
+	};
+
+	$rescue = static function () use ( $fallback_hex, $hex_fallback_to_rgb ) {
+		$o = $hex_fallback_to_rgb( $fallback_hex );
+
+		return $o !== '' ? $o : 'rgb(255,255,255)';
+	};
+
+	if ( ! is_string( $stored ) ) {
+		return $rescue();
+	}
+	$s = trim( $stored );
+	if ( $s === '' ) {
+		return $rescue();
+	}
+	// #RGBA shorthand (#f90e → opaque yellow + hex alpha digit).
+	if ( preg_match( '/^#([0-9a-f]{4})$/i', $s, $qm ) ) {
+		$h     = strtolower( $qm[1] );
+		$digits = $h[0] . $h[0] . $h[1] . $h[1] . $h[2] . $h[2] . $h[3] . $h[3];
+		$s     = '#' . $digits;
+	}
+
+	// #RRGGBBAA saved by wp-color-picker-alpha (themes must output comma rgba — `esc_attr`).
+	if ( preg_match( '/^#([0-9a-f]{8})$/i', $s, $hm ) ) {
+		$d   = strtolower( $hm[1] );
+		$r   = max( 0, min( 255, hexdec( substr( $d, 0, 2 ) ) ) );
+		$g   = max( 0, min( 255, hexdec( substr( $d, 2, 2 ) ) ) );
+		$b   = max( 0, min( 255, hexdec( substr( $d, 4, 2 ) ) ) );
+		$a_u = max( 0.0, min( 1.0, hexdec( substr( $d, 6, 2 ) ) / 255.0 ) );
+
+		return $emit_rgb_or_rgba( $r, $g, $b, $a_u );
+	}
+	if ( preg_match( '/^rgb\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)$/i', $s, $m ) ) {
+		return sprintf(
+			'rgb(%d,%d,%d)',
+			max( 0, min( 255, (int) $m[1] ) ),
+			max( 0, min( 255, (int) $m[2] ) ),
+			max( 0, min( 255, (int) $m[3] ) )
+		);
+	}
+
+	// Comma separates channels; fourth may be fractional or `%`.
+	if ( preg_match( '/^rgba?\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*(?:,\s*((?:[0-9]*\.?[0-9]+)%|[0-9]*\.?[0-9]+)\s*)?\)$/i', $s, $m ) ) {
+		$r = max( 0, min( 255, (int) $m[1] ) );
+		$g = max( 0, min( 255, (int) $m[2] ) );
+		$b = max( 0, min( 255, (int) $m[3] ) );
+
+		return $emit_rgb_or_rgba( $r, $g, $b, isset( $m[4] ) ? $m[4] : 1.0 );
+	}
+
+	// rgb(255 255 6 / 0.75) — alpha **or** `50 %`.
+	if ( preg_match( '/^rgba?\(\s*([0-9]{1,3})\s+([0-9]{1,3})\s+([0-9]{1,3})\s*(?:\/\s*((?:[0-9]*\.?[0-9]+)%|[0-9]*\.?[0-9]+))?\s*\)$/i', $s, $m ) ) {
+		$r = max( 0, min( 255, (int) $m[1] ) );
+		$g = max( 0, min( 255, (int) $m[2] ) );
+		$b = max( 0, min( 255, (int) $m[3] ) );
+
+		return $emit_rgb_or_rgba( $r, $g, $b, isset( $m[4] ) ? $m[4] : 1.0 );
+	}
+
+	if ( preg_match( '/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $s ) ) {
+		$out = $hex_fallback_to_rgb( $s );
+
+		return $out !== '' ? $out : $rescue();
+	}
+
+	return $rescue();
+}
+
+/**
+ * Read one **color** field and return a string safe for inline `background-color:`.
+ *
+ * @param string $field_id     Registered Color field option id.
+ * @param string $fallback_hex `#rrggbb` when missing or unreadable stored value.
+ */
+function sto_color_field_background_css( $field_id, $fallback_hex = '#ffffff' ) {
+	$field_id = sanitize_key( (string) $field_id );
+
+	return sto_color_string_to_background_css(
+		$field_id !== '' ? sto_get_option( $field_id ) : '',
+		$fallback_hex
+	);
 }
 
 /**
@@ -156,6 +344,62 @@ function sto_get_responsive_option( $id, $viewport_width = null, $default = null
 	}
 
 	return ViewportOptions::get_value_for_width( $stored, (int) $viewport_width, $opts, $default );
+}
+
+/**
+ * Resolve a responsive option into a full breakpoint map (largest → smallest).
+ *
+ * Explicit tab values override; smaller breakpoints inherit the last larger value until
+ * the next override (matches STO admin tabs). Scalar storage repeats on every breakpoint.
+ *
+ * @param string                    $field_id                 Option key in `sto_options`.
+ * @param array<string, scalar>     $defaults_per_breakpoint  Fallback per slug, e.g. `array( 'xxl' => '4', 'mobile' => '1' )`.
+ * @param array<int, string>|null   $breakpoint_order         Defaults to {@see ResponsiveConfig::ALL_BREAKPOINTS}.
+ * @return array<string, string>
+ */
+function sto_resolve_responsive_breakpoint_map( $field_id, array $defaults_per_breakpoint = array(), $breakpoint_order = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+	$bps      = is_array( $breakpoint_order ) && array() !== $breakpoint_order
+		? array_values( array_map( 'sanitize_key', $breakpoint_order ) )
+		: ResponsiveConfig::ALL_BREAKPOINTS;
+
+	$stored = ( $field_id !== '' && function_exists( 'sto_get_option' ) )
+		? sto_get_option( $field_id, null )
+		: null;
+
+	$out   = array();
+	$carry = null;
+
+	if ( ! is_array( $stored ) || ! ResponsiveConfig::is_breakpoint_value_map( $stored ) ) {
+		$scalar = is_scalar( $stored ) ? trim( (string) $stored ) : '';
+		if ( '' === $scalar && isset( $defaults_per_breakpoint['xxl'] ) && is_scalar( $defaults_per_breakpoint['xxl'] ) ) {
+			$scalar = trim( (string) $defaults_per_breakpoint['xxl'] );
+		}
+
+		foreach ( $bps as $bp ) {
+			if ( array_key_exists( $bp, $defaults_per_breakpoint ) && is_scalar( $defaults_per_breakpoint[ $bp ] ) ) {
+				$out[ $bp ] = trim( (string) $defaults_per_breakpoint[ $bp ] );
+				continue;
+			}
+			$out[ $bp ] = '' !== $scalar ? $scalar : '4';
+		}
+
+		return $out;
+	}
+
+	foreach ( $bps as $bp ) {
+		$raw = ResponsiveConfig::raw_value_at_breakpoint( $stored, $bp );
+		if ( null !== $raw && is_scalar( $raw ) && '' !== trim( (string) $raw ) ) {
+			$carry = trim( (string) $raw );
+		} elseif ( null === $carry ) {
+			$carry = ( array_key_exists( $bp, $defaults_per_breakpoint ) && is_scalar( $defaults_per_breakpoint[ $bp ] ) )
+				? trim( (string) $defaults_per_breakpoint[ $bp ] )
+				: '';
+		}
+		$out[ $bp ] = $carry;
+	}
+
+	return $out;
 }
 
 /**

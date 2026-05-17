@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\CodeEditor;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
 use SimpleThemeOptions\Admin\ThemeSettingsMetabox;
@@ -10,6 +11,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
+use SimpleThemeOptions\Admin\Options\RequiredVisibility;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveControl;
 use SimpleThemeOptions\Traits\SingletonTrait;
@@ -134,11 +136,11 @@ final class CodeEditor {
 	 *       line_numbers? (bool; default true), line_wrapping? (bool; default false — code stays scrollable),
 	 *       indent_size? (int; default 4), tab_size? (int; mirrors indent_size when omitted),
 	 *       fullscreen? (bool; default true — show the expand button),
-	 *       **autocomplete?** (bool; default **true** — `Ctrl/Cmd + Space` + smart auto-trigger),
+	 *       **autocomplete?** (bool; default **false** — set **`true`** for `Ctrl/Cmd + Space` + smart auto-trigger),
 	 *       **language_switcher?** (bool; default **true** — show the in-chrome `<select>` so admins
 	 *       can override auto-detection or change the language without leaving the screen),
 	 *       responsive? (bool / array), device? (see ResponsiveConfig),
-	 *       wrapper_class?, required?, group?, tooltip?, tooltip_image?, tooltip_preloader?
+	 *       wrapper_class?, required?, html_required?, group?, tooltip?, tooltip_image?, tooltip_preloader?
 	 *
 	 * @param array<string, mixed> $field
 	 */
@@ -222,6 +224,7 @@ final class CodeEditor {
 		$field['default']              = isset( $field['default'] ) && is_scalar( $field['default'] ) ? (string) $field['default'] : '';
 		$field['wrapper_class']        = isset( $field['wrapper_class'] ) ? (string) $field['wrapper_class'] : '';
 		$field['required']             = isset( $field['required'] ) && is_array( $field['required'] ) ? $field['required'] : array();
+		$field['html_required']       = ! empty( $field['html_required'] );
 		$field['group']                = isset( $field['group'] ) ? sanitize_key( (string) $field['group'] ) : '';
 		$field['mode']                 = $mode;
 		$field['height']               = $height;
@@ -231,11 +234,9 @@ final class CodeEditor {
 		$field['indent_size']          = $indent;
 		$field['tab_size']             = $tab_size;
 		$field['fullscreen']           = ! array_key_exists( 'fullscreen', $field ) || (bool) $field['fullscreen'];
-		// IDE-style features default **on** — `Ctrl+Space` autocomplete + smart hint trigger,
-		// plus the chrome-bar language switcher (so the user can override `mode => 'auto'` or
-		// flip language without leaving the field). Disable per-field for read-only / display
-		// surfaces (e.g. a one-line snippet preview) by setting these to `false`.
-		$field['autocomplete']         = ! array_key_exists( 'autocomplete', $field ) || (bool) $field['autocomplete'];
+		// Chrome-bar language switcher defaults **on** (override `mode => 'auto'` or flip language).
+		// Autocomplete defaults **off** — most snippet fields don't need Ctrl/Cmd+Space hints.
+		$field['autocomplete']         = isset( $field['autocomplete'] ) && (bool) $field['autocomplete'];
 		$field['language_switcher']    = ! array_key_exists( 'language_switcher', $field ) || (bool) $field['language_switcher'];
 		$field['responsive_breakpoints'] = ResponsiveConfig::breakpoints_for_field( $field );
 
@@ -287,6 +288,75 @@ final class CodeEditor {
 		$field    = $field_id ? ( $this->fields_by_id[ $field_id ] ?? null ) : null;
 
 		return is_array( $field ) ? ( $field['responsive_breakpoints'] ?? null ) : null;
+	}
+
+	/**
+	 * Server-side checks when **`html_required`** is set — only if conditional **`required`**
+	 * visibility rules mean the row is shown (parity with Theme Settings JS).
+	 *
+	 * @param string               $section_slug  Leaf section being saved.
+	 * @param array<string, mixed> $option_values Merged preview of `sto_options`.
+	 * @return array<int, string> User-visible error strings.
+	 */
+	public function collect_html_required_violations_for_section( $section_slug, array $option_values ) {
+		$section_slug = sanitize_key( (string) $section_slug );
+		if ( $section_slug === '' || empty( $this->fields_by_section[ $section_slug ] ) ) {
+			return array();
+		}
+
+		$messages = array();
+		foreach ( $this->fields_by_section[ $section_slug ] as $field ) {
+			if ( ! is_array( $field ) || empty( $field['html_required'] ) ) {
+				continue;
+			}
+
+			$rules = isset( $field['required'] ) && is_array( $field['required'] ) ? $field['required'] : array();
+			if ( ! RequiredVisibility::row_is_visible( $rules, $option_values ) ) {
+				continue;
+			}
+
+			$field_option_key = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
+			if ( $field_option_key === '' ) {
+				continue;
+			}
+
+			$row_value_raw = array_key_exists( $field_option_key, $option_values ) ? $option_values[ $field_option_key ] : null;
+			if ( $this->field_value_is_nonempty_for_required( $field, $row_value_raw ) ) {
+				continue;
+			}
+
+			$heading_title      = isset( $field['title'] ) ? trim( (string) $field['title'] ) : '';
+			$error_field_label = $heading_title !== '' ? $heading_title : $field_option_key;
+
+			$messages[] = sprintf(
+				/* translators: %s: field label */
+				__( '“%s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+				$error_field_label
+			);
+		}
+
+		return $messages;
+	}
+
+	/**
+	 * @param array<string, mixed> $field Registered editor field.
+	 * @param mixed                $raw_value Stored scalar or breakpoint map for this option id.
+	 */
+	private function field_value_is_nonempty_for_required( array $field, $raw_value ): bool {
+		if ( is_array( $raw_value ) && ResponsiveConfig::is_breakpoint_value_map( $raw_value ) ) {
+			$breakpoints_for_field = isset( $field['responsive_breakpoints'] ) && is_array( $field['responsive_breakpoints'] ) ? $field['responsive_breakpoints'] : array();
+			foreach ( $breakpoints_for_field as $breakpoint_key ) {
+				$breakpoint_key = sanitize_key( (string) $breakpoint_key );
+				$breakpoint_cell_value = isset( $raw_value[ $breakpoint_key ] ) ? $raw_value[ $breakpoint_key ] : '';
+				if ( trim( wp_strip_all_tags( (string) $breakpoint_cell_value ) ) !== '' ) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		return trim( wp_strip_all_tags( is_scalar( $raw_value ) ? (string) $raw_value : '' ) ) !== '';
 	}
 
 	/**
@@ -505,7 +575,8 @@ final class CodeEditor {
 				<?php FieldTitle::render_heading( $title, $context, $tooltip, $field_id, $is_inner, $toolbar_markup ); ?>
 			<?php endif; ?>
 
-			<?php if ( $tabs_pane_bp !== '' && $bps_storage ) : ?>
+			<?php if ( PremiumFieldGate::render_controls_or_locked_placeholder( $title, 'code_editor' ) ) : ?>
+			<?php elseif ( $tabs_pane_bp !== '' && $bps_storage ) : ?>
 				<?php
 				$value_map = $this->get_value_map( $field_id, $bps_storage, $field );
 				$cur       = isset( $value_map[ $tabs_pane_bp ] ) ? (string) $value_map[ $tabs_pane_bp ] : (string) $field['default'];
@@ -538,7 +609,7 @@ final class CodeEditor {
 				?>
 			<?php endif; ?>
 
-			<?php if ( $description ) : ?>
+			<?php if ( $description && ! PremiumFieldGate::is_locked() ) : ?>
 				<p class="sto-field-description"><?php echo esc_html( $description ); ?></p>
 			<?php endif; ?>
 		</div>
@@ -589,14 +660,14 @@ final class CodeEditor {
 			'matchBrackets'  => true,
 			'autoCloseBrackets' => true,
 			'autoCloseTags'  => true,
-			// Hint scaffolding — actual `Ctrl+Space` binding + the auto-trigger live in
-			// `sto-code-editor.js` so the keymap can fall back to `anyword` when the mode-specific
-			// hint addon isn't on the page.
-			'hintOptions'    => array(
+		);
+		if ( $ac ) {
+			// Hint scaffolding — `Ctrl+Space` binding + auto-trigger live in `sto-code-editor.js`.
+			$settings['hintOptions'] = array(
 				'completeSingle' => false,
 				'closeOnUnfocus' => true,
-			),
-		);
+			);
+		}
 		$settings_json = (string) wp_json_encode( $settings );
 
 		$mode_label = $this->mode_to_label( $mode );
@@ -680,6 +751,17 @@ final class CodeEditor {
 
 				<div class="sto-code-editor__bar-spacer" aria-hidden="true"></div>
 
+				<span
+					class="sto-code-editor__shortcut sto-code-editor__shortcut--wrap"
+					data-sto-code-wrap-hint
+					data-sto-wrap-active="<?php echo $lw ? '1' : '0'; ?>"
+					title="<?php esc_attr_e( 'Toggle word wrap — Alt + Z (Option + Z on macOS)', 'simple-theme-options' ); ?>"
+				>
+					<kbd><?php esc_html_e( 'Alt', 'simple-theme-options' ); ?></kbd>
+					<span aria-hidden="true">+</span>
+					<kbd>Z</kbd>
+				</span>
+
 				<?php if ( $ac ) : ?>
 					<span
 						class="sto-code-editor__shortcut"
@@ -705,6 +787,9 @@ final class CodeEditor {
 				<?php endif; ?>
 			</div>
 
+			<?php
+			$code_editor_requires_input = ! empty( $field['html_required'] );
+			?>
 			<textarea
 				id="<?php echo esc_attr( $ta_id ); ?>"
 				class="sto-code-editor__textarea"
@@ -718,6 +803,10 @@ final class CodeEditor {
 				style="height: <?php echo esc_attr( (string) $height ); ?>px; min-height: <?php echo esc_attr( (string) $min_h ); ?>px;"
 				<?php if ( $placeh !== '' ) : ?>
 					placeholder="<?php echo esc_attr( $placeh ); ?>"
+				<?php endif; ?>
+				<?php if ( $code_editor_requires_input ) : ?>
+					required="required"
+					aria-required="true"
 				<?php endif; ?>
 			><?php echo esc_textarea( (string) $value ); ?></textarea>
 		</div>

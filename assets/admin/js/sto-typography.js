@@ -214,20 +214,98 @@
         }
     }
 
+    function isTypographySelect2Attached($el) {
+        return $el && $el.length && $el.hasClass('select2-hidden-accessible');
+    }
+
     function destroySelect2($el) {
-        if ($.fn.select2 && $el && $el.length && $el.data('select2')) {
-            $el.select2('destroy');
+        if (!$.fn.select2 || !$el || !$el.length) {
+            return;
+        }
+        if (isTypographySelect2Attached($el)) {
+            try {
+                $el.select2('destroy');
+            } catch (destroyError) {
+                $el.removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
+            }
         }
     }
 
-    function initSelect2($el) {
-        if (typeof $.fn.select2 !== 'function' || !$el || !$el.length) {
-            return;
+    function getTypographySelects($wrap) {
+        var $w = $wrap && $wrap.length ? $wrap : $(document);
+        return $w.find(
+            '[data-sto-typography-family], [data-sto-typography-variant], [data-sto-typography-subset], [data-sto-typography-transform]'
+        );
+    }
+
+    /**
+     * Whether the control is in a context where Select2 should stay attached (or be attached).
+     *
+     * @param {JQuery} $el
+     * @return {boolean}
+     */
+    function isTypographySelectContextAllowed($el) {
+        if (!$el || !$el.length) {
+            return false;
         }
-        if ($el.data('select2')) {
-            return;
+        if ($el.prop('disabled')) {
+            return false;
         }
-        if (!$el.is(':visible')) {
+        if ($el.closest('fieldset:disabled').length) {
+            return false;
+        }
+        if ($el.closest('.sto-option-panel-section.sto-is-hidden').length) {
+            return false;
+        }
+        if ($el.closest('.sto-required-hidden').length) {
+            return false;
+        }
+        var $typoBody = $el.closest('.sto-typography-body');
+        if ($typoBody.length && ($typoBody.is('[hidden]') || $typoBody.css('display') === 'none')) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * True when the control is painted on screen (use Select2 chrome when already enhanced).
+     *
+     * @param {JQuery} $el
+     * @return {boolean}
+     */
+    function isTypographySelectPainted($el) {
+        if (!$el || !$el.length) {
+            return false;
+        }
+        if (isTypographySelect2Attached($el)) {
+            var $container = $el.next('.select2-container');
+            if ($container.length) {
+                return $container.is(':visible') && $container[0].getClientRects().length > 0;
+            }
+        }
+        var $row = $el.closest('.sto-field-row, .sto-typography-cell');
+        if ($row.length && ($row.hasClass('sto-required-hidden') || !$row.is(':visible'))) {
+            return false;
+        }
+        var node = $el[0];
+        return !!(node && node.getClientRects && node.getClientRects().length);
+    }
+
+    /**
+     * True when the native select can receive Select2 (panel/fieldset enabled and painted).
+     *
+     * @param {JQuery} $el
+     * @return {boolean}
+     */
+    function canAttachTypographySelect2($el) {
+        if (typeof $.fn.select2 !== 'function') {
+            return false;
+        }
+        return isTypographySelectContextAllowed($el) && isTypographySelectPainted($el);
+    }
+
+    function attachTypographySelect2($el) {
+        if (!canAttachTypographySelect2($el) || isTypographySelect2Attached($el)) {
             return;
         }
         var $dropdownParent =
@@ -240,13 +318,87 @@
         var $ph = $el.find('option[value=""]').first();
         var phText = $.trim($ph.text() || '');
         var hasPh = $ph.length > 0;
-        $el.select2({
-            width: '100%',
-            allowClear: hasPh && phText.length > 0,
-            placeholder: hasPh && phText ? { id: '', text: phText } : undefined,
-            minimumResultsForSearch: 0,
-            dropdownCssClass: 'sto-select2-dropdown-wrap',
-            dropdownParent: $dropdownParent
+        try {
+            $el.select2({
+                width: '100%',
+                allowClear: hasPh && phText.length > 0,
+                placeholder: hasPh && phText ? { id: '', text: phText } : undefined,
+                minimumResultsForSearch: 0,
+                dropdownCssClass: 'sto-select2-dropdown-wrap',
+                dropdownParent: $dropdownParent
+            });
+        } catch (attachError) {
+            if (window.console && typeof window.console.warn === 'function') {
+                window.console.warn('STO typography Select2 failed', attachError);
+            }
+        }
+    }
+
+    function initSelect2($el) {
+        attachTypographySelect2($el);
+    }
+
+    /**
+     * Typography often boots while `sto-required-hidden` (Content tab) or inside a disabled
+     * fieldset — attach Select2 only when the control is actually interactive, then retry.
+     */
+    function initTypographySelectsInWrap($wrap) {
+        getTypographySelects($wrap).each(function() {
+            var $el = $(this);
+            var contextOk = isTypographySelectContextAllowed($el);
+            var painted = isTypographySelectPainted($el);
+            var attached = isTypographySelect2Attached($el);
+
+            if (attached && !contextOk) {
+                destroySelect2($el);
+                return;
+            }
+            if (attached) {
+                return;
+            }
+            if (contextOk && painted) {
+                attachTypographySelect2($el);
+            }
+        });
+    }
+
+    function scheduleTypographySelect2Retry($wrap, attempt) {
+        attempt = typeof attempt === 'number' ? attempt : 0;
+        if (attempt > 32) {
+            return;
+        }
+        var pending = false;
+        getTypographySelects($wrap).each(function() {
+            var $el = $(this);
+            if (!canAttachTypographySelect2($el)) {
+                return;
+            }
+            if (!isTypographySelect2Attached($el)) {
+                attachTypographySelect2($el);
+            }
+            if (!isTypographySelect2Attached($el)) {
+                pending = true;
+            }
+        });
+        if (pending) {
+            window.setTimeout(function() {
+                initTypographySelectsInWrap($wrap);
+                scheduleTypographySelect2Retry($wrap, attempt + 1);
+            }, attempt < 3 ? 0 : 120);
+        }
+    }
+
+    function refreshTypographySelect2($root) {
+        var $scope = ($root && $root.length) ? $root : $(document);
+        if ($scope.find('.select2-container--open').length) {
+            return;
+        }
+        $scope.find('[data-sto-typography]').filter(function() {
+            return $(this).data('stoTypographyLoaded');
+        }).each(function() {
+            var $wrap = $(this);
+            initTypographySelectsInWrap($wrap);
+            scheduleTypographySelect2Retry($wrap, 0);
         });
     }
 
@@ -361,14 +513,8 @@
         $sub.val(state.subset || 'latin');
         $trans.val(state.transform === 'none' ? 'none' : (state.transform || 'none'));
 
-        destroySelect2($fam);
-        destroySelect2($var);
-        destroySelect2($sub);
-        destroySelect2($trans);
-        initSelect2($fam);
-        initSelect2($var);
-        initSelect2($sub);
-        initSelect2($trans);
+        initTypographySelectsInWrap($wrap);
+        scheduleTypographySelect2Retry($wrap, 0);
 
         bindWrap($wrap);
         applyPreview($wrap, readJson($hidden, $wrap));
@@ -389,6 +535,12 @@
                 $wrap.data('stoTypographyLoaded', true);
                 bootWrap($wrap, fonts);
             });
+            window.setTimeout(function() {
+                refreshTypographySelect2($('.sto-option-panel-section.sto-is-active'));
+            }, 0);
+            window.setTimeout(function() {
+                refreshTypographySelect2($('.sto-option-panel-section.sto-is-active'));
+            }, 200);
         });
     }
 
@@ -396,7 +548,12 @@
         initTypographyIn($(document));
     });
 
+    $(document).on('sto:typography-refresh-request', function(_event, scope) {
+        refreshTypographySelect2(scope && scope.length ? scope : $('.sto-option-panel-section.sto-is-active'));
+    });
+
     window.stoInitTypographyPanels = initTypographyIn;
+    window.stoRefreshTypographySelect2 = refreshTypographySelect2;
 
     window.stoResetTypographyCatalog = function() {
         catalog = null;

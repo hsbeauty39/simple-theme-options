@@ -23,7 +23,8 @@ defined( 'ABSPATH' ) || exit;
  * Register with **`'type' => 'icon_select'`** (or **`IconSelect::register()`**). Keys: **`section_slug`**, **`id`**, **`title`**,
  * optional **`default`** (full class string allowed by the merged manifest — FA from JSON or **`dashicons dashicons-*`** from core), **`description`**, conditional **`required`**, **`html_required`**,
  * **`tooltip`**, **`wrapper_class`**, optional **`allow_clear`** (bool — empty value allowed), optional **`responsive`** + **`device`**.
- * Boot **`IconSelect::instance()`** before **`Group::register()`** when used inside groups / tabs / accordion.
+ * **Advanced repeater:** the same **`icon_select`** declarative **`type`** may appear in **`AdvancedRepeaterControl`** **`fields`** (scalar string per JSON row — see **`AdvancedRepeaterControl`** / **`IconSelect::render_embedded_widget_markup()`**).
+ * Boot **`IconSelect::instance()`** before **`Group::register()`** when used inside groups / tabs / accordion (**not** required for repeater-only icon leaves, but **`IconSelect`** must be loadable for shared markup + sanitization helpers).
  */
 final class IconSelect {
 	use SingletonTrait;
@@ -240,6 +241,153 @@ final class IconSelect {
 		$s = trim( preg_replace( '/\s+/', ' ', preg_replace( '/[^a-zA-Z0-9\- ]/', '', (string) $s ) ) );
 
 		return $s;
+	}
+
+	/**
+	 * Normalize a scalar icon stored in an **`advanced_repeater`** **`icon_select`** leaf against the manifest.
+	 *
+	 * @param string $raw Posted or persisted value.
+	 * @param bool   $allow_clear When true, unknown / empty clears to **`''`**.
+	 * @param string $schema_default Resolved default already coerced once (typically from schema **`default`**); used when **`! allow_clear`** and **`$raw`** is invalid / empty (but **non-empty invalid** maps to coercion fallback chain, not blindly to **`$schema_default`** — callers should pass **`$schema_default`** as the sane empty-row default).
+	 * @return string
+	 */
+	public static function coerce_advanced_repeater_leaf_value( string $raw, bool $allow_clear, string $schema_default ) {
+		$allowed = self::get_allowed_class_map();
+		$s       = self::sanitize_icon_class_string( $raw );
+		if ( $s !== '' && isset( $allowed[ $s ] ) ) {
+			return $s;
+		}
+		if ( $allow_clear ) {
+			return '';
+		}
+		if ( $s === '' ) {
+			$d = self::sanitize_icon_class_string( $schema_default );
+			if ( $d !== '' && isset( $allowed[ $d ] ) ) {
+				return $d;
+			}
+
+			return isset( $allowed[ self::FALLBACK_DEFAULT ] ) ? self::FALLBACK_DEFAULT : self::get_first_allowed_class();
+		}
+		if ( isset( $allowed[ self::FALLBACK_DEFAULT ] ) ) {
+			return self::FALLBACK_DEFAULT;
+		}
+
+		return self::get_first_allowed_class();
+	}
+
+	/**
+	 * Same **IconSelect** picker DOM **`embedded_icon_widget_markup()`** as **`render_icon_widget()`**. Repeater cells carry **`sto-field-row-icon-select`** so **`sto-icon-select-field.css`** keeps the fullscreen library popup (**`position: fixed`**, not flowing inline below the preview).
+	 * Does not emit **`responsive`** breakpoint maps here.
+	 *
+	 * @param string      $id_suffix           Unique suffix for **`id`** attributes (sanitize before call).
+	 * @param string|null $input_name          **`name`** for the hidden value; **`null`** when the hosting UI owns persistence (omit attribute).
+	 * @param string      $current             Current class string.
+	 * @param string      $aria_label          Accessible label for the widget.
+	 * @param bool        $allow_clear         Whether clearing to empty is allowed.
+	 * @param string|null $repeater_row_default Optional: when **`$input_name`** is **`null`**, **`data-sto-adv-rep-icon`** + **`data-sto-adv-rep-icon-default`** are added for advanced repeater JSON sync / row reset (equals schema default).
+	 */
+	public static function render_embedded_widget_markup( string $id_suffix, ?string $input_name, string $current, string $aria_label, bool $allow_clear, ?string $repeater_row_default = null ) {
+		self::embedded_icon_widget_markup( $id_suffix, $input_name, $current, $aria_label, $allow_clear, $repeater_row_default );
+	}
+
+	/**
+	 * Shared markup builder for **`render_field_markup`** and **`render_embedded_widget_markup`**.
+	 *
+	 * @param string|null $repeater_row_default When non-null, emits repeater **`data-*`** helpers on the hidden input.
+	 */
+	private static function embedded_icon_widget_markup( string $id_suffix, ?string $input_name, string $current, string $aria_label, bool $allow_clear, ?string $repeater_row_default = null ) {
+		$wid = 'sto_icon_select_' . $id_suffix;
+		?>
+		<div
+			class="sto-icon-select"
+			data-sto-icon-select="1"
+			<?php if ( $allow_clear ) : ?>
+				data-sto-icon-select-allow-clear="1"
+			<?php endif; ?>
+			aria-label="<?php echo esc_attr( $aria_label ); ?>"
+		>
+			<div class="sto-icon-select__chrome">
+				<button
+					type="button"
+					class="sto-icon-select__preview"
+					id="<?php echo esc_attr( $wid . '_preview' ); ?>"
+					data-sto-icon-select-open
+					aria-haspopup="dialog"
+					aria-expanded="false"
+					aria-controls="<?php echo esc_attr( $wid . '_dialog' ); ?>"
+				>
+					<span class="sto-icon-select__preview-inner" data-sto-icon-select-preview>
+						<?php if ( $current !== '' ) : ?>
+							<?php if ( self::is_dashicons_value( $current ) ) : ?>
+								<span class="<?php echo esc_attr( $current ); ?>" aria-hidden="true"></span>
+							<?php else : ?>
+								<i class="<?php echo esc_attr( $current ); ?>" aria-hidden="true"></i>
+							<?php endif; ?>
+						<?php else : ?>
+							<span class="sto-icon-select__placeholder"><?php esc_html_e( 'No icon', 'simple-theme-options' ); ?></span>
+						<?php endif; ?>
+					</span>
+					<span class="sto-icon-select__preview-hint"><?php esc_html_e( 'Click to choose', 'simple-theme-options' ); ?></span>
+				</button>
+				<?php if ( $allow_clear ) : ?>
+					<button type="button" class="sto-icon-select__clear" data-sto-icon-select-clear aria-label="<?php esc_attr_e( 'Clear icon', 'simple-theme-options' ); ?>">
+						<i class="fa-light fa-xmark" aria-hidden="true"></i>
+					</button>
+				<?php endif; ?>
+			</div>
+			<input
+				type="hidden"
+				class="sto-icon-select-value"
+				<?php echo null !== $input_name ? 'name="' . esc_attr( $input_name ) . '"' : ''; ?>
+				value="<?php echo esc_attr( $current ); ?>"
+				autocomplete="off"
+				<?php echo null !== $repeater_row_default ? ' data-sto-adv-rep-icon="1" data-sto-adv-rep-icon-default="' . esc_attr( $repeater_row_default ) . '"' : ''; ?>
+			/>
+			<div
+				class="sto-icon-select__modal"
+				id="<?php echo esc_attr( $wid . '_dialog' ); ?>"
+				data-sto-icon-select-modal
+				hidden
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="<?php echo esc_attr( $wid . '_title' ); ?>"
+			>
+				<div class="sto-icon-select__backdrop" data-sto-icon-select-close tabindex="-1" aria-hidden="true"></div>
+				<div class="sto-icon-select__panel" role="document">
+					<header class="sto-icon-select__head">
+						<h2 class="sto-icon-select__title" id="<?php echo esc_attr( $wid . '_title' ); ?>"><?php esc_html_e( 'Icon library', 'simple-theme-options' ); ?></h2>
+						<button type="button" class="sto-icon-select__close" data-sto-icon-select-close aria-label="<?php esc_attr_e( 'Close', 'simple-theme-options' ); ?>">
+							<i class="fa-light fa-xmark" aria-hidden="true"></i>
+						</button>
+					</header>
+					<div class="sto-icon-select__layout">
+						<nav class="sto-icon-select__nav" aria-label="<?php esc_attr_e( 'Icon library filters', 'simple-theme-options' ); ?>">
+							<button type="button" class="sto-icon-select__nav-btn sto-is-active" data-sto-icon-filter="all"><?php esc_html_e( 'All icons', 'simple-theme-options' ); ?></button>
+							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="solid"><?php esc_html_e( 'Solid', 'simple-theme-options' ); ?></button>
+							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="regular"><?php esc_html_e( 'Regular', 'simple-theme-options' ); ?></button>
+							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="light"><?php esc_html_e( 'Light', 'simple-theme-options' ); ?></button>
+							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="brands"><?php esc_html_e( 'Brands', 'simple-theme-options' ); ?></button>
+							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="wordpress"><?php esc_html_e( 'WordPress', 'simple-theme-options' ); ?></button>
+						</nav>
+						<div class="sto-icon-select__main">
+							<div class="sto-icon-select__search-wrap">
+								<label class="screen-reader-text" for="<?php echo esc_attr( $wid . '_q' ); ?>"><?php esc_html_e( 'Filter by name', 'simple-theme-options' ); ?></label>
+								<input type="search" class="sto-icon-select__search sto-input-text" id="<?php echo esc_attr( $wid . '_q' ); ?>" data-sto-icon-select-q placeholder="<?php esc_attr_e( 'Filter by name…', 'simple-theme-options' ); ?>" autocomplete="off" />
+								<span class="sto-icon-select__search-icon" aria-hidden="true"><i class="fa-light fa-magnifying-glass"></i></span>
+							</div>
+							<div class="sto-icon-select__grid-wrap">
+								<div class="sto-icon-select__grid" data-sto-icon-select-grid></div>
+							</div>
+						</div>
+					</div>
+					<footer class="sto-icon-select__foot">
+						<button type="button" class="button sto-icon-select__btn-secondary" data-sto-icon-select-close><?php esc_html_e( 'Cancel', 'simple-theme-options' ); ?></button>
+						<button type="button" class="button button-primary sto-icon-select__insert" data-sto-icon-select-insert disabled><?php esc_html_e( 'Insert', 'simple-theme-options' ); ?></button>
+					</footer>
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 
 	/**
@@ -583,91 +731,7 @@ final class IconSelect {
 	 * @param bool                 $allow_clear
 	 */
 	private function render_icon_widget( $id_suffix, $input_name, $current, $group_label, $allow_clear ) {
-		$wid = 'sto_icon_select_' . $id_suffix;
-		?>
-		<div
-			class="sto-icon-select"
-			data-sto-icon-select="1"
-			<?php if ( $allow_clear ) : ?>
-				data-sto-icon-select-allow-clear="1"
-			<?php endif; ?>
-			aria-label="<?php echo esc_attr( $group_label ); ?>"
-		>
-			<div class="sto-icon-select__chrome">
-				<button
-					type="button"
-					class="sto-icon-select__preview"
-					id="<?php echo esc_attr( $wid . '_preview' ); ?>"
-					data-sto-icon-select-open
-					aria-haspopup="dialog"
-					aria-expanded="false"
-					aria-controls="<?php echo esc_attr( $wid . '_dialog' ); ?>"
-				>
-					<span class="sto-icon-select__preview-inner" data-sto-icon-select-preview>
-						<?php if ( $current !== '' ) : ?>
-							<?php if ( self::is_dashicons_value( $current ) ) : ?>
-								<span class="<?php echo esc_attr( $current ); ?>" aria-hidden="true"></span>
-							<?php else : ?>
-								<i class="<?php echo esc_attr( $current ); ?>" aria-hidden="true"></i>
-							<?php endif; ?>
-						<?php else : ?>
-							<span class="sto-icon-select__placeholder"><?php esc_html_e( 'No icon', 'simple-theme-options' ); ?></span>
-						<?php endif; ?>
-					</span>
-					<span class="sto-icon-select__preview-hint"><?php esc_html_e( 'Click to choose', 'simple-theme-options' ); ?></span>
-				</button>
-				<?php if ( $allow_clear ) : ?>
-					<button type="button" class="sto-icon-select__clear" data-sto-icon-select-clear aria-label="<?php esc_attr_e( 'Clear icon', 'simple-theme-options' ); ?>">
-						<i class="fa-light fa-xmark" aria-hidden="true"></i>
-					</button>
-				<?php endif; ?>
-			</div>
-			<input type="hidden" class="sto-icon-select-value" name="<?php echo esc_attr( $input_name ); ?>" value="<?php echo esc_attr( $current ); ?>" autocomplete="off" />
-			<div
-				class="sto-icon-select__modal"
-				id="<?php echo esc_attr( $wid . '_dialog' ); ?>"
-				data-sto-icon-select-modal
-				hidden
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="<?php echo esc_attr( $wid . '_title' ); ?>"
-			>
-				<div class="sto-icon-select__backdrop" data-sto-icon-select-close tabindex="-1" aria-hidden="true"></div>
-				<div class="sto-icon-select__panel" role="document">
-					<header class="sto-icon-select__head">
-						<h2 class="sto-icon-select__title" id="<?php echo esc_attr( $wid . '_title' ); ?>"><?php esc_html_e( 'Icon library', 'simple-theme-options' ); ?></h2>
-						<button type="button" class="sto-icon-select__close" data-sto-icon-select-close aria-label="<?php esc_attr_e( 'Close', 'simple-theme-options' ); ?>">
-							<i class="fa-light fa-xmark" aria-hidden="true"></i>
-						</button>
-					</header>
-					<div class="sto-icon-select__layout">
-						<nav class="sto-icon-select__nav" aria-label="<?php esc_attr_e( 'Icon library filters', 'simple-theme-options' ); ?>">
-							<button type="button" class="sto-icon-select__nav-btn sto-is-active" data-sto-icon-filter="all"><?php esc_html_e( 'All icons', 'simple-theme-options' ); ?></button>
-							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="solid"><?php esc_html_e( 'Solid', 'simple-theme-options' ); ?></button>
-							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="regular"><?php esc_html_e( 'Regular', 'simple-theme-options' ); ?></button>
-							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="light"><?php esc_html_e( 'Light', 'simple-theme-options' ); ?></button>
-							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="brands"><?php esc_html_e( 'Brands', 'simple-theme-options' ); ?></button>
-							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="wordpress"><?php esc_html_e( 'WordPress', 'simple-theme-options' ); ?></button>
-						</nav>
-						<div class="sto-icon-select__main">
-							<div class="sto-icon-select__search-wrap">
-								<label class="screen-reader-text" for="<?php echo esc_attr( $wid . '_q' ); ?>"><?php esc_html_e( 'Filter by name', 'simple-theme-options' ); ?></label>
-								<input type="search" class="sto-icon-select__search sto-input-text" id="<?php echo esc_attr( $wid . '_q' ); ?>" data-sto-icon-select-q placeholder="<?php esc_attr_e( 'Filter by name…', 'simple-theme-options' ); ?>" autocomplete="off" />
-								<span class="sto-icon-select__search-icon" aria-hidden="true"><i class="fa-light fa-magnifying-glass"></i></span>
-							</div>
-							<div class="sto-icon-select__grid-wrap">
-								<div class="sto-icon-select__grid" data-sto-icon-select-grid></div>
-							</div>
-						</div>
-					</div>
-					<footer class="sto-icon-select__foot">
-						<button type="button" class="button sto-icon-select__btn-secondary" data-sto-icon-select-close><?php esc_html_e( 'Cancel', 'simple-theme-options' ); ?></button>
-						<button type="button" class="button button-primary sto-icon-select__insert" data-sto-icon-select-insert disabled><?php esc_html_e( 'Insert', 'simple-theme-options' ); ?></button>
-					</footer>
-				</div>
-			</div>
-		</div>
-		<?php
+		self::embedded_icon_widget_markup( (string) $id_suffix, (string) $input_name, (string) $current, (string) $group_label, (bool) $allow_clear, null );
 	}
 
 	/**

@@ -369,6 +369,58 @@
         });
     }
 
+    /**
+     * Whether a select may be upgraded to Select2 (broader than jQuery `:visible`, which
+     * false-negatives inside grids / during panel reveal).
+     *
+     * @param {JQuery} $el
+     * @return {boolean}
+     */
+    function isStoSelectEnhanceable($el) {
+        if (!$el || !$el.length) {
+            return false;
+        }
+        /* Typography selects are enhanced only in sto-typography.js (catalog + retries). */
+        if (
+            $el.is(
+                '[data-sto-typography-family], [data-sto-typography-variant], [data-sto-typography-subset], [data-sto-typography-transform]'
+            )
+        ) {
+            return false;
+        }
+        if ($el.prop('disabled')) {
+            return false;
+        }
+        if ($el.closest('.sto-required-hidden').length) {
+            return false;
+        }
+        if ($el.closest('.sto-field-group--empty-body').length) {
+            return false;
+        }
+        var $section = $el.closest('.sto-option-panel-section');
+        if ($section.length && $section.hasClass('sto-is-hidden')) {
+            return false;
+        }
+        var $typoBody = $el.closest('.sto-typography-body');
+        if ($typoBody.length && ($typoBody.is('[hidden]') || $typoBody.css('display') === 'none')) {
+            return false;
+        }
+        return true;
+    }
+
+    window.stoIsSelectEnhanceable = isStoSelectEnhanceable;
+
+    function refreshSelect2AfterVisibility($scope) {
+        var $panel = ($scope && $scope.length) ? $scope : $('.sto-option-panel-section.sto-is-active');
+        if (!$panel.length) {
+            return;
+        }
+        if (typeof window.stoRefreshTypographySelect2 === 'function') {
+            window.stoRefreshTypographySelect2($panel);
+        }
+        initStoSelect2($panel);
+    }
+
     function applyRequiredVisibility($scope) {
         var $context = ($scope && $scope.length) ? $scope : $('.sto-option-panel-section.sto-is-active');
         if (!$context.length) {
@@ -379,6 +431,7 @@
         // is toggled in the same sweep (DOM order). Re-run until stable (capped).
         var maxPasses = 12;
         var pass;
+        var hadVisibilityChange = false;
         for (pass = 0; pass < maxPasses; pass++) {
             var anyVisibilityChange = false;
             $context.find('[data-sto-required]').each(function() {
@@ -414,6 +467,7 @@
                 }
                 if (wasHidden !== $row.hasClass('sto-required-hidden')) {
                     anyVisibilityChange = true;
+                    hadVisibilityChange = true;
                 }
             });
             if (!anyVisibilityChange) {
@@ -422,6 +476,15 @@
         }
 
         markEmptyFieldGroups($context);
+
+        if (hadVisibilityChange) {
+            refreshSelect2AfterVisibility($context);
+            window.setTimeout(function() {
+                if (typeof window.stoRefreshTypographySelect2 === 'function') {
+                    window.stoRefreshTypographySelect2($context);
+                }
+            }, 50);
+        }
     }
 
     /**
@@ -432,6 +495,7 @@
      * and keeps Select2/TinyMCE sane. Fallback: disable :input if no fieldset (legacy markup).
      */
     function syncSectionPanelsDomDisabled() {
+        var $activePanel = $();
         $('.sto-option-panel-section').each(function() {
             var $p = $(this);
             var hide = $p.hasClass('sto-is-hidden');
@@ -441,7 +505,15 @@
             } else {
                 $p.find(':input').prop('disabled', hide);
             }
+            if (!hide) {
+                $activePanel = $p;
+            }
         });
+        if ($activePanel.length && typeof window.stoRefreshTypographySelect2 === 'function') {
+            window.setTimeout(function() {
+                window.stoRefreshTypographySelect2($activePanel);
+            }, 0);
+        }
     }
 
     window.stoApplyDependentFieldVisibility = function() {
@@ -458,6 +530,10 @@
      * descendant" check matches the legacy stacked layout.
      */
     function innerHasVisibleContent($inner) {
+        if ($inner.find('[data-sto-premium-locked="1"]').length) {
+            return true;
+        }
+
         var visible = false;
 
         // Either legacy (.sto-field-row direct child) or grid mode (.sto-field-group-cell > .sto-field-row).
@@ -543,7 +619,7 @@
             if ($s.data('select2')) {
                 return;
             }
-            if (!$s.is(':visible')) {
+            if (!isStoSelectEnhanceable($s)) {
                 return;
             }
 
@@ -590,7 +666,7 @@
             if ($s.data('select2')) {
                 return;
             }
-            if (!$s.is(':visible')) {
+            if (!isStoSelectEnhanceable($s)) {
                 return;
             }
 
@@ -714,8 +790,21 @@
                 $chk.closest('[data-sto-bg-segment]').addClass('sto-button-group__segment--selected');
             }
 
-            $wrap.off('change.stoBtnGrp').on('change.stoBtnGrp', '[data-sto-button-group-input]', syncVisual);
+            $wrap.off('change.stoBtnGrp').on('change.stoBtnGrp', '[data-sto-button-group-input]', function() {
+                syncVisual();
+                var $panel = $wrap.closest('.sto-option-panel-section.sto-is-active');
+                applyRequiredVisibility($panel.length ? $panel : undefined);
+                /* Content | Style tabs: typography may have booted hidden; retry Select2 after visibility. */
+                refreshSelect2AfterVisibility($panel.length ? $panel : undefined);
+                window.setTimeout(function() {
+                    if (typeof window.stoRefreshTypographySelect2 === 'function') {
+                        window.stoRefreshTypographySelect2($panel.length ? $panel : undefined);
+                    }
+                }, 80);
+            });
             syncVisual();
+            var $panelInit = $wrap.closest('.sto-option-panel-section.sto-is-active');
+            applyRequiredVisibility($panelInit.length ? $panelInit : undefined);
         });
     }
 
@@ -748,10 +837,13 @@
             if (typeof window.stoInitAdvancedRepeaterFields === 'function') {
                 window.stoInitAdvancedRepeaterFields($activePanel);
             }
-            initStoSelect2($activePanel);
             initStoImageSelectRadios($activePanel);
             initStoButtonGroups($activePanel);
             applyRequiredVisibility($activePanel);
+            initStoSelect2($activePanel);
+            if (typeof window.stoRefreshTypographySelect2 === 'function') {
+                window.stoRefreshTypographySelect2($activePanel);
+            }
             refreshStoWpEditors($activePanel);
             if (typeof window.stoInitTypographyPanels === 'function') {
                 window.stoInitTypographyPanels($activePanel);
@@ -1486,6 +1578,16 @@
                 $targetPanel.removeClass('sto-is-hidden').addClass('sto-is-active');
 
                 syncSectionPanelsDomDisabled();
+
+                if (typeof window.stoRefreshTypographySelect2 === 'function') {
+                    window.stoRefreshTypographySelect2($targetPanel);
+                    window.setTimeout(function() {
+                        window.stoRefreshTypographySelect2($targetPanel);
+                    }, 120);
+                    window.setTimeout(function() {
+                        window.stoRefreshTypographySelect2($targetPanel);
+                    }, 400);
+                }
 
                 var leafForSave = (targetSection || '').trim();
                 if (!leafForSave) {

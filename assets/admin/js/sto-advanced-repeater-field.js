@@ -5,7 +5,7 @@
  * shares one handler path (avoids per-wrap bind gaps and duplicate toggle handling).
  * After a row body is expanded or a new item is appended, calls `window.stoInitSelect2ForScope`
  * (from main.js) so selects inside formerly hidden bodies get Select2 — `initStoSelect2` skips
- * `:hidden` controls on first paint when `default_collapsed` is true.
+ * `:hidden` controls on first paint when `default_collapsed` is true. Also calls **`window.stoInitIconSelectFields`** for **`icon_select`** leaves.
  */
 (function ($) {
     'use strict';
@@ -39,6 +39,9 @@
         }
         if (k === 'select') {
             return String($leaf.find('[data-sto-adv-rep-select]').val() || '');
+        }
+        if (k === 'icon_select') {
+            return String($leaf.find('[data-sto-adv-rep-icon]').val() || '');
         }
         if (k === 'textarea') {
             return String($leaf.find('[data-sto-adv-rep-input]').val() || '');
@@ -141,6 +144,17 @@
             $cb.closest('.sto-switcher').removeClass('sto-switcher--on');
         } else if (k === 'select') {
             $leaf.find('[data-sto-adv-rep-select]').prop('selectedIndex', 0);
+        } else if (k === 'icon_select') {
+            var def = '';
+            var $h = $leaf.find('[data-sto-adv-rep-icon]').first();
+            def = String($h.attr('data-sto-adv-rep-icon-default') || '');
+            var $iso = $h.closest('.sto-icon-select[data-sto-icon-select]');
+            $h.val(def);
+            if ($iso.length && typeof window.stoIconSelectApplyClass === 'function') {
+                window.stoIconSelectApplyClass($iso.first(), def);
+            } else {
+                $h.trigger('change');
+            }
         } else {
             $leaf.find('[data-sto-adv-rep-input]').val('');
         }
@@ -216,6 +230,13 @@
             return;
         }
         window.stoInitSelect2ForScope($fr);
+    }
+
+    function refreshIconSelectForScope($scope) {
+        if (typeof window.stoInitIconSelectFields !== 'function') {
+            return;
+        }
+        window.stoInitIconSelectFields($scope);
     }
 
     function maxRows($wrap) {
@@ -325,6 +346,7 @@
                         marginBottom: ''
                     });
                     refreshSelect2ForFieldRow($btn);
+                    refreshIconSelectForScope($body);
                 });
                 $btn.attr('aria-expanded', 'true');
                 $btn.find('.sto-adv-rep__chev').removeClass('fa-chevron-down').addClass('fa-chevron-up');
@@ -353,6 +375,7 @@
             });
             syncFromAny($w);
             refreshSelect2ForFieldRow($w);
+            refreshIconSelectForScope($proto);
         });
 
         $fieldRow.on('click.stoAdvRep', '[data-sto-adv-rep-remove]', function (e) {
@@ -372,7 +395,7 @@
 
         $fieldRow.on(
             'input.stoAdvRep change.stoAdvRep',
-            '[data-sto-adv-rep-input], [data-sto-adv-rep-select], [data-sto-adv-rep-switcher]',
+            '[data-sto-adv-rep-input], [data-sto-adv-rep-select], [data-sto-adv-rep-switcher], [data-sto-adv-rep-icon]',
             function () {
                 var $t = $(this);
                 if ($t.is('[data-sto-adv-rep-switcher]')) {

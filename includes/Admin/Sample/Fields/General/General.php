@@ -276,7 +276,7 @@ final class General {
 				'section_slug'     => 'layout-inputs',
 				'id'               => 'layout_sample_radio_list_single',
 				'title'            => __( 'Radio list (single row, outside group)', 'simple-theme-options' ),
-				'description'      => __( 'Same tile radios as repeater radio lists, but **repeatable** is off: one list only (no add / drag / remove). **`radio_layout` => `stack`** stacks choices in a **column** (use **`inline`** for a horizontal row). Register with **RadioListsControl::register** and empty **group** so it prints on the section before the group panel. JSON is still **[{title,value}]** — use **sto_get_radio_lists_rows( \'layout_sample_radio_list_single\' )[0][\'value\']** (or the first element) in the theme.', 'simple-theme-options' ),
+				'description'      => __( 'Single-row radio list with stacked tile choices (registered outside the group panel).', 'simple-theme-options' ),
 				'repeatable'       => false,
 				'show_row_titles'  => false,
 				'radio_layout'     => 'stack',
@@ -305,7 +305,7 @@ final class General {
 				'section_slug'  => 'layout-inputs',
 				'id'            => 'input_controls',
 				'title'         => __( 'Text & number inputs', 'simple-theme-options' ),
-				'description'   => __( 'This leaf is Theme Settings → Field samples → Inputs & buttons (section slug layout-inputs). Representative controls: text, number, email, password, textarea, classic editor, phone, search, plus date, datetime, dimension, gallery, multi_text, radio_lists, **advanced_repeater** (nested JSON blocks), map, alignment, icon, and button groups. A **single-row** radio_lists demo (**layout_sample_radio_list_single**) is registered above this group on the same section.', 'simple-theme-options' ),
+				'description'   => __( 'Text, number, email, date, dimension, gallery, and related input samples for Field samples → Inputs & buttons.', 'simple-theme-options' ),
 				'fields'        => array(
 					array(
 						'type'            => 'text',
@@ -471,172 +471,6 @@ final class General {
 						),
 					),
 					array(
-						'type'          => 'advanced_repeater',
-						'id'            => 'layout_sample_advanced_repeater',
-						'title'         => __( 'Advanced repeater', 'simple-theme-options' ),
-						'description'   => __( 'Showcase row: **fieldset** (text, number, textarea, select, switcher), **nested repeater** (level 1), and **second nested repeater** (level 2) with text + select + switcher. Drag, collapse/expand (all levels start **collapsed** by default), add/remove. Schema types match **`AdvancedRepeaterControl`** only. One JSON array in **sto_options**. Theme: **sto_get_advanced_repeater_items( \'layout_sample_advanced_repeater\' )**. Optional **`default_collapsed` => false** opens new rows by default (default is **true**). Inner leaves: no per-breakpoint **responsive** (carve-out).', 'simple-theme-options' ),
-						'max'           => 12,
-						'default'       => array(
-							array(
-								'adv_block'    => array(
-									'adv_title'     => __( 'First block', 'simple-theme-options' ),
-									'adv_qty'       => '2',
-									'adv_summary'   => __( 'Demo summary for this top-level item.', 'simple-theme-options' ),
-									'adv_tier'      => 'standard',
-									'adv_feature'   => '0',
-								),
-								'adv_subitems' => array(
-									array(
-										'adv_note'  => __( 'Nested line A (level 1 note).', 'simple-theme-options' ),
-										'adv_cells' => array(
-											array(
-												'adv_cell_label' => __( 'Level-2 row', 'simple-theme-options' ),
-												'adv_cell_mode'  => 'mode_standard',
-												'adv_cell_on'    => '1',
-											),
-										),
-									),
-								),
-							),
-						),
-						'fields'        => array(
-							array(
-								'type'   => 'fieldset',
-								'id'     => 'adv_block',
-								'title'  => __( 'Primary fields (fieldset)', 'simple-theme-options' ),
-								'fields' => array(
-									array(
-										'type'          => 'text',
-										'id'            => 'adv_title',
-										'title'         => __( 'Block title', 'simple-theme-options' ),
-										'default'       => '',
-										'html_required' => true,
-									),
-									array(
-										'type'    => 'number',
-										'id'      => 'adv_qty',
-										'title'   => __( 'Quantity', 'simple-theme-options' ),
-										'default' => '1',
-										'min'     => '1',
-										'max'     => '99',
-										'step'    => '1',
-									),
-									array(
-										'type'          => 'textarea',
-										'id'            => 'adv_summary',
-										'title'         => __( 'Summary', 'simple-theme-options' ),
-										'description'   => __( 'Longer copy inside the fieldset.', 'simple-theme-options' ),
-										'default'       => '',
-										'placeholder'   => __( 'Optional summary…', 'simple-theme-options' ),
-									),
-									array(
-										'type'          => 'select',
-										'id'            => 'adv_tier',
-										'title'         => __( 'Tier (select)', 'simple-theme-options' ),
-										'placeholder'   => __( 'Choose…', 'simple-theme-options' ),
-										'default'       => 'standard',
-										'options'       => array(
-											'standard' => __( 'Standard', 'simple-theme-options' ),
-											'premium'  => __( 'Premium', 'simple-theme-options' ),
-										),
-									),
-									array(
-										'type'          => 'switcher',
-										'id'            => 'adv_feature',
-										'title'         => __( 'Feature toggle (switcher)', 'simple-theme-options' ),
-										'description'   => __( 'Example switcher inside the fieldset.', 'simple-theme-options' ),
-										'default'       => '0',
-									),
-								),
-							),
-							array(
-								'type'          => 'advanced_repeater',
-								'id'            => 'adv_subitems',
-								'title'         => __( 'Nested repeater (level 1)', 'simple-theme-options' ),
-								'max'           => 8,
-								'default'       => array(
-									array(
-										'adv_note'  => '',
-										'adv_cells' => array(
-											array(
-												'adv_cell_label' => '',
-												'adv_cell_mode'  => 'mode_standard',
-												'adv_cell_on'    => '0',
-											),
-										),
-									),
-								),
-								'fields'        => array(
-									array(
-										'type'    => 'textarea',
-										'id'      => 'adv_note',
-										'title'   => __( 'Note (level 1)', 'simple-theme-options' ),
-										'default' => '',
-									),
-									array(
-										'type'          => 'advanced_repeater',
-										'id'            => 'adv_cells',
-										'title'         => __( 'Nested repeater (level 2)', 'simple-theme-options' ),
-										'max'           => 6,
-										'default'       => array(
-											array(
-												'adv_cell_label' => '',
-												'adv_cell_mode'  => 'mode_standard',
-												'adv_cell_on'    => '0',
-											),
-										),
-										'fields'        => array(
-											array(
-												'type'    => 'text',
-												'id'      => 'adv_cell_label',
-												'title'   => __( 'Label (text)', 'simple-theme-options' ),
-												'default' => '',
-											),
-											array(
-												'type'        => 'select',
-												'id'          => 'adv_cell_mode',
-												'title'       => __( 'Mode (select)', 'simple-theme-options' ),
-												'default'     => 'mode_standard',
-												'options'     => array(
-													'mode_standard' => __( 'Standard', 'simple-theme-options' ),
-													'mode_alt'      => __( 'Alternate', 'simple-theme-options' ),
-												),
-											),
-											array(
-												'type'    => 'switcher',
-												'id'      => 'adv_cell_on',
-												'title'   => __( 'Inner toggle (level 2)', 'simple-theme-options' ),
-												'default' => '0',
-											),
-										),
-									),
-								),
-							),
-						),
-					),
-					array(
-						'type'          => 'google_map',
-						'id'            => 'layout_sample_google_map',
-						'title'         => __( 'Sample location map', 'simple-theme-options' ),
-						'description'   => __( 'Map (OpenStreetMap), search (Enter) fills fields; fields and search line stay in sync; coordinates trigger reverse lookup. One JSON in sto_options. Theme helper: sto_get_google_map_field().', 'simple-theme-options' ),
-						'default'       => array(
-							'formatted_address' => '1600 Pennsylvania Avenue NW, Washington, DC 20500, USA',
-							'address'           => '1600',
-							'street'            => 'Pennsylvania Avenue NW',
-							'city'              => 'Washington',
-							'state'             => 'DC',
-							'zip'               => '20500',
-							'country'           => 'United States',
-							'lat'               => '38.8976763',
-							'lng'               => '-77.0365298',
-						),
-						// image tooltip
-						'tooltip' => array(
-							'image' => 'http://woodmart-theme-options.local/wp-content/uploads/2013/09/dsc20040724_152504_532.jpg',
-							'preloader' => 'https://example.com/loader.mp4',
-						),
-					),
-					array(
 						'type'        => 'alignment',
 						'id'          => 'layout_sample_alignment',
 						'title'       => __( 'Sample alignment', 'simple-theme-options' ),
@@ -762,79 +596,238 @@ final class General {
 			)
 		);
 
-		Group::register(
+		AdvancedRepeaterControl::register(
 			array(
-				'section_slug'  => 'layout-code-borders',
-				'id'            => 'range_controls',
-				'title'         => __( 'Sliders & spacing', 'simple-theme-options' ),
-				'description'   => __( 'Slider + number + units: locked badge, custom suffix, and mixed rem / em / custom.', 'simple-theme-options' ),
+				'section_slug'  => 'layout-inputs',
+				'id'            => 'layout_sample_advanced_repeater',
+				'title'         => __( 'Advanced repeater', 'simple-theme-options' ),
+				'description'   => __( 'Showcase row: **fieldset** (text, number, textarea, select, switcher), **nested repeater** (level 1), and **second nested repeater** (level 2) with text + select + switcher. Drag, collapse/expand (all levels start **collapsed** by default), add/remove. Schema types match **`AdvancedRepeaterControl`** only. One JSON array in **sto_options**. Theme: **sto_get_advanced_repeater_items( \'layout_sample_advanced_repeater\' )**. Optional **`default_collapsed` => false** opens new rows by default (default is **true**). Inner leaves: no per-breakpoint **responsive** (carve-out).', 'simple-theme-options' ),
+				'max'           => 12,
+				'default'       => array(
+					array(
+						'adv_block'    => array(
+							'adv_title'   => __( 'First block', 'simple-theme-options' ),
+							'adv_qty'     => '2',
+							'adv_summary' => __( 'Demo summary for this top-level item.', 'simple-theme-options' ),
+							'adv_tier'    => 'standard',
+							'adv_feature' => '0',
+						),
+						'adv_subitems' => array(
+							array(
+								'adv_note'  => __( 'Nested line A (level 1 note).', 'simple-theme-options' ),
+								'adv_cells' => array(
+									array(
+										'adv_cell_label' => __( 'Level-2 row', 'simple-theme-options' ),
+										'adv_cell_mode'  => 'mode_standard',
+										'adv_cell_on'    => '1',
+									),
+								),
+							),
+						),
+					),
+				),
 				'fields'        => array(
 					array(
-						'type'          => 'range',
-						'id'            => 'layout_popup_width',
-						'title'         => __( 'Popup width', 'simple-theme-options' ),
-						'description'   => __( 'Width of the promo popup. One value for all viewports. Units: pixels only.', 'simple-theme-options' ),
-						'default'       => '760px',
-						'min'           => 200,
-						'max'           => 1400,
-						'responsive'    => true,
-						'device'        => array( 'lg', 'md', 'mobile' ),
-						'step'          => 1,
-						'units'         => array( 'px' ),
+						'type'   => 'fieldset',
+						'id'     => 'adv_block',
+						'title'  => __( 'Primary fields (fieldset)', 'simple-theme-options' ),
+						'fields' => array(
+							array(
+								'type'          => 'text',
+								'id'            => 'adv_title',
+								'title'         => __( 'Block title', 'simple-theme-options' ),
+								'default'       => '',
+								'html_required' => true,
+							),
+							array(
+								'type'    => 'number',
+								'id'      => 'adv_qty',
+								'title'   => __( 'Quantity', 'simple-theme-options' ),
+								'default' => '1',
+								'min'     => '1',
+								'max'     => '99',
+								'step'    => '1',
+							),
+							array(
+								'type'        => 'textarea',
+								'id'          => 'adv_summary',
+								'title'       => __( 'Summary', 'simple-theme-options' ),
+								'description' => __( 'Longer copy inside the fieldset.', 'simple-theme-options' ),
+								'default'     => '',
+								'placeholder' => __( 'Optional summary…', 'simple-theme-options' ),
+							),
+							array(
+								'type'        => 'select',
+								'id'          => 'adv_tier',
+								'title'       => __( 'Tier (select)', 'simple-theme-options' ),
+								'placeholder' => __( 'Choose…', 'simple-theme-options' ),
+								'default'     => 'standard',
+								'options'     => array(
+									'standard' => __( 'Standard', 'simple-theme-options' ),
+									'premium'  => __( 'Premium', 'simple-theme-options' ),
+								),
+							),
+							array(
+								'type'        => 'switcher',
+								'id'          => 'adv_feature',
+								'title'       => __( 'Feature toggle (switcher)', 'simple-theme-options' ),
+								'description' => __( 'Example switcher inside the fieldset.', 'simple-theme-options' ),
+								'default'     => '0',
+							),
+						),
 					),
 					array(
-						'type'          => 'range',
-						'id'            => 'layout_popup_show_after_pages',
-						'title'         => __( 'Show after number of pages visited', 'simple-theme-options' ),
-						'description'   => __( 'How many pages the user should visit before the popup is shown. Uses a custom display label (not a CSS unit).', 'simple-theme-options' ),
-						'default'       => '5',
-						'min'           => 0,
-						'max'           => 50,
-						'step'          => 1,
-						'units'         => array( 'custom' ),
-						'unit_label'    => __( 'PAGE', 'simple-theme-options' ),
-					),
-					array(
-						'type'          => 'range',
-						'id'            => 'layout_popup_padding',
-						'title'         => __( 'Popup padding', 'simple-theme-options' ),
-						'description'   => __( 'Inner padding; can differ per device tab when responsive is enabled. Units: rem, em, or custom suffix.', 'simple-theme-options' ),
-						'default'       => '30px',
-						'min'           => 0,
-						'max'           => 120,
-						'step'          => 1,
-						'responsive'    => true,
-						'units'         => array( 'rem', 'em', 'custom' ),
+						'type'    => 'advanced_repeater',
+						'id'      => 'adv_subitems',
+						'title'   => __( 'Nested repeater (level 1)', 'simple-theme-options' ),
+						'max'     => 8,
+						'default' => array(
+							array(
+								'adv_note'  => '',
+								'adv_cells' => array(
+									array(
+										'adv_cell_label' => '',
+										'adv_cell_mode'  => 'mode_standard',
+										'adv_cell_on'    => '0',
+									),
+								),
+							),
+						),
+						'fields'  => array(
+							array(
+								'type'    => 'textarea',
+								'id'      => 'adv_note',
+								'title'   => __( 'Note (level 1)', 'simple-theme-options' ),
+								'default' => '',
+							),
+							array(
+								'type'    => 'advanced_repeater',
+								'id'      => 'adv_cells',
+								'title'   => __( 'Nested repeater (level 2)', 'simple-theme-options' ),
+								'max'     => 6,
+								'default' => array(
+									array(
+										'adv_cell_label' => '',
+										'adv_cell_mode'  => 'mode_standard',
+										'adv_cell_on'    => '0',
+									),
+								),
+								'fields'  => array(
+									array(
+										'type'    => 'text',
+										'id'      => 'adv_cell_label',
+										'title'   => __( 'Label (text)', 'simple-theme-options' ),
+										'default' => '',
+									),
+									array(
+										'type'    => 'select',
+										'id'      => 'adv_cell_mode',
+										'title'   => __( 'Mode (select)', 'simple-theme-options' ),
+										'default' => 'mode_standard',
+										'options' => array(
+											'mode_standard' => __( 'Standard', 'simple-theme-options' ),
+											'mode_alt'      => __( 'Alternate', 'simple-theme-options' ),
+										),
+									),
+									array(
+										'type'    => 'switcher',
+										'id'      => 'adv_cell_on',
+										'title'   => __( 'Inner toggle (level 2)', 'simple-theme-options' ),
+										'default' => '0',
+									),
+								),
+							),
+						),
 					),
 				),
 			)
 		);
 
-		Group::register(
+		GoogleMapControl::register(
 			array(
-				'section_slug' => 'layout-code-borders',
-				'id'           => 'portfolio_url',
-				'title'        => __( 'URL slugs (two columns)', 'simple-theme-options' ),
-				'description'  => __( 'Side-by-side text fields on the 12-column grid; they stack on narrow screens.', 'simple-theme-options' ),
-				'fields'       => array(
-					array(
-						'type'        => 'text',
-						'id'          => 'portfolio_project_slug',
-						'title'       => __( 'Portfolio project URL slug', 'simple-theme-options' ),
-						'description' => __( 'IMPORTANT: You need to go to WordPress Settings -> Permalinks and resave them to apply these settings.', 'simple-theme-options' ),
-						'default'     => '',
-						'placeholder' => 'portfolio',
-						'width'       => '1-2',
-					),
-					array(
-						'type'        => 'text',
-						'id'          => 'portfolio_category_slug',
-						'title'       => __( 'Portfolio category URL slug', 'simple-theme-options' ),
-						'description' => __( 'IMPORTANT: You need to go to WordPress Settings -> Permalinks and resave them to apply these settings.', 'simple-theme-options' ),
-						'default'     => '',
-						'placeholder' => 'portfolio-category',
-						'width'       => '1-2',
-					),
+				'section_slug'  => 'layout-inputs',
+				'id'            => 'layout_sample_google_map',
+				'title'         => __( 'Sample location map', 'simple-theme-options' ),
+				'description'   => __( 'Map (OpenStreetMap), search (Enter) fills fields; fields and search line stay in sync; coordinates trigger reverse lookup. One JSON in sto_options. Theme helper: sto_get_google_map_field().', 'simple-theme-options' ),
+				'default'       => array(
+					'formatted_address' => '1600 Pennsylvania Avenue NW, Washington, DC 20500, USA',
+					'address'           => '1600',
+					'street'            => 'Pennsylvania Avenue NW',
+					'city'              => 'Washington',
+					'state'             => 'DC',
+					'zip'               => '20500',
+					'country'           => 'United States',
+					'lat'               => '38.8976763',
+					'lng'               => '-77.0365298',
+				),
+				'tooltip'       => array(
+					'image'     => 'http://woodmart-theme-options.local/wp-content/uploads/2013/09/dsc20040724_152504_532.jpg',
+					'preloader' => 'https://example.com/loader.mp4',
+				),
+			)
+		);
+
+		Range::register_many(
+			array(
+				array(
+					'section_slug' => 'layout-code-borders',
+					'id'           => 'layout_popup_width',
+					'title'        => __( 'Popup width', 'simple-theme-options' ),
+					'description'  => __( 'Width of the promo popup. One value for all viewports. Units: pixels only.', 'simple-theme-options' ),
+					'default'      => '760px',
+					'min'          => 200,
+					'max'          => 1400,
+					'responsive'   => true,
+					'device'       => array( 'lg', 'md', 'mobile' ),
+					'step'         => 1,
+					'units'        => array( 'px' ),
+				),
+				array(
+					'section_slug' => 'layout-code-borders',
+					'id'           => 'layout_popup_show_after_pages',
+					'title'        => __( 'Show after number of pages visited', 'simple-theme-options' ),
+					'description'  => __( 'How many pages the user should visit before the popup is shown. Uses a custom display label (not a CSS unit).', 'simple-theme-options' ),
+					'default'      => '5',
+					'min'          => 0,
+					'max'          => 50,
+					'step'         => 1,
+					'units'        => array( 'custom' ),
+					'unit_label'   => __( 'PAGE', 'simple-theme-options' ),
+				),
+				array(
+					'section_slug' => 'layout-code-borders',
+					'id'           => 'layout_popup_padding',
+					'title'        => __( 'Popup padding', 'simple-theme-options' ),
+					'description'  => __( 'Inner padding; can differ per device tab when responsive is enabled. Units: rem, em, or custom suffix.', 'simple-theme-options' ),
+					'default'      => '30px',
+					'min'          => 0,
+					'max'          => 120,
+					'step'         => 1,
+					'responsive'   => true,
+					'units'        => array( 'rem', 'em', 'custom' ),
+				),
+			)
+		);
+
+		Input::register_many(
+			array(
+				array(
+					'section_slug'  => 'layout-code-borders',
+					'type'          => 'text',
+					'id'            => 'portfolio_project_slug',
+					'title'         => __( 'Portfolio project URL slug', 'simple-theme-options' ),
+					'description'   => __( 'IMPORTANT: You need to go to WordPress Settings -> Permalinks and resave them to apply these settings.', 'simple-theme-options' ),
+					'default'       => '',
+					'placeholder'   => 'portfolio',
+				),
+				array(
+					'section_slug'  => 'layout-code-borders',
+					'type'          => 'text',
+					'id'            => 'portfolio_category_slug',
+					'title'         => __( 'Portfolio category URL slug', 'simple-theme-options' ),
+					'description'   => __( 'IMPORTANT: You need to go to WordPress Settings -> Permalinks and resave them to apply these settings.', 'simple-theme-options' ),
+					'default'       => '',
+					'placeholder'   => 'portfolio-category',
 				),
 			)
 		);
@@ -844,42 +837,38 @@ final class General {
 				'section_slug' => 'layout-code-borders',
 				'id'           => 'custom_css',
 				'title'        => __( 'Code editor (auto-detect)', 'simple-theme-options' ),
-				'description'  => __( 'Paste CSS, JS, HTML, PHP, JSON, Markdown, XML, or YAML — mode follows content; override from the language chip.', 'simple-theme-options' ),
+				'description'  => __( 'Paste CSS, JS, HTML, PHP, JSON, Markdown, XML, or YAML — mode follows content; override from the language chip. This sample opts in to autocomplete (`autocomplete => true`) so Ctrl/Cmd+Space hints are available here only.', 'simple-theme-options' ),
 				'mode'         => 'auto',
 				'height'       => 320,
+				'autocomplete' => true,
 				'placeholder'  => "/* Paste any CSS, JS, HTML, PHP, JSON or Markdown — the editor will detect the language. */\n.site-header {\n\tbackground-color: #fff;\n}",
 				'default'      => '',
 			)
 		);
 
-		Group::register(
+		CodeEditor::register(
 			array(
 				'section_slug' => 'layout-code-borders',
-				'id'           => 'custom_code_snippets',
-				'title'        => __( 'Header & footer code', 'simple-theme-options' ),
-				'description'  => __( 'Two editors in one row (`width` 1-2): HTML for the head, JavaScript before closing body.', 'simple-theme-options' ),
-				'fields'       => array(
-					array(
-						'type'        => 'code_editor',
-						'id'          => 'custom_header_html',
-						'title'       => __( 'Header HTML', 'simple-theme-options' ),
-						'description' => __( 'Sanitized with `wp_kses_post()` — safe for editor-cap users. Output inside the `<head>` tag.', 'simple-theme-options' ),
-						'mode'        => 'html',
-						'height'      => 220,
-						'placeholder' => "<!-- Google Tag Manager, verification meta, etc. -->",
-						'width'       => '1-2',
-					),
-					array(
-						'type'        => 'code_editor',
-						'id'          => 'custom_footer_js',
-						'title'       => __( 'Footer JavaScript', 'simple-theme-options' ),
-						'description' => __( 'Stored verbatim — `manage_options` capability is required to save. Output just before the closing `</body>` tag, unescaped.', 'simple-theme-options' ),
-						'mode'        => 'javascript',
-						'height'      => 220,
-						'placeholder' => "// Custom analytics / chat-widget bootstrap",
-						'width'       => '1-2',
-					),
-				),
+				'id'           => 'custom_header_html',
+				'title'        => __( 'Header HTML', 'simple-theme-options' ),
+				'description'  => __( 'Sanitized with `wp_kses_post()` — safe for editor-cap users. Output inside the `<head>` tag.', 'simple-theme-options' ),
+				'mode'         => 'html',
+				'height'       => 220,
+				'placeholder'  => "<!-- Google Tag Manager, verification meta, etc. -->",
+				'default'      => '',
+			)
+		);
+
+		CodeEditor::register(
+			array(
+				'section_slug' => 'layout-code-borders',
+				'id'           => 'custom_footer_js',
+				'title'        => __( 'Footer JavaScript', 'simple-theme-options' ),
+				'description'  => __( 'Stored verbatim — `manage_options` capability is required to save. Output just before the closing `</body>` tag, unescaped.', 'simple-theme-options' ),
+				'mode'         => 'javascript',
+				'height'       => 220,
+				'placeholder'  => "// Custom analytics / chat-widget bootstrap",
+				'default'      => '',
 			)
 		);
 
@@ -924,50 +913,42 @@ final class General {
 			)
 		);
 
-		Group::register(
+		Tabs::register(
 			array(
 				'section_slug'  => 'layout-tabs-side',
-				'id'            => 'layout_custom_buttons_tabs',
-				'title'         => __( 'Tabbed button slots', 'simple-theme-options' ),
-				'description'   => __( 'Tabs inside a group: each tab repeats the same inner fields; storage keys include the tab id.', 'simple-theme-options' ),
+				'id'            => 'layout_cust_btn',
+				'title'         => __( 'Button bar', 'simple-theme-options' ),
+				'description'   => __( 'Five slots share one field template; values are stored per tab (standalone Pro tabs row — not inside a group).', 'simple-theme-options' ),
+				'tabs'          => array(
+					array( 'id' => 'b1', 'label' => __( 'Slot 1', 'simple-theme-options' ) ),
+					array( 'id' => 'b2', 'label' => __( 'Slot 2', 'simple-theme-options' ) ),
+					array( 'id' => 'b3', 'label' => __( 'Slot 3', 'simple-theme-options' ) ),
+					array( 'id' => 'b4', 'label' => __( 'Slot 4', 'simple-theme-options' ) ),
+					array( 'id' => 'b5', 'label' => __( 'Slot 5', 'simple-theme-options' ) ),
+				),
 				'fields'        => array(
 					array(
-						'type'        => 'tabs',
-						'id'          => 'layout_cust_btn',
-						'title'       => __( 'Button bar', 'simple-theme-options' ),
-						'description' => __( 'Five slots share one field template; values are stored per tab.', 'simple-theme-options' ),
-						'tabs'        => array(
-							array( 'id' => 'b1', 'label' => __( 'Slot 1', 'simple-theme-options' ) ),
-							array( 'id' => 'b2', 'label' => __( 'Slot 2', 'simple-theme-options' ) ),
-							array( 'id' => 'b3', 'label' => __( 'Slot 3', 'simple-theme-options' ) ),
-							array( 'id' => 'b4', 'label' => __( 'Slot 4', 'simple-theme-options' ) ),
-							array( 'id' => 'b5', 'label' => __( 'Slot 5', 'simple-theme-options' ) ),
-						),
-						'fields'      => array(
-							array(
-								'type'          => 'text',
-								'id'            => 'btn_url',
-								'title'         => __( 'Link URL', 'simple-theme-options' ),
-								'default'       => '',
-								'placeholder'   => 'https://',
-								'width'         => '1-3',
-							),
-							array(
-								'type'          => 'text',
-								'id'            => 'btn_text',
-								'title'         => __( 'Label', 'simple-theme-options' ),
-								'default'       => '',
-								'width'         => '1-3',
-							),
-							array(
-								'type'          => 'text',
-								'id'            => 'btn_icon',
-								'title'         => __( 'Icon URL', 'simple-theme-options' ),
-								'description'   => __( 'Icon URL or attachment ID as text (media picker can be wired in the theme).', 'simple-theme-options' ),
-								'default'       => '',
-								'width'         => '1-3',
-							),
-						),
+						'type'        => 'text',
+						'id'          => 'btn_url',
+						'title'       => __( 'Link URL', 'simple-theme-options' ),
+						'default'     => '',
+						'placeholder' => 'https://',
+						'width'       => '1-3',
+					),
+					array(
+						'type'    => 'text',
+						'id'      => 'btn_text',
+						'title'   => __( 'Label', 'simple-theme-options' ),
+						'default' => '',
+						'width'   => '1-3',
+					),
+					array(
+						'type'        => 'text',
+						'id'          => 'btn_icon',
+						'title'       => __( 'Icon URL', 'simple-theme-options' ),
+						'description' => __( 'Icon URL or attachment ID as text (media picker can be wired in the theme).', 'simple-theme-options' ),
+						'default'     => '',
+						'width'       => '1-3',
 					),
 				),
 			)
@@ -1123,30 +1104,18 @@ final class General {
 						),
 					),
 					array(
-						'id'            => 'sidebar_layout_extras',
-						'title'         => __( 'Nested options', 'simple-theme-options' ),
-						'description'   => __( 'Subgroup inside Sidebar — demonstrates nested group + conditional visibility.', 'simple-theme-options' ),
-						'required'      => array(
+						'id'          => 'sidebar_sticky',
+						'title'       => __( 'Sticky sidebar', 'simple-theme-options' ),
+						'description' => __( 'Shown only when position is right and width is large.', 'simple-theme-options' ),
+						'default'     => 'no',
+						'options'     => array(
+							'no'  => __( 'No', 'simple-theme-options' ),
+							'yes' => __( 'Yes', 'simple-theme-options' ),
+						),
+						'required'    => array(
 							array(
 								'sidebar_position' => 'right',
-							),
-						),
-						'fields'        => array(
-							array(
-								'id'          => 'sidebar_sticky',
-								'title'       => __( 'Sticky sidebar', 'simple-theme-options' ),
-								'description' => __( 'Shown only when position is right and width is large.', 'simple-theme-options' ),
-								'default'     => 'no',
-								'options'     => array(
-									'no'  => __( 'No', 'simple-theme-options' ),
-									'yes' => __( 'Yes', 'simple-theme-options' ),
-								),
-								'required'     => array(
-									array(
-										'sidebar_position' => 'right',
-										'sidebar_size' => 'large',
-									),
-								),
+								'sidebar_size'     => 'large',
 							),
 						),
 					),

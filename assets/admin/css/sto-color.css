@@ -4,6 +4,8 @@
  * a full-bleed .color-alpha layer over the vendor checkerboard. Container is
  * inline-grid so row 1 stays one line; `.wp-picker-holder` is `display:none`
  * until `.wp-picker-active` so closed pickers never show an empty bordered strip.
+ * The `.wp-color-result` button must not use `background* !important` — Iris paints
+ * the swatch via inline background (+ .color-alpha); !important hides the color.
  * Open holder trims inline-block gap above Iris. Standalone rows are flush.
  */
 
@@ -52,7 +54,8 @@
 	box-shadow: var(--sto-field-soft-shadow, 0 2px 4px rgba(0, 0, 0, 0.05));
 	position: relative;
 	overflow: hidden;
-	background-color: #fff !important;
+	/* Let Iris / wp-color-picker-alpha set the swatch via inline `background` (+ `.color-alpha`).
+	 * Never use `background* !important` here — it overrides the picker and the preview stays white. */
 }
 
 /* Alpha: one swatch — full-area color (incl. transparency) over vendor checkerboard (no split strip) */
@@ -244,6 +247,38 @@
 	border-radius: 3px;
 	overflow: hidden;
 	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+	min-width: 18px;
+}
+
+/*
+ * Iris + wp-color-picker-alpha: `_dimensions()` splits `(picker width − square)` across **two**
+ * vertical strips (hue + opacity). In narrow Theme Settings columns that difference can collapse
+ * toward 0px so the opacity rail “disappears” while the SV square still looks fine.
+ * Skip `palette_ui` layouts — those set `.iris-picker { width: 100% }` and widen the holder separately.
+ */
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-color-wrap.sto-color--alpha:not(.sto-color-wrap--palette-ui) .wp-picker-container.wp-picker-active .wp-picker-holder {
+	min-width: min(100%, 288px);
+	overflow: visible;
+}
+
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-color-wrap.sto-color--alpha:not(.sto-color-wrap--palette-ui) .iris-picker {
+	min-width: 262px;
+	width: 262px !important;
+	max-width: 100%;
+	box-sizing: border-box;
+	overflow: visible;
+}
+
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-color-wrap.sto-color--alpha:not(.sto-color-wrap--palette-ui) .iris-picker .iris-strip:not(.iris-strip-alpha) {
+	min-width: 18px;
+}
+
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-color-wrap.sto-color--alpha:not(.sto-color-wrap--palette-ui) .iris-border {
+	overflow: visible;
+}
+
+.sto-option-panel-wrapper :is(.sto-field-row-color, .sto-field-row-gradient) .sto-color-wrap.sto-color--alpha:not(.sto-color-wrap--palette-ui) .iris-picker-inner {
+	overflow: visible;
 }
 
 /* External reset */

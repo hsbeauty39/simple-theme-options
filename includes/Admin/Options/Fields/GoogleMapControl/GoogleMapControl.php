@@ -8,6 +8,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveControl;
 use SimpleThemeOptions\Admin\Options\RequiredVisibility;
@@ -420,7 +421,8 @@ final class GoogleMapControl {
 				<?php FieldTitle::render_heading( $title, $context, $tooltip, $field_id, $is_inner, $toolbar_markup ); ?>
 			<?php endif; ?>
 
-			<?php if ( $tabs_pane_bp !== '' && $bps_storage ) : ?>
+			<?php if ( PremiumFieldGate::render_controls_or_locked_placeholder( $title, 'google_map' ) ) : ?>
+			<?php elseif ( $tabs_pane_bp !== '' && $bps_storage ) : ?>
 				<?php
 				$value_map = $this->get_value_map( $field_id, $defaults, $bps_storage );
 				$json      = isset( $value_map[ $tabs_pane_bp ] ) ? (string) $value_map[ $tabs_pane_bp ] : wp_json_encode( $defaults );
@@ -454,7 +456,7 @@ final class GoogleMapControl {
 				?>
 			<?php endif; ?>
 
-			<?php if ( $description ) : ?>
+			<?php if ( $description && ! PremiumFieldGate::is_locked() ) : ?>
 				<p class="sto-field-description"><?php echo esc_html( $description ); ?></p>
 			<?php endif; ?>
 		</div>

@@ -100,7 +100,7 @@
         var $prev = $root.find('[data-sto-icon-select-preview]');
         var $hidden = $root.find('.sto-icon-select-value');
         $hidden.val(classStr);
-        if (classStr) {
+		if (classStr) {
             if (isDashiconsClass(classStr)) {
                 $prev.html('<span class="' + escAttr(classStr) + '" aria-hidden="true"></span>');
             } else {
@@ -109,6 +109,9 @@
         } else {
             var ph = (window.stoIconSelectField && window.stoIconSelectField.i18n && window.stoIconSelectField.i18n.noIcon) || 'No icon';
             $prev.html('<span class="sto-icon-select__placeholder">' + escHtml(ph) + '</span>');
+        }
+        if ($hidden.attr('data-sto-adv-rep-icon')) {
+            $hidden.trigger('change');
         }
     }
 
@@ -242,6 +245,17 @@
         $root.find('.sto-icon-select[data-sto-icon-select]').each(function() {
             bindOne($(this));
         });
+    };
+
+    /**
+     * @param {JQuery} $isoRoot `.sto-icon-select[data-sto-icon-select]`
+     * @param {string} classStr
+     */
+    window.stoIconSelectApplyClass = function($isoRoot, classStr) {
+        if (!$isoRoot.length) {
+            return;
+        }
+        syncPreview($isoRoot.first(), String(classStr || ''));
     };
 
     $(function() {

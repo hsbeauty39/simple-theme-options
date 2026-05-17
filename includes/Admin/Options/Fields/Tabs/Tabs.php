@@ -14,6 +14,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Common\LayoutWidth;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
@@ -711,12 +712,16 @@ final class Tabs {
 		}
 
 		$tab_defs        = $config['tab_defs'];
-		$tab_list_main   = empty( $breakpoints ) ? $this->build_tab_list_markup( $tabs_id, $tab_defs, '' ) : '';
+		$tab_list_main   = '';
 		$tab_list_master = '';
-		if ( ! empty( $breakpoints ) ) {
-			$tab_list_master = $this->build_tab_list_markup( $tabs_id, $tab_defs, '', true, '' );
+		$heading_trail   = '';
+		if ( ! PremiumFieldGate::is_locked() ) {
+			$tab_list_main = empty( $breakpoints ) ? $this->build_tab_list_markup( $tabs_id, $tab_defs, '' ) : '';
+			if ( ! empty( $breakpoints ) ) {
+				$tab_list_master = $this->build_tab_list_markup( $tabs_id, $tab_defs, '', true, '' );
+			}
+			$heading_trail = empty( $breakpoints ) ? $tab_list_main : '';
 		}
-		$heading_trail = empty( $breakpoints ) ? $tab_list_main : '';
 
 		$title = isset( $config['title'] ) ? (string) $config['title'] : '';
 		?>
@@ -740,10 +745,14 @@ final class Tabs {
 				FieldTitle::render_heading( $title, $context, $tooltip_cfg, $tabs_id, false, $heading_trail, $tab_list_master );
 			}
 
-			$dom_base = $this->tabs_dom_base( $tabs_id, '' );
-			$this->render_tabs_stack( $section_slug, $tabs_id, $config, $inner_ctx, $dom_base, null );
+			if ( PremiumFieldGate::render_controls_or_locked_placeholder( $title, 'tabs' ) ) {
+				// Premium body placeholder only.
+			} else {
+				$dom_base = $this->tabs_dom_base( $tabs_id, '' );
+				$this->render_tabs_stack( $section_slug, $tabs_id, $config, $inner_ctx, $dom_base, null );
+			}
 
-			if ( $desc !== '' ) {
+			if ( $desc !== '' && ! PremiumFieldGate::is_locked() ) {
 				echo '<p class="sto-field-description">' . esc_html( $desc ) . '</p>';
 			}
 			?>

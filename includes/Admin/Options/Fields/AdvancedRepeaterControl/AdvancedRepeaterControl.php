@@ -8,6 +8,8 @@ use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
+use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\RequiredVisibility;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
@@ -16,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * **Advanced repeater** — ordered **items** (JSON in **`sto_options[id]`**), each item a map of **logical sub-keys**
  * built from a **schema** (`fields`). Supports **nested repeaters**, **`fieldset`** grouping (nested object), and
- * scalar leaves: **`text`**, **`number`**, **`textarea`**, **`select`**, **`switcher`**. Admin: **Add item**, **drag**
+ * scalar leaves: **`text`**, **`number`**, **`textarea`**, **`select`**, **`switcher`**, **`icon_select`**. Admin: **Add item**, **drag**
  * reorder (**jQuery UI Sortable**), **collapse / expand** per item, **remove** row. New rows match the same **collapsed /
  * expanded** default as the initial markup. Optional **`default_collapsed`** (bool) on **`register()`** — when **true**
  * (default), every root and nested item renders **collapsed** until the user expands it. Set **`default_collapsed` =>
@@ -271,6 +273,24 @@ final class AdvancedRepeaterControl {
 					'html_required' => ! empty( $item['html_required'] ),
 				);
 				++$count;
+				continue;
+			}
+
+			if ( $type === 'icon_select' ) {
+				$allow_clear_ic = ! empty( $item['allow_clear'] );
+				$raw_icon_def   = isset( $item['default'] ) ? (string) $item['default'] : '';
+				$resolved_def   = IconSelect::coerce_advanced_repeater_leaf_value( $raw_icon_def, $allow_clear_ic, '' );
+				$out[]          = array(
+					'type'          => 'icon_select',
+					'id'            => $id,
+					'title'         => isset( $item['title'] ) ? (string) $item['title'] : '',
+					'description'   => isset( $item['description'] ) ? (string) $item['description'] : '',
+					'default'       => $resolved_def,
+					'allow_clear'   => $allow_clear_ic,
+					'html_required' => ! empty( $item['html_required'] ),
+				);
+				++$count;
+				continue;
 			}
 		}
 
@@ -310,6 +330,8 @@ final class AdvancedRepeaterControl {
 			if ( in_array( $t, array( 'text', 'number', 'textarea', 'switcher' ), true ) ) {
 				$row[ $id ] = isset( $node['default'] ) ? (string) $node['default'] : ( $t === 'switcher' ? '0' : '' );
 			} elseif ( $t === 'select' ) {
+				$row[ $id ] = isset( $node['default'] ) ? (string) $node['default'] : '';
+			} elseif ( $t === 'icon_select' ) {
 				$row[ $id ] = isset( $node['default'] ) ? (string) $node['default'] : '';
 			} elseif ( $t === 'fieldset' ) {
 				$row[ $id ] = $this->empty_item_for_schema( $node['fields'] );
@@ -390,6 +412,15 @@ final class AdvancedRepeaterControl {
 				} else {
 					$out[ $id ] = $vk;
 				}
+				continue;
+			}
+			if ( $t === 'icon_select' ) {
+				$out[ $id ] = IconSelect::coerce_advanced_repeater_leaf_value(
+					is_scalar( $val ) ? (string) $val : '',
+					! empty( $node['allow_clear'] ),
+					isset( $node['default'] ) ? (string) $node['default'] : ''
+				);
+				continue;
 			}
 		}
 
@@ -553,6 +584,9 @@ final class AdvancedRepeaterControl {
 				<?php FieldTitle::render_heading( $title, $context, $tooltip, $field_id, $is_inner, '' ); ?>
 			<?php endif; ?>
 
+			<?php if ( PremiumFieldGate::render_controls_or_locked_placeholder( $title, 'advanced_repeater' ) ) : ?>
+			<?php else : ?>
+
 			<div
 				class="sto-adv-rep"
 				data-sto-adv-rep="1"
@@ -597,7 +631,9 @@ final class AdvancedRepeaterControl {
 				<button type="button" class="button sto-adv-rep__add" data-sto-adv-rep-add><?php echo esc_html( $i18n['addItem'] ); ?></button>
 			</div>
 
-			<?php if ( $description ) : ?>
+			<?php endif; ?>
+
+			<?php if ( $description && ! PremiumFieldGate::is_locked() ) : ?>
 				<p class="sto-field-description"><?php echo esc_html( $description ); ?></p>
 			<?php endif; ?>
 		</div>
@@ -772,6 +808,33 @@ final class AdvancedRepeaterControl {
 					<?php endif; ?>
 				</div>
 				<?php
+				continue;
+			}
+
+			if ( $type === 'icon_select' ) {
+				$allow_ic = ! empty( $node['allow_clear'] );
+				$def_ic   = isset( $node['default'] ) ? (string) $node['default'] : '';
+				$vc       = IconSelect::coerce_advanced_repeater_leaf_value( $vstr, $allow_ic, $def_ic );
+				?>
+				<div class="sto-adv-rep__field sto-adv-rep__field--icon-select sto-field-row-icon-select" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="icon_select">
+					<?php if ( $title !== '' ) : ?>
+						<span class="sto-adv-rep__label"><?php echo esc_html( $title ); ?></span>
+					<?php endif; ?>
+					<?php
+					IconSelect::render_embedded_widget_markup(
+						$fid,
+						null,
+						$vc,
+						( $title !== '' ? $title : $id ),
+						$allow_ic,
+						$def_ic
+					);
+					?>
+					<?php if ( $desc !== '' ) : ?>
+						<p class="sto-field-description sto-adv-rep__hint"><?php echo esc_html( $desc ); ?></p>
+					<?php endif; ?>
+				</div>
+				<?php
 			}
 		}
 	}
@@ -936,6 +999,49 @@ final class AdvancedRepeaterControl {
 		$field_id = sanitize_key( (string) $field_id );
 
 		return $field_id && ! empty( $this->registered_ids[ $field_id ] );
+	}
+
+	/**
+	 * True when any registered repeater **`schema`** (including nested) uses **`icon_select`** leaves — used to localize the icon manifest even without standalone **`IconSelect`** fields.
+	 */
+	public function registry_schema_contains_icon_select(): bool {
+		foreach ( $this->fields_by_id as $field ) {
+			if ( empty( $field['schema'] ) || ! is_array( $field['schema'] ) ) {
+				continue;
+			}
+			if ( $this->schema_tree_contains_icon_select( $field['schema'] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $schema
+	 */
+	private function schema_tree_contains_icon_select( array $schema ): bool {
+		foreach ( $schema as $node ) {
+			if ( ! is_array( $node ) ) {
+				continue;
+			}
+			$t = isset( $node['type'] ) ? sanitize_key( (string) $node['type'] ) : '';
+			if ( $t === 'icon_select' ) {
+				return true;
+			}
+			if ( $t === 'fieldset' && ! empty( $node['fields'] ) && is_array( $node['fields'] ) ) {
+				if ( $this->schema_tree_contains_icon_select( $node['fields'] ) ) {
+					return true;
+				}
+			}
+			if ( $t === 'advanced_repeater' && ! empty( $node['fields'] ) && is_array( $node['fields'] ) ) {
+				if ( $this->schema_tree_contains_icon_select( $node['fields'] ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**

@@ -391,6 +391,7 @@ final class BackgroundControl {
 							data-sto-default="<?php echo esc_attr( $default_color ); ?>"
 							<?php if ( $use_alpha ) : ?>
 								data-alpha-enabled="true"
+								data-alpha-color-type="octohex"
 								data-type="full"
 								data-alpha-custom-width="0"
 							<?php endif; ?>

@@ -783,6 +783,13 @@
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
 }
 
+.sto-options-form-footer__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+}
+
 .sto-save-notice {
     margin-top: 14px;
     margin-bottom: 16px;

@@ -307,6 +307,13 @@
 	user-select: none;
 }
 
+.sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__shortcut--wrap[data-sto-wrap-active="1"] kbd {
+	box-shadow: 0 0 0 1px rgba(34, 113, 177, 0.35);
+	background: rgba(34, 113, 177, 0.08);
+	border-color: rgba(34, 113, 177, 0.45);
+	color: #2271b1;
+}
+
 .sto-option-panel-wrapper .sto-field-row-code-editor .sto-code-editor__shortcut kbd {
 	display: inline-block;
 	min-width: 22px;

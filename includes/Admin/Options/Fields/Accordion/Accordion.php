@@ -13,6 +13,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Common\LayoutWidth;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
@@ -753,7 +754,7 @@ final class Accordion {
 			}
 		}
 		$master_toolbar = '';
-		if ( ! empty( $breakpoints ) ) {
+		if ( ! PremiumFieldGate::is_locked() && ! empty( $breakpoints ) ) {
 			$master_toolbar = $this->build_master_panel_toolbar_markup( $accordion_id, $panel_defs, $default_open_panel_id );
 		}
 
@@ -779,10 +780,14 @@ final class Accordion {
 				FieldTitle::render_heading( $title, $context, $tooltip_cfg, $accordion_id, false, '', $master_toolbar );
 			}
 
-			$dom_base = $this->accordion_dom_base( $accordion_id, '' );
-			$this->render_accordion_stack( $section_slug, $accordion_id, $config, $inner_ctx, $dom_base, null );
+			if ( PremiumFieldGate::render_controls_or_locked_placeholder( $title, 'accordion' ) ) {
+				// Premium body placeholder only.
+			} else {
+				$dom_base = $this->accordion_dom_base( $accordion_id, '' );
+				$this->render_accordion_stack( $section_slug, $accordion_id, $config, $inner_ctx, $dom_base, null );
+			}
 
-			if ( $desc !== '' ) {
+			if ( $desc !== '' && ! PremiumFieldGate::is_locked() ) {
 				echo '<p class="sto-field-description">' . esc_html( $desc ) . '</p>';
 			}
 			?>

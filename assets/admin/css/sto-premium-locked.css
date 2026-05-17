@@ -1,0 +1,113 @@
+/**
+ * Premium field placeholder — shown when Pro license is inactive.
+ */
+
+.sto-premium-locked {
+	margin: 0.35rem 0 0.5rem;
+	width: 100%;
+	max-width: 100%;
+}
+
+.sto-field-group-inner > .sto-field-group-cell .sto-premium-locked {
+	margin-top: 0;
+}
+
+.sto-premium-locked__card {
+	position: relative;
+	overflow: hidden;
+	border-radius: 10px;
+	padding: 1.25rem 1.35rem 1.35rem;
+	border: 1px solid rgba(99, 102, 241, 0.22);
+	background: linear-gradient(
+		135deg,
+		#f5f3ff 0%,
+		#ede9fe 28%,
+		#fce7f3 58%,
+		#fff7ed 100%
+	);
+	box-shadow:
+		0 1px 2px rgba(15, 23, 42, 0.06),
+		inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.sto-premium-locked__card::before {
+	content: "";
+	position: absolute;
+	inset: -40% -20% auto auto;
+	width: 55%;
+	height: 140%;
+	background: radial-gradient(
+		ellipse at center,
+		rgba(139, 92, 246, 0.18) 0%,
+		transparent 68%
+	);
+	pointer-events: none;
+}
+
+.sto-premium-locked__badge {
+	position: relative;
+	display: inline-block;
+	margin: 0 0 0.55rem;
+	padding: 0.2rem 0.55rem;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #5b21b6;
+	background: rgba(255, 255, 255, 0.72);
+	border: 1px solid rgba(139, 92, 246, 0.35);
+	border-radius: 999px;
+}
+
+.sto-premium-locked__field-type {
+	position: relative;
+	margin: 0 0 0.75rem;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.35;
+	color: #5b21b6;
+}
+
+.sto-premium-locked__message {
+	position: relative;
+	margin: 0 0 1rem;
+	max-width: 42rem;
+	font-size: 13px;
+	line-height: 1.55;
+	color: #334155;
+}
+
+.sto-premium-locked__cta {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.55rem 1.15rem;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.2;
+	text-decoration: none;
+	color: #fff;
+	border-radius: 8px;
+	background: linear-gradient(135deg, #7c3aed 0%, #db2777 52%, #ea580c 100%);
+	box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+	transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.sto-premium-locked__cta:hover,
+.sto-premium-locked__cta:focus {
+	color: #fff;
+	text-decoration: none;
+	transform: translateY(-1px);
+	box-shadow: 0 6px 18px rgba(124, 58, 237, 0.42);
+	filter: brightness(1.04);
+}
+
+.sto-premium-locked__cta:focus-visible {
+	outline: 2px solid #7c3aed;
+	outline-offset: 2px;
+}
+
+.sto-field-row--in-group .sto-premium-locked__card {
+	padding: 1rem 1.1rem 1.1rem;
+}
