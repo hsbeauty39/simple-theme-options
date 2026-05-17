@@ -148,6 +148,26 @@
      * Advanced `palette_ui` uses a full-width grid below the square + strips — clear Iris inline height /
      * paddingBottom and set each `.iris-strip` height to the square height so sliders match the SV panel.
      */
+    /**
+     * Match hue / alpha rail height to the saturation square (Iris can mis-size when opened hidden).
+     *
+     * @param {jQuery} $input
+     */
+    function syncIrisStripHeights($input) {
+        var $picker = $input.closest('.wp-picker-container').find('.iris-picker').first();
+        if (!$picker.length) {
+            return;
+        }
+        var $square = $picker.find('.iris-square').first();
+        var squareHeight = $square.outerHeight();
+        if (!squareHeight || squareHeight < 8) {
+            return;
+        }
+        $picker.find('.iris-strip').each(function() {
+            $(this).css('height', squareHeight);
+        });
+    }
+
     function reflowPaletteUiIrisLayout($input) {
         var $wrap = $input.closest('.sto-color-wrap');
         if (!$wrap.attr('data-sto-palette-ui')) {
@@ -158,27 +178,73 @@
         if (!$picker.length) {
             return;
         }
-        var $square = $picker.find('.iris-square').first();
-        var h = $square.outerHeight();
-        if (!h) {
-            return;
-        }
-        $picker.find('.iris-strip').each(function() {
-            $(this).css('height', h);
-        });
+        syncIrisStripHeights($input);
         $picker.css({ height: '', paddingBottom: '' });
     }
 
+    /**
+     * Re-measure Iris after the popover is visible (gradient dock, narrow columns, palette_ui).
+     *
+     * @param {jQuery} $input `.sto-color-input` / `.wp-color-picker`
+     */
+    function reflowIrisColorPicker($input) {
+        if (!$input || !$input.length) {
+            return;
+        }
+        var $container = $input.closest('.wp-picker-container');
+        if (!$container.hasClass('wp-picker-active')) {
+            return;
+        }
+        if (typeof $input.iris === 'function') {
+            try {
+                $input.iris('resize');
+            } catch (ignore) {}
+        }
+        syncIrisStripHeights($input);
+        reflowPaletteUiIrisLayout($input);
+    }
+
+    function scheduleIrisReflow($input) {
+        var delays = [0, 50, 200, 400];
+        for (var index = 0; index < delays.length; index++) {
+            (function(delayMs) {
+                window.setTimeout(function() {
+                    reflowIrisColorPicker($input);
+                }, delayMs);
+            })(delays[index]);
+        }
+    }
+
     function schedulePaletteUiReflow($input) {
-        window.setTimeout(function() {
-            reflowPaletteUiIrisLayout($input);
-        }, 0);
-        window.setTimeout(function() {
-            reflowPaletteUiIrisLayout($input);
-        }, 50);
-        window.setTimeout(function() {
-            reflowPaletteUiIrisLayout($input);
-        }, 200);
+        scheduleIrisReflow($input);
+    }
+
+    /**
+     * Tear down wp-color-picker so it can be rebuilt after the gradient dock becomes visible.
+     *
+     * @param {jQuery} $input
+     */
+    function destroyStoColorPicker($input) {
+        if (!$input || !$input.length) {
+            return;
+        }
+        if (!$input.closest('.wp-picker-container').length) {
+            return;
+        }
+        if (typeof $input.wpColorPicker !== 'function') {
+            return;
+        }
+        try {
+            $input.wpColorPicker('destroy');
+        } catch (ignore) {}
+        $input.removeData('stoManualColorBound');
+        $input.closest('.sto-color-wrap').removeData('stoColorResetBound');
+        $input.closest('.wp-picker-container').removeData('stoPaletteUiBound');
+    }
+
+    function irisSquareTooSmall($input) {
+        var $square = $input.closest('.wp-picker-container').find('.iris-square').first();
+        return !$square.length || $square.outerHeight() < 16;
     }
 
     function bindAdvancedPaletteUi($input) {
@@ -202,7 +268,7 @@
             window.setTimeout(sync, 0);
         });
         $container.on('click.stoPaletteUi', '.wp-color-result', function() {
-            schedulePaletteUiReflow($input);
+            scheduleIrisReflow($input);
             window.setTimeout(sync, 400);
         });
         $input.on('keyup.stoPaletteUi', sync);
@@ -251,7 +317,11 @@
             if ($input.closest('.wp-picker-container').length) {
                 return;
             }
-            if (!$input.is(':visible') && !$input.is('.sto-gradient-active-color')) {
+            /* Gradient dock is off-screen while idle — Iris sizes to 0 if inited there. */
+            if ($input.closest('.sto-gradient-color-dock--idle').length) {
+                return;
+            }
+            if (!$input.is(':visible')) {
                 return;
             }
 
@@ -290,5 +360,16 @@
         });
     }
 
+    $(document).on('click.stoIrisReflow', '.sto-option-panel-wrapper .wp-color-result', function() {
+        var $input = $(this).closest('.wp-picker-container').find('input.wp-color-picker, input.sto-color-input').first();
+        if ($input.length) {
+            scheduleIrisReflow($input);
+        }
+    });
+
     window.stoInitColorPickers = initStoColorPickers;
+    window.stoReflowIrisColorPicker = reflowIrisColorPicker;
+    window.stoScheduleIrisReflow = scheduleIrisReflow;
+    window.stoDestroyColorPicker = destroyStoColorPicker;
+    window.stoIrisSquareTooSmall = irisSquareTooSmall;
 })(jQuery);

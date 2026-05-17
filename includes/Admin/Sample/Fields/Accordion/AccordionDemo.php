@@ -157,7 +157,7 @@ final class AccordionDemo {
 				'section_slug'  => 'accordion',
 				'id'            => 'acc_basic',
 				'title'         => __( 'Standard accordion', 'simple-theme-options' ),
-				'description'   => __( 'Panels start collapsed unless you set expanded, show, or open on a panel. Click the open header again to collapse. Inner widths use the shared 12-column grammar.', 'simple-theme-options' ),
+				'description'  => __( 'Collapsible panels with twelve-column grid.', 'simple-theme-options' ),
 				'wrapper_class' => 'sto-acc-demo-block',
 				'panels'        => array(
 					array(
@@ -227,7 +227,7 @@ final class AccordionDemo {
 				'section_slug'  => 'accordion',
 				'id'            => 'acc_resp',
 				'title'         => __( 'Responsive accordion', 'simple-theme-options' ),
-				'description'   => __( 'Master tabs in the title row keep the same logical panel across breakpoints; inner fields can still define their own responsive storage.', 'simple-theme-options' ),
+				'description'  => __( 'Responsive accordion with device tabs.', 'simple-theme-options' ),
 				'wrapper_class' => 'sto-acc-demo-block',
 				'responsive'    => true,
 				'device'        => array( 'xxl', 'md', 'mobile' ),
@@ -275,7 +275,6 @@ final class AccordionDemo {
 				'section_slug'  => 'accordion',
 				'id'            => 'acc_adv',
 				'title'         => __( 'Deep nesting (tabs · group · accordion)', 'simple-theme-options' ),
-				'description'   => __( 'Accordion → horizontal tabs → nested group and a sibling nested accordion.', 'simple-theme-options' ),
 				'wrapper_class' => 'sto-acc-demo-block',
 				'panels'        => array(
 					array( 'id' => 'main', 'label' => __( 'Canvas', 'simple-theme-options' ) ),
@@ -285,7 +284,7 @@ final class AccordionDemo {
 						'type'          => 'tabs',
 						'id'            => 'adv_tabs',
 						'title'         => __( 'Horizontal tabs', 'simple-theme-options' ),
-						'description'   => __( 'The same inner field list is repeated in every tab with per-tab scoped ids. Full-width rows use span-12 so nested groups are not squeezed.', 'simple-theme-options' ),
+						'description'  => __( 'Per-tab fields with full-width rows.', 'simple-theme-options' ),
 						'width'         => '1-1',
 						'tabs'          => array(
 							array( 'id' => 'a', 'label' => __( 'Tab — grouped content', 'simple-theme-options' ) ),
@@ -295,7 +294,7 @@ final class AccordionDemo {
 							array(
 								'id'          => 'adv_sub',
 								'title'       => __( 'Settings panel (nested group)', 'simple-theme-options' ),
-								'description' => __( 'Nested group with its own heading, description, and 12-column inner card.', 'simple-theme-options' ),
+								'description'  => __( 'Nested group with inner card.', 'simple-theme-options' ),
 								'width'       => '1-1',
 								'fields'      => array(
 									array(
@@ -338,7 +337,7 @@ final class AccordionDemo {
 						'type'          => 'accordion',
 						'id'            => 'adv_nacc',
 						'title'         => __( 'Nested accordion', 'simple-theme-options' ),
-						'description'   => __( 'Second-level accordion; composite ids include this block and each panel.', 'simple-theme-options' ),
+						'description'  => __( 'Nested accordion inside tabs.', 'simple-theme-options' ),
 						'width'         => '1-1',
 						'panels'        => array(
 							array( 'id' => 'x1', 'label' => __( 'Section A', 'simple-theme-options' ) ),
@@ -363,7 +362,7 @@ final class AccordionDemo {
 				'section_slug'  => 'accordion',
 				'id'            => 'acc_full',
 				'title'         => __( 'Complete inner-type palette', 'simple-theme-options' ),
-				'description'   => __( 'One panel showcasing every field type supported inside an accordion tree.', 'simple-theme-options' ),
+				'description'  => __( 'Every inner field type in one panel.', 'simple-theme-options' ),
 				'wrapper_class' => 'sto-acc-demo-block',
 				'panels'        => array(
 					array( 'id' => 'all', 'label' => __( 'All controls', 'simple-theme-options' ) ),
@@ -521,7 +520,7 @@ final class AccordionDemo {
 						'type'        => 'gallery',
 						'id'          => 'cf_gallery',
 						'title'       => __( 'Gallery', 'simple-theme-options' ),
-						'description' => __( 'Same as the Layout sample: optional default array( attachment_id, … ). Theme: sto_get_gallery_attachment_ids().', 'simple-theme-options' ),
+						'description'  => __( 'Gallery attachment IDs array.', 'simple-theme-options' ),
 						'default'     => array(
 							101,
 							102,
@@ -534,7 +533,7 @@ final class AccordionDemo {
 						'type'        => 'google_map',
 						'id'          => 'cf_google_map',
 						'title'       => __( 'Google map', 'simple-theme-options' ),
-						'description' => __( 'Same storage as standalone: JSON in sto_options. Theme: sto_get_google_map_field().', 'simple-theme-options' ),
+						'description'  => __( 'Map field JSON in sto_options.', 'simple-theme-options' ),
 						'default'     => array(
 							'city'    => 'Washington',
 							'country' => 'United States',
@@ -567,7 +566,7 @@ final class AccordionDemo {
 				'section_slug'  => 'accordion',
 				'id'            => 'acc_host_group',
 				'title'         => __( 'Accordion inside a group', 'simple-theme-options' ),
-				'description'   => __( 'Use this pattern when the accordion sits beside other group-level controls; blocks above are standalone accordions.', 'simple-theme-options' ),
+				'description'  => __( 'Accordion nested inside a group.', 'simple-theme-options' ),
 				'fields'        => array(
 					array(
 						'type'          => 'accordion',

@@ -505,6 +505,44 @@
 	grid-column: 1;
 	grid-row: 3;
 	width: 100%;
+	min-width: min(100%, 268px);
+	line-height: normal;
+	overflow: visible;
+	padding: 8px 10px 10px;
+	box-sizing: border-box;
+}
+
+/* Iris must measure while the dock is visible — enforce a sane picker footprint in the floating dock. */
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) .iris-picker {
+	min-width: 240px !important;
+	width: 100% !important;
+	max-width: 100%;
+	box-sizing: border-box;
+	overflow: visible;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) .iris-picker-inner {
+	overflow: visible;
+	vertical-align: top;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) .iris-square {
+	min-width: 160px;
+	min-height: 160px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) .iris-strip {
+	min-width: 18px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) .iris-picker .iris-palette-container {
+	position: relative !important;
+	bottom: auto !important;
+	left: auto !important;
+	right: auto !important;
+	width: 100% !important;
+	margin-top: 8px !important;
+	clear: both;
 }
 
 .sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock .sto-color-reset {

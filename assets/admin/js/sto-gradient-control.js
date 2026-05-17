@@ -399,24 +399,37 @@
     }
 
     function ensureColorPicker($wrap) {
-        if ($wrap.data('stoGradColorReady')) {
-            return;
-        }
         if (typeof window.stoInitColorPickers !== 'function') {
             return;
         }
+        var $input = $wrap.find('[data-sto-gradient-active-color]');
         var $scope;
         if (isPopupMode($wrap)) {
             $scope = $wrap.find('> .sto-gradient-popover');
         } else {
             $scope = $wrap.find('.sto-gradient-ui');
         }
+        var needsRebuild =
+            $wrap.data('stoGradColorReady') &&
+            $input.closest('.wp-picker-container').length &&
+            typeof window.stoIrisSquareTooSmall === 'function' &&
+            window.stoIrisSquareTooSmall($input);
+        if (needsRebuild && typeof window.stoDestroyColorPicker === 'function') {
+            window.stoDestroyColorPicker($input);
+            $wrap.removeData('stoGradColorReady');
+        }
+        if ($wrap.data('stoGradColorReady')) {
+            if (typeof window.stoScheduleIrisReflow === 'function') {
+                window.stoScheduleIrisReflow($input);
+            }
+            return;
+        }
         if ($scope.length) {
             window.stoInitColorPickers($scope);
         } else {
             window.stoInitColorPickers($wrap);
         }
-        if ($wrap.find('[data-sto-gradient-active-color]').closest('.wp-picker-container').length) {
+        if ($input.closest('.wp-picker-container').length) {
             $wrap.data('stoGradColorReady', 1);
         }
     }
@@ -434,6 +447,9 @@
                 $btn.trigger('click');
             } else {
                 $input.trigger('focus');
+            }
+            if (typeof window.stoScheduleIrisReflow === 'function') {
+                window.stoScheduleIrisReflow($input);
             }
             window.setTimeout(function() {
                 positionColorDock($wrap);
