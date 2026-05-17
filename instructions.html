@@ -2983,23 +2983,43 @@ Input::register(
 		return key;
 	}
 
+	function scrollProseToElement(el, smooth) {
+		if (!el || !prose.contains(el)) return;
+		var targetY = pickRefY();
+		var delta = el.getBoundingClientRect().top - targetY;
+		if (Math.abs(delta) < 4) return;
+		suppressProseScrollSync = true;
+		prose.scrollBy({ top: delta, behavior: smooth === true ? 'smooth' : 'auto' });
+		window.setTimeout(function () {
+			suppressProseScrollSync = false;
+		}, smooth === true ? 520 : 80);
+	}
+
+	function getPhpKeyForProseElement(el) {
+		if (!el || !prose.contains(el)) return null;
+		var sibling = el.nextElementSibling;
+		if (sibling && sibling.classList && sibling.classList.contains('sto-docs-php-jump')) {
+			var jumpA = sibling.querySelector('a.sto-docs-php-jump__a[href^="#php-"]');
+			if (jumpA) {
+				return (jumpA.getAttribute('href') || '').replace(/^#php-/, '');
+			}
+		}
+		var nested = el.querySelector('a.sto-docs-php-jump__a[href^="#php-"]');
+		if (nested) {
+			return (nested.getAttribute('href') || '').replace(/^#php-/, '');
+		}
+		return null;
+	}
+
 	function scrollProseToPhpKey(key, smooth) {
 		if (!key || !prose) return;
 		var jump = prose.querySelector('a.sto-docs-php-jump__a[href="#php-' + key + '"]');
 		if (!jump) return;
-		var targetY = pickRefY();
-		var delta = jump.getBoundingClientRect().top - targetY;
-		if (Math.abs(delta) < 4) return;
-		suppressProseScrollSync = true;
-		var behavior = smooth === true ? 'smooth' : 'auto';
-		prose.scrollBy({ top: delta, behavior: behavior });
+		scrollProseToElement(jump, smooth);
 		lastPhpKey = key;
 		phpSnippets.forEach(function (s) {
 			s.classList.toggle('is-sto-php-synced', s.id === 'php-' + key);
 		});
-		window.setTimeout(function () {
-			suppressProseScrollSync = false;
-		}, 50);
 		window.requestAnimationFrame(function () {
 			var navId = getActiveNavId();
 			if (navId) setActive('#' + navId);
@@ -3051,7 +3071,6 @@ Input::register(
 		'scroll',
 		function () {
 			if (suppressProseScrollSync) {
-				suppressProseScrollSync = false;
 				return;
 			}
 			if (scrollTicking) return;
@@ -3065,21 +3084,46 @@ Input::register(
 	);
 	window.addEventListener('resize', syncFromProse, { passive: true });
 
+	jumpLinks.forEach(function (a) {
+		a.addEventListener('click', function (e) {
+			var href = a.getAttribute('href');
+			if (!href || href.indexOf('#php-') !== 0) return;
+			e.preventDefault();
+			var phpKey = href.replace(/^#php-/, '');
+			if (!phpKey) return;
+			phpUserUntil = 0;
+			scrollPhpToKey(phpKey, true);
+			scrollProseToPhpKey(phpKey, true);
+			var navId = getActiveNavId();
+			if (navId) {
+				history.replaceState(null, '', '#' + navId);
+			}
+		});
+	});
+
 	links.forEach(function (a) {
 		a.addEventListener('click', function (e) {
 			var href = a.getAttribute('href');
-			if (!href || href === '#') return;
-			var el = document.getElementById(href.slice(1));
-			if (el && prose.contains(el)) {
-				e.preventDefault();
-				el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-				setActive(href);
-				history.replaceState(null, '', href);
-				window.setTimeout(function () {
-					syncFromProse();
-					scrollPhpToKey(getActivePhpKey(), true);
-				}, 380);
-			}
+			if (!href || href.charAt(0) !== '#') return;
+			var sectionId = href.slice(1);
+			var el = document.getElementById(sectionId);
+			if (!el || !prose.contains(el)) return;
+			e.preventDefault();
+			phpUserUntil = 0;
+			setActive(href);
+			history.replaceState(null, '', href);
+			scrollProseToElement(el, true);
+			var phpKeyFromJump = getPhpKeyForProseElement(el);
+			window.setTimeout(function () {
+				var phpKey = phpKeyFromJump || getActivePhpKey();
+				if (phpKey) {
+					scrollPhpToKey(phpKey, true);
+				}
+				var navId = sectionId || getActiveNavId();
+				if (navId) {
+					setActive('#' + navId);
+				}
+			}, 450);
 		});
 	});
 
@@ -3225,8 +3269,13 @@ Input::register(
 			var hid = location.hash.replace(/^#/, '');
 			var t = document.getElementById(hid);
 			if (t && prose.contains(t)) {
-				t.scrollIntoView({ block: 'start' });
 				setActive(location.hash);
+				scrollProseToElement(t, false);
+				var pk = getPhpKeyForProseElement(t);
+				window.requestAnimationFrame(function () {
+					scrollPhpToKey(pk || getActivePhpKey(), false);
+					setActive(location.hash);
+				});
 			}
 		}
 		syncFromProse();
