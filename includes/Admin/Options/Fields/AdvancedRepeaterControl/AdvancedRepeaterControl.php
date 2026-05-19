@@ -519,6 +519,64 @@ final class AdvancedRepeaterControl {
 	}
 
 	/**
+	 * Rows with no meaningful leaf values (e.g. blank custom-tab name) are UI placeholders — skip on save/validation.
+	 *
+	 * @param array<int, array<string, mixed>> $schema
+	 * @param array<string, mixed>             $row
+	 */
+	private function row_is_storage_empty( array $schema, array $row ): bool {
+		foreach ( $schema as $node ) {
+			$id = $node['id'];
+			$t  = $node['type'];
+			if ( $t === 'fieldset' ) {
+				$sub = isset( $row[ $id ] ) && is_array( $row[ $id ] ) ? $row[ $id ] : array();
+				if ( ! $this->row_is_storage_empty( $node['fields'], $sub ) ) {
+					return false;
+				}
+				continue;
+			}
+			if ( $t === 'advanced_repeater' ) {
+				$lst = isset( $row[ $id ] ) && is_array( $row[ $id ] ) ? $row[ $id ] : array();
+				foreach ( $lst as $inner ) {
+					if ( is_array( $inner ) && ! $this->row_is_storage_empty( $node['fields'], $inner ) ) {
+						return false;
+					}
+				}
+				continue;
+			}
+			$val = isset( $row[ $id ] ) ? $row[ $id ] : '';
+			if ( $t === 'switcher' ) {
+				if ( (string) $val === '1' ) {
+					return false;
+				}
+				continue;
+			}
+			if ( is_string( $val ) && trim( $val ) !== '' ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $schema
+	 * @param array<int, array<string, mixed>> $rows
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function filter_storage_rows( array $schema, array $rows ): array {
+		$kept = array();
+		foreach ( $rows as $row ) {
+			if ( ! is_array( $row ) || $this->row_is_storage_empty( $schema, $row ) ) {
+				continue;
+			}
+			$kept[] = $row;
+		}
+
+		return $kept;
+	}
+
+	/**
 	 * @param mixed $raw
 	 * @return array<int, array<string, mixed>>
 	 */
@@ -564,9 +622,7 @@ final class AdvancedRepeaterControl {
 				$out[] = $this->sanitize_item_for_schema( $schema, $row, 0 );
 			}
 		}
-		if ( $out === array() ) {
-			$out[] = $this->empty_item_for_schema( $schema );
-		}
+		$out = $this->filter_storage_rows( $schema, $out );
 
 		return wp_json_encode( array_values( $out ) );
 	}
@@ -1006,11 +1062,9 @@ final class AdvancedRepeaterControl {
 	 */
 	private function collect_html_required_messages_for_field( array $field, $raw ): array {
 		$schema = $field['schema'];
-		$items  = $this->parse_items( is_string( $raw ) ? $raw : ( is_array( $raw ) ? wp_json_encode( $raw ) : '' ) );
-		if ( $items === array() ) {
-			$items = array( $this->empty_item_for_schema( $schema ) );
-		}
-		$out = array();
+		$items = $this->parse_items( is_string( $raw ) ? $raw : ( is_array( $raw ) ? wp_json_encode( $raw ) : '' ) );
+		$items = $this->filter_storage_rows( $schema, $items );
+		$out   = array();
 		foreach ( $items as $idx => $row ) {
 			if ( ! is_array( $row ) ) {
 				continue;

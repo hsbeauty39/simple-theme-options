@@ -2706,6 +2706,44 @@
         }
         initStoMetaboxSaveOnPostSave();
 
+        /**
+         * WooCommerce product save: sync STO fields inside Product data tabs into #post before submit.
+         */
+        function stoPrepareWcProductDataPanelsForSubmit() {
+            var $wcPanels = $('#woocommerce-product-data .sto-wc-product-data-panel');
+            if (!$wcPanels.length) {
+                return;
+            }
+            $wcPanels.each(function () {
+                $(this)
+                    .find('.sto-panel-section-fields')
+                    .prop('disabled', false);
+            });
+            if (typeof window.stoSyncAdvancedRepeaterFields === 'function') {
+                window.stoSyncAdvancedRepeaterFields($wcPanels);
+            }
+            $wcPanels.find('.sto-rich-modern-editor__input').each(function () {
+                $(this).trigger('change');
+            });
+        }
+
+        function initStoWcProductDataSaveOnPostSave() {
+            if (!$('#woocommerce-product-data').length || !stoIsWcProductDataScreen()) {
+                return;
+            }
+            var $postForm = $('#post');
+            if (!$postForm.length) {
+                return;
+            }
+            $postForm.on('submit.stoWcProductDataPersist', function () {
+                stoPrepareWcProductDataPanelsForSubmit();
+            });
+            $(document).on('click.stoWcProductDataPersist', '#publish, #save-post', function () {
+                stoPrepareWcProductDataPanelsForSubmit();
+            });
+        }
+        initStoWcProductDataSaveOnPostSave();
+
         function stoRunTermThemeSettingsAjaxSave(options) {
             options = options || {};
             var silent = !!options.silent;

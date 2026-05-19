@@ -788,6 +788,18 @@
 
     window.stoApplyAdvRepLeafRequiredVisibility = applyAdvRepLeafRequiredVisibility;
 
+    /**
+     * Flush repeater leaf values into hidden `sto_options[…]` JSON (call before product #post submit).
+     *
+     * @param {JQuery} [$scope]
+     */
+    window.stoSyncAdvancedRepeaterFields = function ($scope) {
+        var $ctx = $scope && $scope.length ? $scope : $(document);
+        $ctx.find('.sto-field-row-advanced-repeater').each(function () {
+            syncFromAny($(this));
+        });
+    };
+
     window.stoInitAdvancedRepeaterFields = function ($scope) {
         var $ctx = $scope && $scope.length ? $scope : $(document);
         $ctx.find('.sto-field-row-advanced-repeater').each(function () {
