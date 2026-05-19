@@ -852,6 +852,19 @@
                     }
                 }, 80);
             });
+            $wrap.off('click.stoBtnGrpSegment').on('click.stoBtnGrpSegment', '[data-sto-bg-segment]', function(ev) {
+                if ($(ev.target).closest('.sto-button-group__hint').length) {
+                    return;
+                }
+                var $segment = $(this);
+                var $input = $segment.find('[data-sto-button-group-input]').first();
+                if (!$input.length) {
+                    return;
+                }
+                if (!$input.prop('checked')) {
+                    $input.prop('checked', true).trigger('change');
+                }
+            });
             syncVisual();
             var $panelInit = stoResolveOptionsAdminScope($wrap.closest('.sto-option-panel-wrapper, .sto-theme-settings-metabox-inner, .sto-option-panel-section'));
             applyRequiredVisibility($panelInit.length ? $panelInit : undefined);

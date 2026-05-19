@@ -341,9 +341,15 @@
 }
 
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-button-group .sto-button-group__segment {
-	flex: 0 0 auto;
-	width: max-content;
+	flex: 1 1 0;
+	width: auto;
 	min-width: min-content;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-button-group .sto-button-group__choice {
+	flex: 1 1 auto;
+	width: 100%;
+	justify-content: center;
 }
 
 /* Advanced repeater — full-width rows inside the narrow WC column. */
@@ -529,8 +535,14 @@
 	}
 
 	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-button-group .sto-button-group__segment {
-		flex: 1 1 auto;
+		flex: 1 1 0;
 		min-width: min(100%, 8rem);
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-button-group .sto-button-group__choice {
+		flex: 1 1 auto;
+		width: 100%;
+		justify-content: center;
 	}
 }
 
