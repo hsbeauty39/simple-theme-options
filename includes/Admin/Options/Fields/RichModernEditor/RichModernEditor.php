@@ -590,7 +590,8 @@ final class RichModernEditor {
 	 */
 	private function get_value_map( string $field_id, array $breakpoints, array $field ): array {
 		$value_map = array();
-		$stored    = OptionsMenu::get_option_value_for_field( $field_id );
+		$opts      = (array) get_option( 'sto_options', array() );
+		$stored    = array_key_exists( $field_id, $opts ) ? $opts[ $field_id ] : null;
 
 		if ( is_array( $stored ) ) {
 			foreach ( $breakpoints as $breakpoint_key ) {
@@ -617,9 +618,10 @@ final class RichModernEditor {
 	 * @param string $default_value Default markup.
 	 */
 	private function get_option_value( string $field_id, string $default_value ): string {
-		$stored = OptionsMenu::get_option_value_for_field( $field_id );
-		if ( is_scalar( $stored ) ) {
-			return (string) $stored;
+		$opts  = (array) get_option( 'sto_options', array() );
+		$value = array_key_exists( $field_id, $opts ) ? $opts[ $field_id ] : null;
+		if ( is_string( $value ) ) {
+			return $value;
 		}
 
 		return $default_value;
