@@ -7,20 +7,23 @@
 	border: 1px solid #dcdcde;
 	border-radius: 8px;
 	background: #fff;
-	overflow: hidden;
+	overflow: visible;
+	position: relative;
 }
 
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__mount {
+	position: relative;
 	min-height: var(--sto-rich-modern-editor-min-height, 320px);
+	pointer-events: auto;
 }
 
-.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__canvas-inner {
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__surface {
 	min-height: var(--sto-rich-modern-editor-min-height, 320px);
-	padding: 12px 14px 16px;
+	padding: 12px 14px 48px;
 }
 
-.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__canvas-inner .block-editor-writing-flow {
-	min-height: calc(var(--sto-rich-modern-editor-min-height, 320px) - 48px);
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__surface .block-editor-writing-flow {
+	min-height: calc(var(--sto-rich-modern-editor-min-height, 320px) - 60px);
 }
 
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__input {
@@ -33,26 +36,40 @@
 	clip: rect(0, 0, 0, 0) !important;
 	white-space: nowrap !important;
 	border: 0 !important;
+	pointer-events: none !important;
 }
 
-.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor--initialized .sto-rich-modern-editor__input {
-	display: block;
-}
-
-/* Block toolbar inside STO panels */
+/* Block toolbar + inserter (+) inside STO panels */
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-editor-block-toolbar {
 	z-index: 20;
+}
+
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-list-appender,
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-editor-default-block-appender,
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-editor-inserter {
+	pointer-events: auto;
+}
+
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-list-appender .block-list-appender__toggle,
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-editor-inserter__toggle {
+	cursor: pointer;
 }
 
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .components-popover {
 	z-index: 100001;
 }
 
-/* Responsive panes: let hidden editors repaint when shown */
+/* Responsive panes: defer mount until active (JS); hide inert canvas */
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-responsive-pane:not(.sto-responsive-pane--active) .sto-rich-modern-editor__mount {
 	visibility: hidden;
 }
 
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-responsive-pane.sto-responsive-pane--active .sto-rich-modern-editor__mount {
 	visibility: visible;
+}
+
+/* Disabled fieldsets must not block the block canvas (only native form controls). */
+.sto-panel-section-fields:disabled .sto-field-row-rich-modern-editor .sto-rich-modern-editor__mount,
+.sto-panel-section-fields:disabled .sto-field-row-rich-modern-editor .sto-rich-modern-editor__surface {
+	pointer-events: auto;
 }

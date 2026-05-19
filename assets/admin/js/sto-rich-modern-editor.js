@@ -12,7 +12,6 @@
     var useState = wp.element.useState;
     var useMemo = wp.element.useMemo;
     var useCallback = wp.element.useCallback;
-    var useEffect = wp.element.useEffect;
     var parse = wp.blocks.parse;
     var serialize = wp.blocks.serialize;
     var BlockEditorProvider = wp.blockEditor.BlockEditorProvider;
@@ -20,8 +19,11 @@
     var WritingFlow = wp.blockEditor.WritingFlow;
     var ObserveTyping = wp.blockEditor.ObserveTyping;
     var BlockTools = wp.blockEditor.BlockTools;
+    var DefaultBlockAppender = wp.blockEditor.DefaultBlockAppender;
+    var BlockEditorKeyboardShortcuts = wp.blockEditor.BlockEditorKeyboardShortcuts;
     var SlotFillProvider = wp.components.SlotFillProvider;
     var Popover = wp.components.Popover;
+    var DropZoneProvider = wp.components.DropZoneProvider;
 
     var coreBlocksRegistered = false;
 
@@ -63,13 +65,36 @@
         }
 
         var next = Object.assign({}, base, {
-            hasFixedToolbar: true,
+            hasFixedToolbar: false,
             focusMode: false,
+            isPreviewMode: false,
         });
         if (!mediaUploadEnabled) {
             next.mediaUpload = false;
         }
         return next;
+    }
+
+    function shouldDeferMount($wrap) {
+        var $section = $wrap.closest('.sto-option-panel-section');
+        if ($section.length && $section.hasClass('sto-is-hidden')) {
+            return true;
+        }
+        var $pane = $wrap.closest('.sto-responsive-pane');
+        if ($pane.length && !$pane.hasClass('sto-responsive-pane--active')) {
+            return true;
+        }
+        return false;
+    }
+
+    function destroyEditor($wrap) {
+        var root = $wrap.data('stoRichModernRoot');
+        if (root && typeof root.unmount === 'function') {
+            root.unmount();
+        }
+        $wrap.removeData('stoRichModernRoot stoRichModernMounted');
+        $wrap.removeClass('sto-rich-modern-editor--initialized');
+        $wrap.find('.sto-rich-modern-editor__mount').empty();
     }
 
     function RichEditorApp(props) {
@@ -99,29 +124,41 @@
             [onSerializedChange, setBlocks]
         );
 
+        var editorSurface = createElement(
+            BlockTools,
+            null,
+            createElement(
+                WritingFlow,
+                null,
+                createElement(
+                    ObserveTyping,
+                    null,
+                    createElement(BlockList, null),
+                    createElement(DefaultBlockAppender, null)
+                )
+            )
+        );
+
         return createElement(
             SlotFillProvider,
             null,
             createElement(
-                BlockEditorProvider,
-                {
-                    value: blocks,
-                    onInput: onInput,
-                    onChange: onInput,
-                    settings: settings,
-                },
+                DropZoneProvider,
+                null,
                 createElement(
-                    'div',
-                    { className: 'sto-rich-modern-editor__canvas-inner' },
-                    createElement(BlockTools, null),
+                    BlockEditorProvider,
+                    {
+                        value: blocks,
+                        onInput: onInput,
+                        onChange: onInput,
+                        settings: settings,
+                        useSubRegistry: true,
+                    },
+                    createElement(BlockEditorKeyboardShortcuts, null),
                     createElement(
-                        ObserveTyping,
-                        null,
-                        createElement(
-                            WritingFlow,
-                            null,
-                            createElement(BlockList, null)
-                        )
+                        'div',
+                        { className: 'sto-rich-modern-editor__surface editor-styles-wrapper' },
+                        editorSurface
                     ),
                     createElement(Popover.Slot, null)
                 )
@@ -133,6 +170,10 @@
         var $textarea = $wrap.find('textarea.sto-rich-modern-editor__input').first();
         var mountNode = $wrap.find('.sto-rich-modern-editor__mount')[0];
         if (!$textarea.length || !mountNode) {
+            return;
+        }
+
+        if (shouldDeferMount($wrap)) {
             return;
         }
 
@@ -165,6 +206,7 @@
         };
 
         $wrap.addClass('sto-rich-modern-editor--initialized');
+        $wrap.data('stoRichModernMounted', true);
         renderApp();
     }
 
@@ -175,17 +217,30 @@
 
         $scope.find('.sto-rich-modern-editor[data-sto-rich-modern-editor]').each(function () {
             var $wrap = $(this);
+            if (shouldDeferMount($wrap)) {
+                if ($wrap.data('stoRichModernMounted')) {
+                    destroyEditor($wrap);
+                }
+                return;
+            }
             if ($wrap.data('stoRichModernMounted')) {
                 return;
             }
-            $wrap.data('stoRichModernMounted', true);
             mountEditor($wrap);
         });
     }
 
     window.stoInitRichModernEditors = initRichModernEditors;
+    window.stoDestroyRichModernEditors = function ($scope) {
+        if (!$scope || !$scope.length) {
+            return;
+        }
+        $scope.find('.sto-rich-modern-editor[data-sto-rich-modern-editor]').each(function () {
+            destroyEditor($(this));
+        });
+    };
 
     $(function () {
-        initRichModernEditors($(document));
+        initRichModernEditors($('.sto-option-panel-section.sto-is-active'));
     });
 })(jQuery, window.wp);
