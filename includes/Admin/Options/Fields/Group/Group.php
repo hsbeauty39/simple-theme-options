@@ -1209,9 +1209,7 @@ final class Group {
 							if ( ! empty( $node['tooltip_preloader'] ) ) {
 								$child_group['tooltip_preloader'] = (string) $node['tooltip_preloader'];
 							}
-							if ( ! empty( $node['space_css'] ) ) {
-								$child_group['space_css'] = (string) $node['space_css'];
-							}
+							// `space` is applied on the grid cell only — avoid doubling margin on the nested panel.
 							$this->render_group_branch( $section_slug, $child_group, $depth + 1 );
 						}
 						?>

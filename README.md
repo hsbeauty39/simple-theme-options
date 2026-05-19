@@ -767,7 +767,7 @@ That's it — no manual `require` calls needed. The autoloader handles the rest.
 
 ### 1.0.0 — follow-up (2026-05-19)
 
-- **Group `space` + WooCommerce Product data spacing:** nested groups registered with **`'space'`** now pass **`space_css`** into **`render_group_branch()`** and apply **`margin-top`** on the grid **`.sto-field-group-cell`** wrapper. WC panels use **`row-gap: 1.25rem`** on root **`.sto-field-group-inner`** (was **`0`**) and no longer force **`margin-top: 0`** on every **`.sto-field-group`**, so stacked nested groups (e.g. Battery details → Service price) have visible separation.
+- **Group `space` + WooCommerce Product data spacing:** nested groups with **`'space'`** apply **`margin-top`** on the grid **`.sto-field-group-cell`** only (not duplicated on the nested panel). WC root **`.sto-field-group-inner`** uses **`row-gap: 12px`** between stacked cells; **`margin-top: 0`** is no longer forced on every **`.sto-field-group`**.
 
 ### 1.0.0 — follow-up (2026-05-18, docs)
 
