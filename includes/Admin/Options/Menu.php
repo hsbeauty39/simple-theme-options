@@ -2112,6 +2112,61 @@ final class Menu {
     }
 
     /**
+     * Whether the current admin load is an STO Theme Settings options page (registered root, Tools backup, or Freemius sibling).
+     *
+     * Used by field types (e.g. rich modern editor) to prime block editor assets on the same screens as {@see \SimpleThemeOptions\Assets}.
+     *
+     * @param string $hook_suffix From {@see admin_enqueue_scripts}.
+     */
+    public function is_theme_settings_admin_screen( string $hook_suffix = '' ): bool {
+        if ( ! is_admin() ) {
+            return false;
+        }
+
+        if ( $hook_suffix !== '' && $hook_suffix === 'tools_page_' . ThemeSettingsImportExport::SETTINGS_ADVANCE_PAGE ) {
+            return true;
+        }
+
+        foreach ( $this->get_registered_menu_slugs() as $slug ) {
+            $slug = sanitize_key( (string) $slug );
+            if ( $slug === '' ) {
+                continue;
+            }
+            if ( $hook_suffix !== '' && strpos( $hook_suffix, $slug ) !== false ) {
+                return true;
+            }
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+        if ( $page !== '' && in_array( $page, $this->get_registered_menu_slugs(), true ) ) {
+            return true;
+        }
+
+        if ( $page !== '' ) {
+            foreach ( $this->get_registered_menu_slugs() as $root_slug ) {
+                $root_slug = sanitize_key( (string) $root_slug );
+                if ( $root_slug !== '' && $page !== $root_slug && str_starts_with( $page, $root_slug . '-' ) ) {
+                    return true;
+                }
+            }
+        }
+
+        if ( $page === 'theme-settings' ) {
+            return true;
+        }
+
+        if ( function_exists( 'get_current_screen' ) ) {
+            $screen = get_current_screen();
+            if ( $screen && isset( $screen->id ) && is_string( $screen->id ) && strpos( $screen->id, 'theme-settings' ) !== false ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @param array<string, mixed> $section
      */
     public function get_section_row_menu_page( array $section ): string {

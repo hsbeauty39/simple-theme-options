@@ -89,6 +89,39 @@ final class ThemeSettingsMetabox {
 		return ThemeSettingsDisplayLocations::instance()->is_post_type_enabled( $post_type );
 	}
 
+	/**
+	 * Post editor when at least one Theme Settings root registered a metabox for this post type.
+	 *
+	 * @param string $hook_suffix From {@see admin_enqueue_scripts} (e.g. `post.php`).
+	 */
+	public function is_metabox_admin_screen( string $hook_suffix = '' ): bool {
+		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return false;
+		}
+
+		if ( ! OptionsMenu::instance()->should_show_theme_settings_metaboxes() ) {
+			return false;
+		}
+
+		if ( $hook_suffix !== 'post.php' && $hook_suffix !== 'post-new.php' ) {
+			return false;
+		}
+
+		$screen    = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$post_type = ( $screen && isset( $screen->post_type ) ) ? sanitize_key( (string) $screen->post_type ) : '';
+		if ( $post_type === '' ) {
+			return false;
+		}
+
+		foreach ( $this->roots as $menu_slug => $cfg ) {
+			if ( $this->menu_root_allows_post_type( (string) $menu_slug, $post_type ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private function attach_hooks(): void {
 		if ( $this->hooks_attached ) {
 			return;
