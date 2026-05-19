@@ -2,7 +2,8 @@
  * Rich modern editor (block editor) — scoped to STO field rows.
  */
 
-.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor {
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor,
+.sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor {
 	box-sizing: border-box;
 	border: 1px solid #dcdcde;
 	border-radius: 8px;
@@ -11,13 +12,15 @@
 	position: relative;
 }
 
-.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__mount {
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__mount,
+.sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__mount {
 	position: relative;
 	min-height: var(--sto-rich-modern-editor-min-height, 320px);
 	pointer-events: auto;
 }
 
-.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__surface {
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__surface,
+.sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__surface {
 	min-height: var(--sto-rich-modern-editor-min-height, 320px);
 	padding: 12px 14px 48px;
 }
@@ -46,7 +49,10 @@
 
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-list-appender,
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-editor-default-block-appender,
-.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-editor-inserter {
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-editor-inserter,
+.sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .block-list-appender,
+.sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .block-editor-default-block-appender,
+.sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .block-editor-inserter {
 	pointer-events: auto;
 }
 

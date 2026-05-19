@@ -11,6 +11,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
 use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
+use SimpleThemeOptions\Admin\Options\Fields\RichModernEditor\RichModernEditor;
 use SimpleThemeOptions\Admin\Options\RequiredVisibility;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
@@ -19,7 +20,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * **Advanced repeater** — ordered **items** (JSON in **`sto_options[id]`**), each item a map of **logical sub-keys**
  * built from a **schema** (`fields`). Supports **nested repeaters**, **`fieldset`** grouping (nested object), and
- * scalar leaves: **`text`**, **`number`**, **`textarea`**, **`select`**, **`switcher`**, **`icon_select`**. Admin: **Add item**, **drag**
+ * scalar leaves: **`text`**, **`number`**, **`textarea`**, **`select`**, **`switcher`**, **`icon_select`**, **`rich_modern_editor`**. Admin: **Add item**, **drag**
  * reorder (**jQuery UI Sortable**), **collapse / expand** per item, **remove** row. New rows match the same **collapsed /
  * expanded** default as the initial markup. Optional **`default_collapsed`** (bool) on **`register()`** — when **true**
  * (default), every root and nested item renders **collapsed** until the user expands it. Set **`default_collapsed` =>
@@ -286,6 +287,29 @@ final class AdvancedRepeaterControl {
 				continue;
 			}
 
+			if ( $type === 'rich_modern_editor' ) {
+				$editor_height = isset( $item['editor_height'] ) && is_numeric( $item['editor_height'] ) ? (int) $item['editor_height'] : 320;
+				if ( $editor_height < 160 ) {
+					$editor_height = 160;
+				}
+				if ( $editor_height > 1200 ) {
+					$editor_height = 1200;
+				}
+				$out[] = array(
+					'type'          => 'rich_modern_editor',
+					'id'            => $id,
+					'title'         => isset( $item['title'] ) ? (string) $item['title'] : '',
+					'description'   => isset( $item['description'] ) ? (string) $item['description'] : '',
+					'default'       => isset( $item['default'] ) && is_scalar( $item['default'] ) ? (string) $item['default'] : '',
+					'editor_height' => $editor_height,
+					'media_upload'  => ! array_key_exists( 'media_upload', $item ) || (bool) $item['media_upload'],
+					'required'      => $this->normalize_leaf_required( $item ),
+					'html_required' => ! empty( $item['html_required'] ),
+				);
+				++$count;
+				continue;
+			}
+
 			if ( $type === 'icon_select' ) {
 				$allow_clear_ic = ! empty( $item['allow_clear'] );
 				$raw_icon_def   = isset( $item['default'] ) ? (string) $item['default'] : '';
@@ -365,7 +389,7 @@ final class AdvancedRepeaterControl {
 		foreach ( $schema as $node ) {
 			$t  = $node['type'];
 			$id = $node['id'];
-			if ( in_array( $t, array( 'text', 'number', 'textarea', 'switcher' ), true ) ) {
+			if ( in_array( $t, array( 'text', 'number', 'textarea', 'switcher', 'rich_modern_editor' ), true ) ) {
 				$row[ $id ] = isset( $node['default'] ) ? (string) $node['default'] : ( $t === 'switcher' ? '0' : '' );
 			} elseif ( $t === 'select' ) {
 				$row[ $id ] = isset( $node['default'] ) ? (string) $node['default'] : '';
@@ -457,6 +481,13 @@ final class AdvancedRepeaterControl {
 					is_scalar( $val ) ? (string) $val : '',
 					! empty( $node['allow_clear'] ),
 					isset( $node['default'] ) ? (string) $node['default'] : ''
+				);
+				continue;
+			}
+			if ( $t === 'rich_modern_editor' ) {
+				$out[ $id ] = RichModernEditor::instance()->sanitize_stored_value(
+					is_scalar( $val ) ? (string) $val : '',
+					$node
 				);
 				continue;
 			}
@@ -851,6 +882,36 @@ final class AdvancedRepeaterControl {
 								<option value="<?php echo esc_attr( (string) $ok ); ?>" <?php selected( (string) $vstr, (string) $ok ); ?>><?php echo esc_html( (string) $olab ); ?></option>
 							<?php endforeach; ?>
 						</select>
+					</div>
+					<?php if ( $desc !== '' ) : ?>
+						<p class="sto-field-description sto-adv-rep__hint"><?php echo esc_html( $desc ); ?></p>
+					<?php endif; ?>
+				</div>
+				<?php
+				continue;
+			}
+
+			if ( $type === 'rich_modern_editor' ) {
+				$editor_height = isset( $node['editor_height'] ) ? (int) $node['editor_height'] : 320;
+				$media_upload  = ! empty( $node['media_upload'] );
+				?>
+				<div class="sto-adv-rep__field sto-adv-rep__field--rich-modern-editor" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="rich_modern_editor"<?php echo $this->leaf_adv_rep_required_attr( $node ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+					<?php if ( $title !== '' ) : ?>
+						<span class="sto-adv-rep__label"><?php echo esc_html( $title ); ?></span>
+					<?php endif; ?>
+					<div
+						class="sto-rich-modern-editor"
+						data-sto-rich-modern-editor="1"
+						data-sto-media-upload="<?php echo esc_attr( $media_upload ? '1' : '0' ); ?>"
+						style="--sto-rich-modern-editor-min-height: <?php echo esc_attr( (string) $editor_height ); ?>px;"
+					>
+						<div class="sto-rich-modern-editor__mount" aria-label="<?php esc_attr_e( 'Block editor', 'topten-simple-theme-options' ); ?>"></div>
+						<textarea
+							id="<?php echo esc_attr( $fid ); ?>"
+							class="sto-rich-modern-editor__input sto-adv-rep__input"
+							rows="6"
+							data-sto-adv-rep-input
+						><?php echo esc_textarea( $vstr ); ?></textarea>
 					</div>
 					<?php if ( $desc !== '' ) : ?>
 						<p class="sto-field-description sto-adv-rep__hint"><?php echo esc_html( $desc ); ?></p>

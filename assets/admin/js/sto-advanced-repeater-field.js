@@ -106,6 +106,9 @@
         if (k === 'icon_select') {
             return String($leaf.find('[data-sto-adv-rep-icon]').val() || '');
         }
+        if (k === 'rich_modern_editor') {
+            return String($leaf.find('.sto-rich-modern-editor__input').first().val() || '');
+        }
         if (k === 'textarea') {
             return String($leaf.find('[data-sto-adv-rep-input]').val() || '');
         }
@@ -218,6 +221,17 @@
             } else {
                 $h.trigger('change');
             }
+        } else if (k === 'rich_modern_editor') {
+            $leaf.find('.sto-rich-modern-editor__input').first().val('').trigger('change');
+            if (typeof window.stoDestroyRichModernEditors === 'function') {
+                window.stoDestroyRichModernEditors($leaf);
+            }
+            $leaf.find('.sto-rich-modern-editor').each(function () {
+                var $wrap = $(this);
+                $wrap.removeData('stoRichModernMounted stoRichModernRoot');
+                $wrap.removeClass('sto-rich-modern-editor--initialized');
+                $wrap.find('.sto-rich-modern-editor__mount').empty();
+            });
         } else {
             $leaf.find('[data-sto-adv-rep-input]').val('');
         }
@@ -274,6 +288,28 @@
      *
      * @param {JQuery} $root
      */
+    function prepareRepeaterRichModernLeaves($root) {
+        if (!$root || !$root.length) {
+            return;
+        }
+        $root.find('.sto-rich-modern-editor[data-sto-rich-modern-editor]').each(function () {
+            var $wrap = $(this);
+            if (typeof window.stoDestroyRichModernEditors === 'function') {
+                window.stoDestroyRichModernEditors($wrap);
+            }
+            $wrap.removeData('stoRichModernMounted stoRichModernRoot');
+            $wrap.removeClass('sto-rich-modern-editor--initialized');
+            $wrap.find('.sto-rich-modern-editor__mount').empty();
+        });
+    }
+
+    function refreshRichModernEditorsForScope($scope) {
+        if (!$scope || !$scope.length || typeof window.stoInitRichModernEditors !== 'function') {
+            return;
+        }
+        window.stoInitRichModernEditors($scope);
+    }
+
     function prepareRepeaterSelectLeaves($root) {
         if (!$root || !$root.length) {
             return;
@@ -421,6 +457,7 @@
         });
         $toggle.attr('aria-expanded', 'true');
         $toggle.find('.sto-adv-rep__chev').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        refreshRichModernEditorsForScope($body);
     }
 
     function refreshSelect2ForFieldRow($fromEl) {
@@ -630,6 +667,7 @@
                     });
                     refreshSelect2ForFieldRow($btn);
                     refreshIconSelectForScope($body);
+                    refreshRichModernEditorsForScope($body);
                 });
                 $btn.attr('aria-expanded', 'true');
                 $btn.find('.sto-adv-rep__chev').removeClass('fa-chevron-down').addClass('fa-chevron-up');
@@ -650,6 +688,7 @@
             var $proto = $list.children('li[data-sto-adv-rep-item]').first().clone(true, false);
             stripRepData($proto);
             prepareRepeaterSelectLeaves($proto);
+            prepareRepeaterRichModernLeaves($proto);
             clearItem($proto);
             var newIndex = $list.children('li[data-sto-adv-rep-item]').length;
             var isSublist = $list.attr('data-sto-adv-rep-sublist') === '1';
@@ -671,6 +710,7 @@
             window.setTimeout(function () {
                 refreshSelect2ForScope($proto);
                 refreshIconSelectForScope($proto);
+                refreshRichModernEditorsForScope($proto);
                 applyAdvRepLeafRequiredVisibility($fieldRow);
             }, 0);
         });
@@ -717,7 +757,7 @@
 
         $fieldRow.on(
             'input.stoAdvRep change.stoAdvRep',
-            '[data-sto-adv-rep-input], [data-sto-adv-rep-select], [data-sto-adv-rep-switcher], [data-sto-adv-rep-icon]',
+            '[data-sto-adv-rep-input], [data-sto-adv-rep-select], [data-sto-adv-rep-switcher], [data-sto-adv-rep-icon], .sto-rich-modern-editor__input',
             function () {
                 var $t = $(this);
                 if ($t.is('[data-sto-adv-rep-switcher]')) {
@@ -758,6 +798,9 @@
             }
             bindSortablesUnderFieldRow($fieldRow);
             applyAdvRepLeafRequiredVisibility($fieldRow);
+            $fieldRow.find('[data-sto-adv-rep-body]:visible').each(function () {
+                refreshRichModernEditorsForScope($(this));
+            });
         });
     };
 })(jQuery);
