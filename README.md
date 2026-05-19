@@ -765,6 +765,10 @@ That's it — no manual `require` calls needed. The autoloader handles the rest.
 
 ## Changelog
 
+### 1.0.0 — follow-up (2026-05-19, b)
+
+- **WooCommerce Product data — conditional visibility:** **`stoResolveOptionsAdminScope()`** in **`main.js`** so **`applyRequiredVisibility`**, **`initStoButtonGroups`**, and **`refreshStoSelect2`** run inside **`[data-sto-wc-product-data="1"]`** panels (not only **`.sto-option-panel-section.sto-is-active`**). Fixes nested groups tied to in-panel **New | Service** switchers staying hidden/disabled after tab change.
+
 ### 1.0.0 — follow-up (2026-05-19)
 
 - **Group `space` + WooCommerce Product data spacing:** nested groups with **`'space'`** apply **`margin-top`** on the grid **`.sto-field-group-cell`** only (not duplicated on the nested panel). WC root **`.sto-field-group-inner`** uses **`row-gap: 12px`** between stacked cells; **`margin-top: 0`** is no longer forced on every **`.sto-field-group`**.

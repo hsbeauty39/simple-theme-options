@@ -25,6 +25,10 @@
             if ($sidebar.length) {
                 return $sidebar;
             }
+            /* Advanced repeater rows are cloned; portal dropdown to body to avoid stale parents / clipping. */
+            if ($s.closest('.sto-adv-rep').length) {
+                return $(document.body);
+            }
         }
         var $wp = $('#wpbody-content');
         if ($wp.length) {
@@ -65,16 +69,49 @@
      * @param {string} nameAttr
      * @return {JQuery}
      */
+    /**
+     * Theme Settings leaf panel, WooCommerce Product data form, or post metabox inner.
+     *
+     * @param {JQuery} [$preferred]
+     * @return {JQuery}
+     */
+    function stoResolveOptionsAdminScope($preferred) {
+        if ($preferred && $preferred.length) {
+            return $preferred;
+        }
+        var $active = $('.sto-option-panel-section.sto-is-active');
+        if ($active.length) {
+            return $active;
+        }
+        var $wcForm = $('.sto-options-form--wc-product-data');
+        if ($wcForm.length) {
+            var $wcWrap = $wcForm.closest('.sto-option-panel-wrapper');
+            if ($wcWrap.length) {
+                return $wcWrap;
+            }
+            return $wcForm;
+        }
+        var $metaboxForm = $('.sto-options-form--metabox');
+        if ($metaboxForm.length) {
+            var $mbx = $metaboxForm.closest('.sto-theme-settings-metabox-inner');
+            if ($mbx.length) {
+                return $mbx;
+            }
+            return $metaboxForm;
+        }
+        return $active;
+    }
+
     function findOptionInputsByName(nameAttr) {
         if (!nameAttr) {
             return $();
         }
-        var $active = $('.sto-option-panel-section.sto-is-active');
-        var $inActive = $active.find(':input').filter(function() {
+        var $scope = stoResolveOptionsAdminScope();
+        var $inScope = $scope.find(':input').filter(function() {
             return this.name === nameAttr;
         });
-        if ($inActive.length) {
-            return $inActive;
+        if ($inScope.length) {
+            return $inScope;
         }
         var $form = $('.sto-options-form');
         if ($form.length) {
@@ -422,7 +459,7 @@
     }
 
     function applyRequiredVisibility($scope) {
-        var $context = ($scope && $scope.length) ? $scope : $('.sto-option-panel-section.sto-is-active');
+        var $context = stoResolveOptionsAdminScope($scope && $scope.length ? $scope : null);
         if (!$context.length) {
             return;
         }
@@ -619,6 +656,16 @@
             if ($s.data('select2')) {
                 return;
             }
+            if ($s.closest('.sto-adv-rep').length) {
+                var $wrap = $s.closest('.sto-select-wrap');
+                if ($wrap.length) {
+                    $wrap.find('.select2-container').remove();
+                }
+                $s
+                    .removeClass('select2-hidden-accessible')
+                    .removeAttr('aria-hidden')
+                    .removeAttr('tabindex');
+            }
             if (!isStoSelectEnhanceable($s)) {
                 return;
             }
@@ -670,7 +717,7 @@
                 return;
             }
 
-            var cfg = window.simple_theme_options && window.simple_theme_options.sto_dynamic_object;
+            var cfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_dynamic_object;
             if (!cfg || !cfg.ajax_url || !cfg.action || !cfg.nonce) {
                 return;
             }
@@ -771,7 +818,7 @@
     }
 
     function initStoButtonGroups($panel) {
-        var $scope = ($panel && $panel.length) ? $panel : $('.sto-option-panel-section.sto-is-active');
+        var $scope = stoResolveOptionsAdminScope($panel && $panel.length ? $panel : null);
         if (!$scope.length) {
             return;
         }
@@ -792,7 +839,7 @@
 
             $wrap.off('change.stoBtnGrp').on('change.stoBtnGrp', '[data-sto-button-group-input]', function() {
                 syncVisual();
-                var $panel = $wrap.closest('.sto-option-panel-section.sto-is-active');
+                var $panel = stoResolveOptionsAdminScope($wrap.closest('.sto-option-panel-wrapper, .sto-theme-settings-metabox-inner, .sto-option-panel-section'));
                 applyRequiredVisibility($panel.length ? $panel : undefined);
                 /* Content | Style tabs: typography may have booted hidden; retry Select2 after visibility. */
                 refreshSelect2AfterVisibility($panel.length ? $panel : undefined);
@@ -803,7 +850,7 @@
                 }, 80);
             });
             syncVisual();
-            var $panelInit = $wrap.closest('.sto-option-panel-section.sto-is-active');
+            var $panelInit = stoResolveOptionsAdminScope($wrap.closest('.sto-option-panel-wrapper, .sto-theme-settings-metabox-inner, .sto-option-panel-section'));
             applyRequiredVisibility($panelInit.length ? $panelInit : undefined);
         });
     }
@@ -831,7 +878,7 @@
 
     function refreshStoSelect2() {
         window.setTimeout(function() {
-            var $activePanel = $('.sto-option-panel-section.sto-is-active');
+            var $activePanel = stoResolveOptionsAdminScope();
             initStoResponsiveTabs($activePanel);
             /* Advanced repeater: bind delegated UI + sortables before Select2 so expanded rows enhance on first paint. */
             if (typeof window.stoInitAdvancedRepeaterFields === 'function') {
@@ -979,7 +1026,7 @@
             'sto-field-help-popover--state-loading sto-field-help-popover--state-error sto-field-help-popover--state-ready';
 
         function fieldHelpStrings() {
-            var cfg = window.simple_theme_options && window.simple_theme_options.sto_field_help;
+            var cfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_field_help;
             return {
                 loading: (cfg && cfg.loading) || 'Loading preview…',
                 loading_hint: (cfg && cfg.loading_hint) || 'Please wait.',
@@ -1505,6 +1552,98 @@
             }
         }
 
+        function stoGetMainPageSlug() {
+            var navCfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_nav;
+            var searchCfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_search;
+            return (navCfg && navCfg.page) || (searchCfg && searchCfg.page) || 'theme-settings';
+        }
+
+        function stoGetAdminBaseUrl() {
+            var navCfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_nav;
+            var base = (navCfg && navCfg.admin_url) ? navCfg.admin_url : (window.location.origin + '/wp-admin/');
+            if (base.charAt(base.length - 1) !== '/') {
+                base += '/';
+            }
+            return base;
+        }
+
+        /**
+         * Resolve admin.php links against /wp-admin/ so pushState never lands on /admin.php at site root.
+         *
+         * @param {string} href Sidebar, submenu, or relative admin link.
+         * @return {string}
+         */
+        function stoAbsAdminHref(href) {
+            if (!href) {
+                return href;
+            }
+            try {
+                return new URL(href, stoGetAdminBaseUrl()).toString();
+            } catch (absErr) {
+                return href;
+            }
+        }
+
+        function stoBuildAdminPageUrl(pageSlug, section) {
+            try {
+                var adminUrl = new URL('admin.php', stoGetAdminBaseUrl());
+                adminUrl.searchParams.set('page', pageSlug || stoGetMainPageSlug());
+                if (section) {
+                    adminUrl.searchParams.set('section', section);
+                }
+                return adminUrl.toString();
+            } catch (buildErr) {
+                var query = 'page=' + encodeURIComponent(pageSlug || stoGetMainPageSlug());
+                if (section) {
+                    query += '&section=' + encodeURIComponent(section);
+                }
+                return stoAbsAdminHref('admin.php?' + query);
+            }
+        }
+
+        function stoGetUrlPageParam(urlString) {
+            try {
+                return new URL(urlString, window.location.origin).searchParams.get('page') || '';
+            } catch (pageErr) {
+                return '';
+            }
+        }
+
+        function stoIsOnMainThemeSettingsScreen() {
+            var mainPage = stoGetMainPageSlug();
+            try {
+                var currentUrl = new URL(window.location.href, window.location.origin);
+                if (currentUrl.pathname.indexOf('/wp-admin/') === -1) {
+                    return false;
+                }
+                return (currentUrl.searchParams.get('page') || '') === mainPage;
+            } catch (screenErr) {
+                return false;
+            }
+        }
+
+        function stoCanUseSpaNavForHref(href) {
+            if (stoIsOnMainThemeSettingsScreen()) {
+                return stoGetUrlPageParam(stoAbsAdminHref(href)) === stoGetMainPageSlug();
+            }
+            var $wcWrap = $('.sto-option-panel-wrapper[data-sto-wc-product-data="1"]').first();
+            if ($wcWrap.length) {
+                var postBase = $wcWrap.attr('data-sto-post-edit-base') || '';
+                if (postBase) {
+                    try {
+                        var baseUrl = new URL(stoAbsAdminHref(postBase), window.location.origin);
+                        var targetUrl = new URL(stoAbsAdminHref(href), window.location.origin);
+                        var basePost = baseUrl.searchParams.get('post') || '';
+                        var targetPost = targetUrl.searchParams.get('post') || '';
+                        return baseUrl.pathname === targetUrl.pathname && basePost !== '' && basePost === targetPost;
+                    } catch (wcNavErr) {
+                        return false;
+                    }
+                }
+            }
+            return false;
+        }
+
         /**
          * WP submenu uses section=general while the real panel is section=layout — walk nested sidebar rows
          * until we hit a leaf slug that matches a panel + sidebar row.
@@ -1540,18 +1679,20 @@
         }
 
         function syncActiveState(urlString) {
+            urlString = stoAbsAdminHref(urlString || window.location.href);
+
             var rawSection = getSectionFromUrl(urlString);
             if (!rawSection) {
                 rawSection = $('.sto-option-panel-wrapper').attr('data-sto-default-leaf') || '';
-                if (!rawSection && window.simple_theme_options && window.simple_theme_options.sto_nav) {
-                    rawSection = window.simple_theme_options.sto_nav.default_leaf || '';
+                if (!rawSection && window.battery_simple_theme_options && window.battery_simple_theme_options.sto_nav) {
+                    rawSection = window.battery_simple_theme_options.sto_nav.default_leaf || '';
                 }
             }
             var section = resolveSectionToLeafSlug(rawSection);
 
             if (section && getSectionFromUrl(urlString) !== section) {
                 try {
-                    var u = new URL(urlString, window.location.origin);
+                    var u = new URL(stoAbsAdminHref(urlString), window.location.origin);
                     u.searchParams.set('section', section);
                     window.history.replaceState({}, '', u.toString());
                 } catch (e1) {
@@ -1592,40 +1733,48 @@
                 var leafForSave = (targetSection || '').trim();
                 if (!leafForSave) {
                     leafForSave = $('.sto-option-panel-wrapper').attr('data-sto-default-leaf') || '';
-                    if (!leafForSave && window.simple_theme_options && window.simple_theme_options.sto_nav) {
-                        leafForSave = window.simple_theme_options.sto_nav.default_leaf || '';
+                    if (!leafForSave && window.battery_simple_theme_options && window.battery_simple_theme_options.sto_nav) {
+                        leafForSave = window.battery_simple_theme_options.sto_nav.default_leaf || '';
                     }
                 }
                 var $saveForm = $('#sto-theme-settings-options-form');
                 if ($saveForm.length && leafForSave) {
                     $saveForm.find('input[name="sto_ts_section"]').val(leafForSave);
-                    var scfg = window.simple_theme_options && window.simple_theme_options.sto_search;
-                    var mbx = window.simple_theme_options && window.simple_theme_options.sto_metabox;
-                    if (mbx && mbx.active && mbx.post_edit_base) {
-                        try {
-                            var pu = new URL(mbx.post_edit_base, window.location.origin);
-                            pu.searchParams.set('section', leafForSave);
-                            pu.searchParams.delete('sto_saved');
-                            pu.searchParams.delete('sto_imported');
-                            pu.searchParams.delete('sto_validation_error');
-                            pu.searchParams.delete('sto-metabox-saved');
+                }
+                var $wcProductDataForm = $('.sto-options-form--wc-product-data');
+                if ($wcProductDataForm.length && leafForSave) {
+                    $wcProductDataForm.find('input[name="sto_ts_section"]').val(leafForSave);
+                }
+                var scfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_search;
+                var mbx = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_metabox;
+                if (mbx && mbx.active && mbx.post_edit_base) {
+                    try {
+                        var pu = new URL(mbx.post_edit_base, window.location.origin);
+                        pu.searchParams.set('section', leafForSave);
+                        pu.searchParams.delete('sto_saved');
+                        pu.searchParams.delete('sto_imported');
+                        pu.searchParams.delete('sto_validation_error');
+                        pu.searchParams.delete('sto-metabox-saved');
+                        if ($saveForm.length) {
                             $saveForm.attr('action', pu.toString());
-                            window.history.replaceState({}, '', pu.toString());
-                        } catch (eForm2) {
-                            /* ignore */
                         }
-                    } else if (scfg && scfg.admin_base && scfg.page) {
-                        try {
-                            var fu = new URL(scfg.admin_base, window.location.origin);
-                            fu.searchParams.set('page', scfg.page);
-                            fu.searchParams.set('section', leafForSave);
-                            fu.searchParams.delete('sto_saved');
-                            fu.searchParams.delete('sto_imported');
-                            fu.searchParams.delete('sto_validation_error');
+                        window.history.replaceState({}, '', pu.toString());
+                    } catch (eForm2) {
+                        /* ignore */
+                    }
+                } else if (scfg && scfg.admin_base && scfg.page) {
+                    try {
+                        var fu = new URL(scfg.admin_base, window.location.origin);
+                        fu.searchParams.set('page', scfg.page);
+                        fu.searchParams.set('section', leafForSave);
+                        fu.searchParams.delete('sto_saved');
+                        fu.searchParams.delete('sto_imported');
+                        fu.searchParams.delete('sto_validation_error');
+                        if ($saveForm.length) {
                             $saveForm.attr('action', fu.toString());
-                        } catch (eForm) {
-                            /* ignore */
                         }
+                    } catch (eForm) {
+                        /* ignore */
                     }
                 }
             }
@@ -1709,8 +1858,8 @@
             } catch (e2) {
                 currentPage = '';
             }
-            if (currentPage && !(window.simple_theme_options && window.simple_theme_options.sto_metabox && window.simple_theme_options.sto_metabox.active)) {
-                var cfgNav = window.simple_theme_options && window.simple_theme_options.sto_nav;
+            if (currentPage && !(window.battery_simple_theme_options && window.battery_simple_theme_options.sto_metabox && window.battery_simple_theme_options.sto_metabox.active)) {
+                var cfgNav = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_nav;
                 var wpSubHighlight = (cfgNav && cfgNav.wp_submenu_for_leaf && cfgNav.wp_submenu_for_leaf[section]) || section;
                 var $wpParent = $('#toplevel_page_' + currentPage);
                 $wpParent.find('li').removeClass('current');
@@ -1729,19 +1878,22 @@
         window.stoSyncThemeSettings = syncActiveState;
 
         (function initStoQuickSearch() {
-            var cfg = window.simple_theme_options && window.simple_theme_options.sto_search;
+            var cfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_search;
             if (!cfg || !Array.isArray(cfg.items) || !cfg.items.length) {
                 return;
             }
 
-            var $wrap = $('[data-sto-quick-search]');
-            if (!$wrap.length) {
+            var $wraps = $('[data-sto-quick-search]');
+            if (!$wraps.length) {
                 return;
             }
 
             var maxRes = cfg.max_results && cfg.max_results > 0 ? cfg.max_results : 50;
-            var $input = $wrap.find('.sto-quick-search-input');
-            var $panel = $wrap.find('.sto-quick-search-results');
+
+            $wraps.each(function() {
+            var $wrap = $(this);
+            var $input = $wrap.find('.sto-quick-search-input').first();
+            var $panel = $wrap.find('.sto-quick-search-results').first();
 
             // Keyboard-navigation state. `activeIdx` points at the currently highlighted row
             // inside the rendered results (`-1` when the panel is closed or empty). We
@@ -1857,7 +2009,7 @@
                 var focus = $btn.attr('data-focus') || '';
                 var itemPage = ($btn.attr('data-menu-page') || '').trim();
                 var pageSlug = itemPage || (cfg.page || '');
-                var mbxGlobal = window.simple_theme_options && window.simple_theme_options.sto_metabox;
+                var mbxGlobal = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_metabox;
                 var url;
                 if (mbxGlobal && mbxGlobal.active && mbxGlobal.post_edit_base) {
                     try {
@@ -1865,10 +2017,15 @@
                         uq.searchParams.set('section', section);
                         url = uq.toString();
                     } catch (eMq) {
-                        url = cfg.admin_base + '?page=' + encodeURIComponent(pageSlug) + '&section=' + encodeURIComponent(section);
+                        url = stoBuildAdminPageUrl(pageSlug, section);
                     }
                 } else {
-                    url = cfg.admin_base + '?page=' + encodeURIComponent(pageSlug) + '&section=' + encodeURIComponent(section);
+                    url = stoBuildAdminPageUrl(pageSlug, section);
+                }
+
+                if (!stoCanUseSpaNavForHref(url)) {
+                    window.location.href = url;
+                    return;
                 }
 
                 window.history.pushState({}, '', url);
@@ -1968,6 +2125,7 @@
                     }
                 }
             });
+            });
         })();
 
         (function initStoAccordionDemoJumpCards() {
@@ -2009,6 +2167,24 @@
         $('.sto-option-panel-sidebar').on('click', '.sto-option-panel-sidebar-item-link', function(e) {
             var $link = $(this);
             var href = $link.attr('href') || '';
+
+            // Upgrade / pricing — full admin navigation, not in-panel section SPA.
+            if (
+                $link.hasClass('sto-upgrade-cta')
+                || $link.closest('.sto-option-panel-sidebar-item--upgrade-cta').length
+                || $link.attr('data-sto-skip-spa-nav') === '1'
+            ) {
+                return;
+            }
+
+            href = stoAbsAdminHref(href);
+
+            if (!stoCanUseSpaNavForHref(href)) {
+                e.preventDefault();
+                window.location.href = href;
+                return;
+            }
+
             var $item = $link.closest('.sto-option-panel-sidebar-item');
             var $directChildren = $item.children('.sto-option-panel-sidebar-children');
 
@@ -2033,6 +2209,8 @@
             if (!href) {
                 return;
             }
+
+            href = stoAbsAdminHref(href);
 
             e.preventDefault();
 
@@ -2061,15 +2239,21 @@
                 return;
             }
 
-            var url = new URL(href, window.location.origin);
-            var page = url.searchParams.get('page') || '';
-            var section = url.searchParams.get('section') || '';
+            href = stoAbsAdminHref(href);
+            var page = stoGetUrlPageParam(href);
+            var section = getSectionFromUrl(href);
             if (!page || !section) {
                 return;
             }
 
-            // Keep normal behavior for other admin menus.
-            if (page !== 'theme-settings') {
+            var mainPage = stoGetMainPageSlug();
+            if (page !== mainPage) {
+                return;
+            }
+
+            if (!stoCanUseSpaNavForHref(href)) {
+                e.preventDefault();
+                window.location.href = href;
                 return;
             }
 
@@ -2078,8 +2262,19 @@
             syncActiveState(href);
         });
 
+        (function stoRecoverBrokenThemeSettingsUrl() {
+            var mainPage = stoGetMainPageSlug();
+            if (stoGetUrlPageParam(window.location.href) !== mainPage) {
+                return;
+            }
+            if (stoIsOnMainThemeSettingsScreen()) {
+                return;
+            }
+            window.location.replace(stoBuildAdminPageUrl(mainPage, getSectionFromUrl(window.location.href)));
+        })();
+
         syncActiveState(window.location.href);
-        applyRequiredVisibility($('.sto-option-panel-section.sto-is-active'));
+        applyRequiredVisibility(stoResolveOptionsAdminScope());
 
         /**
          * Persist Theme Settings metabox fields to post meta (AJAX to sto_save_theme_options_metabox).
@@ -2091,7 +2286,7 @@
         function stoRunMetaboxThemeSettingsAjaxSave(options) {
             options = options || {};
             var silent = !!options.silent;
-            var mbx = window.simple_theme_options && window.simple_theme_options.sto_metabox;
+            var mbx = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_metabox;
             if (!mbx || !mbx.active || !mbx.ajax_save_nonce || !mbx.ajax_action || !mbx.post_id) {
                 return Promise.resolve({ skipped: true });
             }
@@ -2110,7 +2305,7 @@
                     fd.append('action', mbx.ajax_action);
                     fd.append('nonce', mbx.ajax_save_nonce);
                     fd.append('post_id', String(mbx.post_id || ''));
-                    var ajaxUrl = (window.simple_theme_options && window.simple_theme_options.ajax_url) || '';
+                    var ajaxUrl = (window.battery_simple_theme_options && window.battery_simple_theme_options.ajax_url) || '';
                     window
                         .fetch(ajaxUrl, {
                             method: 'POST',
@@ -2156,7 +2351,7 @@
         }
 
         function initStoMetaboxSaveOnPostSave() {
-            var mbx = window.simple_theme_options && window.simple_theme_options.sto_metabox;
+            var mbx = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_metabox;
             if (!mbx || !mbx.active || !mbx.post_id) {
                 return;
             }
@@ -2231,7 +2426,7 @@
         function stoRunTermThemeSettingsAjaxSave(options) {
             options = options || {};
             var silent = !!options.silent;
-            var termCfg = window.simple_theme_options && window.simple_theme_options.sto_term;
+            var termCfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_term;
             if (!termCfg || !termCfg.active || !termCfg.ajax_save_nonce || !termCfg.ajax_action || !termCfg.term_id) {
                 return Promise.resolve({ skipped: true });
             }
@@ -2251,7 +2446,7 @@
                     fd.append('nonce', termCfg.ajax_save_nonce);
                     fd.append('term_id', String(termCfg.term_id || ''));
                     fd.append('taxonomy', String(termCfg.taxonomy || ''));
-                    var ajaxUrl = (window.simple_theme_options && window.simple_theme_options.ajax_url) || '';
+                    var ajaxUrl = (window.battery_simple_theme_options && window.battery_simple_theme_options.ajax_url) || '';
                     window
                         .fetch(ajaxUrl, {
                             method: 'POST',
@@ -2319,7 +2514,7 @@
         }
 
         function initStoTermSaveOnTermAdd() {
-            var termCfg = window.simple_theme_options && window.simple_theme_options.sto_term;
+            var termCfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_term;
             if (!termCfg || !termCfg.active || !termCfg.is_add) {
                 return;
             }
@@ -2334,7 +2529,7 @@
         initStoTermSaveOnTermAdd();
 
         function initStoTermSaveOnTermEdit() {
-            var termCfg = window.simple_theme_options && window.simple_theme_options.sto_term;
+            var termCfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_term;
             if (!termCfg || !termCfg.active || !termCfg.term_id || termCfg.is_add) {
                 return;
             }
@@ -2374,7 +2569,7 @@
          * skips Select2 init until the user scrolls/opens Meta boxes. Re-init when the shell enters view.
          */
         function initStoMetaboxIntersectionRefresh() {
-            var mbx = window.simple_theme_options && window.simple_theme_options.sto_metabox;
+            var mbx = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_metabox;
             if (!mbx || !mbx.active || typeof window.IntersectionObserver !== 'function') {
                 return;
             }
@@ -2408,7 +2603,7 @@
         initStoMetaboxIntersectionRefresh();
 
         function initStoTermIntersectionRefresh() {
-            var termCfg = window.simple_theme_options && window.simple_theme_options.sto_term;
+            var termCfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_term;
             if (!termCfg || !termCfg.active || typeof window.IntersectionObserver !== 'function') {
                 return;
             }
@@ -2495,7 +2690,7 @@
          */
         var stoOptionsFormWidgetRefreshTimer = null;
         function onStoOptionsFormControlChanged() {
-            applyRequiredVisibility($('.sto-option-panel-section.sto-is-active'));
+            applyRequiredVisibility(stoResolveOptionsAdminScope());
             window.clearTimeout(stoOptionsFormWidgetRefreshTimer);
             stoOptionsFormWidgetRefreshTimer = window.setTimeout(function() {
                 stoOptionsFormWidgetRefreshTimer = null;
