@@ -410,6 +410,16 @@ final class General {
 						),
 					),
 					array(
+						'type'          => 'rich_modern_editor',
+						'id'            => 'layout_rich_modern_inputs',
+						'title'         => __( 'Rich modern editor (Gutenberg)', 'topten-simple-theme-options' ),
+						'description'   => __( 'Block editor; stores serialized block markup. A standalone copy also lives under Measure, code & borders.', 'topten-simple-theme-options' ),
+						'editor_height' => 320,
+						'media_upload'  => true,
+						'width'         => '1-1',
+						'default'       => "<!-- wp:paragraph -->\n<p>" . esc_html__( 'Start writing with blocks…', 'topten-simple-theme-options' ) . "</p>\n<!-- /wp:paragraph -->",
+					),
+					array(
 						'type'            => 'phone',
 						'id'              => 'layout_phone',
 						'space'           => '20px',
