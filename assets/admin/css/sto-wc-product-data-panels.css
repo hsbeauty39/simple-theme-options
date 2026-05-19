@@ -364,10 +364,17 @@
 
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__item {
 	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+	overflow-x: hidden;
 }
 
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__body {
 	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	overflow-x: hidden;
 }
 
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field {
@@ -383,9 +390,22 @@
 
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__input,
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__select,
-#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-select-wrap {
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-select-wrap,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field .sto-input-wrap {
 	width: 100% !important;
 	max-width: 100% !important;
+	min-width: 0 !important;
+	box-sizing: border-box;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__mount,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__surface {
+	width: 100% !important;
+	max-width: 100% !important;
+	min-width: 0 !important;
+	box-sizing: border-box;
 }
 
 /* Nested groups + advanced repeater (e.g. service sub-tabs) — prevent inputs wider than the WC column. */

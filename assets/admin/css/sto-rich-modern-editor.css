@@ -8,21 +8,39 @@
 	border: 1px solid #dcdcde;
 	border-radius: 8px;
 	background: #fff;
-	overflow: visible;
+	overflow: hidden;
 	position: relative;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
 }
 
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__mount,
 .sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__mount {
 	position: relative;
 	min-height: var(--sto-rich-modern-editor-min-height, 320px);
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
 	pointer-events: auto;
 }
 
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__surface,
 .sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__surface {
 	min-height: var(--sto-rich-modern-editor-min-height, 320px);
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
 	padding: 12px 14px 48px;
+	overflow-x: hidden;
+}
+
+.sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .block-editor-writing-flow,
+.sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .block-editor-block-list__layout,
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-editor-writing-flow,
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-editor-block-list__layout {
+	max-width: 100%;
+	box-sizing: border-box;
 }
 
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__surface .block-editor-writing-flow {
@@ -78,4 +96,30 @@
 .sto-panel-section-fields:disabled .sto-field-row-rich-modern-editor .sto-rich-modern-editor__mount,
 .sto-panel-section-fields:disabled .sto-field-row-rich-modern-editor .sto-rich-modern-editor__surface {
 	pointer-events: auto;
+}
+
+/* WooCommerce product data panels — constrain block editor inside narrow repeater rows. */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-rich-modern-editor .sto-rich-modern-editor {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	overflow: hidden;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__mount,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__surface,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-rich-modern-editor .sto-rich-modern-editor__mount,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-rich-modern-editor .sto-rich-modern-editor__surface {
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	overflow-x: hidden;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .block-editor-writing-flow,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .block-editor-block-list__layout {
+	max-width: 100%;
+	box-sizing: border-box;
 }

@@ -6,6 +6,10 @@
 	max-width: min(920px, 100%);
 }
 
+.sto-adv-rep__field.sto-required-hidden {
+	display: none;
+}
+
 .sto-adv-rep__value {
 	display: none;
 }
@@ -103,6 +107,20 @@
 
 .sto-adv-rep__field {
 	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-adv-rep__field .sto-input-wrap {
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+.sto-adv-rep__field--rich-modern-editor {
+	min-width: 0;
+	max-width: 100%;
 }
 
 .sto-adv-rep__field .sto-select-wrap {
@@ -174,17 +192,24 @@
 }
 
 /* Checkbox-backed switcher: same pill chrome as `sto-switcher.css`; native input is visually hidden. */
+label.sto-switcher.sto-adv-rep__switcher {
+	position: relative;
+}
+
 .sto-adv-rep__switcher-input {
 	border: 0;
 	clip: rect(1px, 1px, 1px, 1px);
 	clip-path: inset(50%);
 	height: 1px;
-	margin: -1px;
+	left: 0;
+	margin: 0;
 	overflow: hidden;
 	padding: 0;
 	position: absolute;
+	top: 0;
 	width: 1px;
 	word-wrap: normal !important;
+	pointer-events: none;
 }
 
 .sto-adv-rep__add.button {

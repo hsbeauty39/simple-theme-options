@@ -18,8 +18,6 @@
     var BlockList = wp.blockEditor.BlockList;
     var WritingFlow = wp.blockEditor.WritingFlow;
     var ObserveTyping = wp.blockEditor.ObserveTyping;
-    var BlockTools = wp.blockEditor.BlockTools;
-    var DefaultBlockAppender = wp.blockEditor.DefaultBlockAppender;
     var BlockEditorKeyboardShortcuts = wp.blockEditor.BlockEditorKeyboardShortcuts;
     var SlotFillProvider = wp.components.SlotFillProvider;
     var Popover = wp.components.Popover;
@@ -124,18 +122,14 @@
             [onSerializedChange, setBlocks]
         );
 
+        /* BlockList renders the block appender; do not add DefaultBlockAppender (duplicates placeholder + inserter). */
         var editorSurface = createElement(
-            BlockTools,
+            WritingFlow,
             null,
             createElement(
-                WritingFlow,
+                ObserveTyping,
                 null,
-                createElement(
-                    ObserveTyping,
-                    null,
-                    createElement(BlockList, null),
-                    createElement(DefaultBlockAppender, null)
-                )
+                createElement(BlockList, null)
             )
         );
 
@@ -177,7 +171,13 @@
             return;
         }
 
+        if ($wrap.data('stoRichModernMounted')) {
+            return;
+        }
+
         registerCoreBlocksOnce();
+
+        mountNode.innerHTML = '';
 
         var allowedBlocks = parseAllowedBlocks($wrap);
         var mediaUpload = String($wrap.attr('data-sto-media-upload') || '1') === '1';
