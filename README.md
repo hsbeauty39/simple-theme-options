@@ -776,6 +776,10 @@ That's it — no manual `require` calls needed. The autoloader handles the rest.
 
 ## Changelog
 
+### 1.0.0 — follow-up (2026-05-19, d)
+
+- **WooCommerce Product data — URL `section` sync:** Clicking a native WC Product data tab (e.g. **Product Tabs** vs **Battery Specifications**) updates `?section=` on the product edit URL to that menu’s default leaf (or keeps the current section when it belongs to that tab). On load/refresh, `section` activates the matching WC tab and STO inner panel. Register with **`woocommerce_product_data_panel` => '#{target}_product_data'`** on **`Menu::register()`**.
+
 ### 1.0.0 — follow-up (2026-05-19, c)
 
 - **Rich modern editor field:** New premium **`rich_modern_editor`** type — WordPress block editor (Gutenberg) inside Theme Settings, groups, tabs, and accordions. Class **`RichModernEditor`**; assets **`sto-rich-modern-editor`**; stores serialized block markup; samples on **Code & borders** and **Groups & panels**.

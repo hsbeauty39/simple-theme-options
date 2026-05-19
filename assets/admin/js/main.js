@@ -1558,6 +1558,176 @@
             }
         }
 
+        function stoParseLeafSlugsAttr($wrap) {
+            if (!$wrap || !$wrap.length) {
+                return [];
+            }
+            var raw = $wrap.attr('data-sto-leaf-slugs') || '[]';
+            try {
+                var parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (parseErr) {
+                return [];
+            }
+        }
+
+        function stoGetWcProductDataWraps() {
+            return $('.sto-option-panel-wrapper[data-sto-wc-product-data="1"]');
+        }
+
+        function stoIsWcProductDataScreen() {
+            return stoGetWcProductDataWraps().length > 0;
+        }
+
+        function stoLeafBelongsToWrap(sectionSlug, $wrap) {
+            var leafSlugs = stoParseLeafSlugsAttr($wrap);
+            return leafSlugs.indexOf(sectionSlug) !== -1;
+        }
+
+        function stoFindWrapForPanelSelector(panelSelector) {
+            var selector = (panelSelector || '').trim();
+            if (!selector) {
+                return $();
+            }
+            var $found = $();
+            stoGetWcProductDataWraps().each(function () {
+                var $wrap = $(this);
+                if (($wrap.attr('data-sto-wc-panel-selector') || '').trim() === selector) {
+                    $found = $wrap;
+                    return false;
+                }
+            });
+            return $found;
+        }
+
+        function stoFindWrapForSection(sectionSlug) {
+            var section = (sectionSlug || '').trim();
+            if (!section) {
+                return $();
+            }
+            var $found = $();
+            stoGetWcProductDataWraps().each(function () {
+                var $wrap = $(this);
+                if (stoLeafBelongsToWrap(section, $wrap)) {
+                    $found = $wrap;
+                    return false;
+                }
+            });
+            return $found;
+        }
+
+        function stoGetVisibleWcProductDataWrap() {
+            var $visiblePanel = $('.sto-wc-product-data-panel:visible').first();
+            if ($visiblePanel.length) {
+                var $wrap = $visiblePanel.find('.sto-option-panel-wrapper[data-sto-wc-product-data="1"]').first();
+                if ($wrap.length) {
+                    return $wrap;
+                }
+            }
+            return stoGetWcProductDataWraps().first();
+        }
+
+        /**
+         * Resolve a section slug to a leaf within one WC Product data STO tree.
+         */
+        function stoResolveSectionToLeafInWrap(rawSection, $wrap) {
+            if (!$wrap || !$wrap.length) {
+                return resolveSectionToLeafSlug(rawSection);
+            }
+
+            var section = (rawSection || '').trim();
+            if (!section) {
+                section = ($wrap.attr('data-sto-default-leaf') || '').trim();
+            }
+
+            var guard = 0;
+            while (guard++ < 25) {
+                if (stoLeafBelongsToWrap(section, $wrap)) {
+                    return section;
+                }
+                var $row = $wrap.find('.sto-option-panel-sidebar-item[data-sto-section="' + section + '"]').first();
+                if (!$row.length) {
+                    break;
+                }
+                var $nested = $row.children('.sto-option-panel-sidebar-children');
+                if (!$nested.length) {
+                    break;
+                }
+                var $firstLink = $nested
+                    .children('.sto-option-panel-sidebar-item')
+                    .first()
+                    .children('.sto-option-panel-sidebar-item-link')
+                    .first();
+                var nextSection = getSectionFromUrl($firstLink.attr('href') || '');
+                if (!nextSection || nextSection === section) {
+                    break;
+                }
+                section = nextSection;
+            }
+
+            if (stoLeafBelongsToWrap(section, $wrap)) {
+                return section;
+            }
+
+            var defaultLeaf = ($wrap.attr('data-sto-default-leaf') || '').trim();
+            if (defaultLeaf) {
+                return defaultLeaf;
+            }
+
+            var leafSlugs = stoParseLeafSlugsAttr($wrap);
+            return leafSlugs.length ? leafSlugs[0] : '';
+        }
+
+        function stoBuildPostEditUrlWithSection($wrap, sectionSlug) {
+            var postBase = ($wrap.attr('data-sto-post-edit-base') || '').trim();
+            if (!postBase) {
+                return '';
+            }
+            try {
+                var postUrl = new URL(stoAbsAdminHref(postBase), window.location.origin);
+                if (sectionSlug) {
+                    postUrl.searchParams.set('section', sectionSlug);
+                } else {
+                    postUrl.searchParams.delete('section');
+                }
+                postUrl.searchParams.delete('sto_saved');
+                postUrl.searchParams.delete('sto_imported');
+                postUrl.searchParams.delete('sto_validation_error');
+                postUrl.searchParams.delete('sto-metabox-saved');
+                postUrl.searchParams.delete('message');
+                return postUrl.toString();
+            } catch (urlErr) {
+                return postBase;
+            }
+        }
+
+        function stoActivateWcProductDataPanel($wrap, options) {
+            options = options || {};
+            if (!$wrap || !$wrap.length) {
+                return;
+            }
+            var panelSelector = ($wrap.attr('data-sto-wc-panel-selector') || '').trim();
+            if (!panelSelector) {
+                return;
+            }
+            var $tabLink = $('#woocommerce-product-data .product_data_tabs li a[href="' + panelSelector + '"]');
+            if ($tabLink.length && !$tabLink.parent().hasClass('active')) {
+                $tabLink.trigger('click');
+            }
+            if (options.syncPanelWrap) {
+                window.setTimeout(function () {
+                    var $wrapEl = $('#woocommerce-product-data .panel-wrap.product_data');
+                    if ($wrapEl.length) {
+                        $wrapEl.css('overflow', 'hidden');
+                        var $stoPanel = $wrapEl.children('.panel.sto-wc-product-data-panel');
+                        if ($stoPanel.length) {
+                            $stoPanel.css('overflow', $stoPanel.is(':visible') ? 'visible' : 'hidden');
+                        }
+                    }
+                }, 0);
+            }
+        }
+
         function stoGetMainPageSlug() {
             var navCfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_nav;
             var searchCfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_search;
@@ -1687,30 +1857,58 @@
         function syncActiveState(urlString) {
             urlString = stoAbsAdminHref(urlString || window.location.href);
 
+            var isWcProductData = stoIsWcProductDataScreen();
+            var $wcScopeWrap = $();
+
             var rawSection = getSectionFromUrl(urlString);
             if (!rawSection) {
-                rawSection = $('.sto-option-panel-wrapper').attr('data-sto-default-leaf') || '';
-                if (!rawSection && window.battery_simple_theme_options && window.battery_simple_theme_options.sto_nav) {
-                    rawSection = window.battery_simple_theme_options.sto_nav.default_leaf || '';
+                if (isWcProductData) {
+                    $wcScopeWrap = stoGetVisibleWcProductDataWrap();
+                    rawSection = $wcScopeWrap.attr('data-sto-default-leaf') || '';
+                } else {
+                    rawSection = $('.sto-option-panel-wrapper').attr('data-sto-default-leaf') || '';
+                    if (!rawSection && window.battery_simple_theme_options && window.battery_simple_theme_options.sto_nav) {
+                        rawSection = window.battery_simple_theme_options.sto_nav.default_leaf || '';
+                    }
                 }
             }
-            var section = resolveSectionToLeafSlug(rawSection);
+
+            if (isWcProductData) {
+                $wcScopeWrap = stoFindWrapForSection(rawSection);
+                if (!$wcScopeWrap.length) {
+                    $wcScopeWrap = stoGetVisibleWcProductDataWrap();
+                }
+                stoActivateWcProductDataPanel($wcScopeWrap, { syncPanelWrap: true });
+            }
+
+            var section = isWcProductData
+                ? stoResolveSectionToLeafInWrap(rawSection, $wcScopeWrap)
+                : resolveSectionToLeafSlug(rawSection);
 
             if (section && getSectionFromUrl(urlString) !== section) {
                 try {
                     var u = new URL(stoAbsAdminHref(urlString), window.location.origin);
                     u.searchParams.set('section', section);
                     window.history.replaceState({}, '', u.toString());
+                    urlString = u.toString();
                 } catch (e1) {
                     /* ignore */
                 }
             }
 
-            $('.sto-option-panel-sidebar-item, .sto-option-panel-sidebar-item-link')
-                .removeClass('sto-is-active sto-is-parent-active');
+            if (isWcProductData && $wcScopeWrap.length) {
+                $wcScopeWrap
+                    .find('.sto-option-panel-sidebar-item, .sto-option-panel-sidebar-item-link')
+                    .removeClass('sto-is-active sto-is-parent-active');
+            } else {
+                $('.sto-option-panel-sidebar-item, .sto-option-panel-sidebar-item-link')
+                    .removeClass('sto-is-active sto-is-parent-active');
+            }
 
-            function switchSectionContent(targetSection) {
-                var $panels = $('.sto-option-panel-section');
+            function switchSectionContent(targetSection, $scopeWrap) {
+                var $panels = $scopeWrap && $scopeWrap.length
+                    ? $scopeWrap.find('.sto-option-panel-section')
+                    : $('.sto-option-panel-section');
                 if (!$panels.length) {
                     return;
                 }
@@ -1738,18 +1936,29 @@
 
                 var leafForSave = (targetSection || '').trim();
                 if (!leafForSave) {
-                    leafForSave = $('.sto-option-panel-wrapper').attr('data-sto-default-leaf') || '';
-                    if (!leafForSave && window.battery_simple_theme_options && window.battery_simple_theme_options.sto_nav) {
-                        leafForSave = window.battery_simple_theme_options.sto_nav.default_leaf || '';
+                    if ($scopeWrap && $scopeWrap.length) {
+                        leafForSave = $scopeWrap.attr('data-sto-default-leaf') || '';
+                    } else {
+                        leafForSave = $('.sto-option-panel-wrapper').attr('data-sto-default-leaf') || '';
+                        if (!leafForSave && window.battery_simple_theme_options && window.battery_simple_theme_options.sto_nav) {
+                            leafForSave = window.battery_simple_theme_options.sto_nav.default_leaf || '';
+                        }
                     }
                 }
                 var $saveForm = $('#sto-theme-settings-options-form');
                 if ($saveForm.length && leafForSave) {
                     $saveForm.find('input[name="sto_ts_section"]').val(leafForSave);
                 }
-                var $wcProductDataForm = $('.sto-options-form--wc-product-data');
-                if ($wcProductDataForm.length && leafForSave) {
-                    $wcProductDataForm.find('input[name="sto_ts_section"]').val(leafForSave);
+                if ($scopeWrap && $scopeWrap.length) {
+                    var $wcForm = $scopeWrap.find('.sto-options-form--wc-product-data').first();
+                    if ($wcForm.length && leafForSave) {
+                        $wcForm.find('input[name="sto_ts_section"]').val(leafForSave);
+                    }
+                } else {
+                    var $wcProductDataForm = $('.sto-options-form--wc-product-data');
+                    if ($wcProductDataForm.length && leafForSave) {
+                        $wcProductDataForm.find('input[name="sto_ts_section"]').val(leafForSave);
+                    }
                 }
                 var scfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_search;
                 var mbx = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_metabox;
@@ -1764,7 +1973,14 @@
                         if ($saveForm.length) {
                             $saveForm.attr('action', pu.toString());
                         }
-                        window.history.replaceState({}, '', pu.toString());
+                        if (isWcProductData && $scopeWrap && $scopeWrap.length) {
+                            var wcUrl = stoBuildPostEditUrlWithSection($scopeWrap, leafForSave);
+                            if (wcUrl) {
+                                window.history.replaceState({}, '', wcUrl);
+                            }
+                        } else {
+                            window.history.replaceState({}, '', pu.toString());
+                        }
                     } catch (eForm2) {
                         /* ignore */
                     }
@@ -1786,12 +2002,21 @@
             }
 
             if (!section) {
-                switchSectionContent(section);
+                switchSectionContent(section, isWcProductData ? $wcScopeWrap : null);
                 refreshStoSelect2();
                 return;
             }
 
-            var $customLinks = $('.sto-option-panel-sidebar .sto-option-panel-sidebar-item-link');
+            if (isWcProductData && !$wcScopeWrap.length) {
+                $wcScopeWrap = stoFindWrapForSection(section);
+            }
+            if (isWcProductData && $wcScopeWrap.length) {
+                stoActivateWcProductDataPanel($wcScopeWrap, { syncPanelWrap: true });
+            }
+
+            var $customLinks = isWcProductData && $wcScopeWrap.length
+                ? $wcScopeWrap.find('.sto-option-panel-sidebar .sto-option-panel-sidebar-item-link')
+                : $('.sto-option-panel-sidebar .sto-option-panel-sidebar-item-link');
             // Parent rows may share the same href section=… as their first child; match owning item slug (data-sto-section).
             var $activeCustomLink = $customLinks.filter(function() {
                 var linkHref = $(this).attr('href') || '';
@@ -1841,21 +2066,27 @@
                 // Update right panel heading (icon + name) without page refresh.
                 var label = $activeCustomLink.find('.sto-option-panel-sidebar-item-title').text().trim();
                 if (label) {
-                    $('.sto-option-panel-content-title').text(label);
+                    var $titleTarget = isWcProductData && $wcScopeWrap.length
+                        ? $wcScopeWrap.find('.sto-option-panel-content-title')
+                        : $('.sto-option-panel-content-title');
+                    $titleTarget.text(label);
                 }
 
                 var iconClass = ($activeCustomLink.find('.sto-option-panel-icon').first().attr('class') || '').trim();
                 if (iconClass) {
-                    $('.sto-option-panel-content-icon')
+                    var $iconTarget = isWcProductData && $wcScopeWrap.length
+                        ? $wcScopeWrap.find('.sto-option-panel-content-icon')
+                        : $('.sto-option-panel-content-icon');
+                    $iconTarget
                         .attr('class', iconClass + ' sto-option-panel-content-icon')
                         .removeClass('sto-option-panel-sidebar-toggle fa-angle-up fa-angle-down');
                 }
 
-                switchSectionContent(section);
+                switchSectionContent(section, isWcProductData ? $wcScopeWrap : null);
 
             }
 
-            switchSectionContent(section);
+            switchSectionContent(section, isWcProductData ? $wcScopeWrap : null);
             refreshStoSelect2();
 
             var currentPage = '';
@@ -2277,6 +2508,39 @@
                 return;
             }
             window.location.replace(stoBuildAdminPageUrl(mainPage, getSectionFromUrl(window.location.href)));
+        })();
+
+        (function initStoWcProductDataTabUrlSync() {
+            var $productData = $('#woocommerce-product-data');
+            if (!$productData.length || !stoIsWcProductDataScreen()) {
+                return;
+            }
+
+            $productData.on('click', '.product_data_tabs li a', function () {
+                var panelSelector = ($(this).attr('href') || '').trim();
+                if (!panelSelector || panelSelector.charAt(0) !== '#') {
+                    return;
+                }
+
+                var $wrap = stoFindWrapForPanelSelector(panelSelector);
+                if (!$wrap.length) {
+                    return;
+                }
+
+                var currentSection = getSectionFromUrl(window.location.href);
+                var targetSection = stoLeafBelongsToWrap(currentSection, $wrap)
+                    ? currentSection
+                    : ($wrap.attr('data-sto-default-leaf') || '');
+                targetSection = stoResolveSectionToLeafInWrap(targetSection, $wrap);
+
+                var nextUrl = stoBuildPostEditUrlWithSection($wrap, targetSection);
+                if (!nextUrl) {
+                    return;
+                }
+
+                window.history.replaceState({}, '', nextUrl);
+                syncActiveState(nextUrl);
+            });
         })();
 
         syncActiveState(window.location.href);

@@ -103,6 +103,13 @@ final class Menu {
 	private $menu_root_woocommerce_product_data = array();
 
 	/**
+	 * WooCommerce Product data panel DOM selector per menu root (e.g. `#battery_specifications_product_data`).
+	 *
+	 * @var array<string, string>
+	 */
+	private $menu_root_woocommerce_product_data_panel = array();
+
+	/**
 	 * Stack of post IDs for {@see filter_option_sto_options_metabox_overlay()} while rendering the Theme Settings metabox.
 	 *
 	 * @var array<int, int>
@@ -387,6 +394,39 @@ final class Menu {
 	}
 
 	/**
+	 * Panel anchor for a WooCommerce Product data tab (must start with `#`).
+	 */
+	public function get_woocommerce_product_data_panel_selector( string $menu_slug ): string {
+		$menu_slug = sanitize_key( $menu_slug );
+		$selector  = $menu_slug !== '' ? (string) ( $this->menu_root_woocommerce_product_data_panel[ $menu_slug ] ?? '' ) : '';
+
+		return str_starts_with( $selector, '#' ) ? $selector : '';
+	}
+
+	/**
+	 * Registered menu root that owns a leaf section slug on Product data screens.
+	 */
+	public function get_menu_page_slug_for_leaf_section( string $leaf_section_slug ): string {
+		$leaf_section_slug = sanitize_key( $leaf_section_slug );
+		if ( $leaf_section_slug === '' ) {
+			return '';
+		}
+
+		foreach ( array_keys( $this->menu_root_woocommerce_product_data ) as $menu_slug ) {
+			$menu_slug = sanitize_key( (string) $menu_slug );
+			if ( $menu_slug === '' ) {
+				continue;
+			}
+			$leaf_map = $this->get_leaf_section_slug_map_for_menu_page( $menu_slug );
+			if ( isset( $leaf_map[ $leaf_section_slug ] ) ) {
+				return $menu_slug;
+			}
+		}
+
+		return '';
+	}
+
+	/**
 	 * Any registered root uses WooCommerce **Product data** for this post type.
 	 */
 	public function has_woocommerce_product_data_for_post_type( string $post_type ): bool {
@@ -513,6 +553,8 @@ final class Menu {
 		$nav_sections    = $this->get_sections_for_navigation_for_menu_page( $menu_page_slug );
 		$default_leaf    = $this->get_default_leaf_section_slug_for_menu_page( $menu_page_slug );
 		$sidebar_base    = $this->get_metabox_post_editor_base_url( $post_id, $editor_post );
+		$wc_panel_selector = $this->get_woocommerce_product_data_panel_selector( $menu_page_slug );
+		$wc_leaf_slugs     = array_keys( $this->get_leaf_section_slug_map_for_menu_page( $menu_page_slug ) );
 		if ( $sidebar_base === '' ) {
 			return;
 		}
@@ -552,6 +594,12 @@ final class Menu {
 				data-sto-post-edit-base="<?php echo esc_attr( $sidebar_base ); ?>"
 				data-sto-post-id="<?php echo esc_attr( (string) $post_id ); ?>"
 				data-sto-wc-product-data="1"
+				<?php if ( $wc_panel_selector !== '' ) : ?>
+					data-sto-wc-panel-selector="<?php echo esc_attr( $wc_panel_selector ); ?>"
+				<?php endif; ?>
+				<?php if ( ! empty( $wc_leaf_slugs ) ) : ?>
+					data-sto-leaf-slugs="<?php echo esc_attr( wp_json_encode( array_values( $wc_leaf_slugs ) ) ); ?>"
+				<?php endif; ?>
 			>
 				<div class="sto-option-panel-body">
 					<div class="sto-option-panel-nav-layout">
@@ -927,6 +975,10 @@ final class Menu {
 		}
 		if ( ! empty( $args['woocommerce_product_data'] ) ) {
 			$this->menu_root_woocommerce_product_data[ $slug_s ] = true;
+			$panel_selector = isset( $args['woocommerce_product_data_panel'] ) ? trim( (string) $args['woocommerce_product_data_panel'] ) : '';
+			if ( $panel_selector !== '' && str_starts_with( $panel_selector, '#' ) ) {
+				$this->menu_root_woocommerce_product_data_panel[ $slug_s ] = $panel_selector;
+			}
 		}
 		if ( ! empty( $metabox_cfg['post_types'] ) && empty( $args['woocommerce_product_data'] ) ) {
 			ThemeSettingsMetabox::instance()->register_root(
