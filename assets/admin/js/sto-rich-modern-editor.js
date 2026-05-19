@@ -16,6 +16,7 @@
     var serialize = wp.blocks.serialize;
     var BlockEditorProvider = wp.blockEditor.BlockEditorProvider;
     var BlockList = wp.blockEditor.BlockList;
+    var DefaultBlockAppender = wp.blockEditor.DefaultBlockAppender;
     var WritingFlow = wp.blockEditor.WritingFlow;
     var ObserveTyping = wp.blockEditor.ObserveTyping;
     var BlockEditorKeyboardShortcuts = wp.blockEditor.BlockEditorKeyboardShortcuts;
@@ -171,14 +172,22 @@
             [onSerializedChange, setBlocks]
         );
 
-        /* BlockList renders the block appender; do not add DefaultBlockAppender (duplicates placeholder + inserter). */
+        /*
+         * Always pass renderAppender so a line/+ shows after the last block (e.g. table).
+         * Without it, shouldRenderAppender is false when a block is selected and users cannot click below.
+         * Do not mount a second DefaultBlockAppender beside BlockList — that duplicated the empty state UI.
+         */
         var editorSurface = createElement(
             WritingFlow,
             null,
             createElement(
                 ObserveTyping,
                 null,
-                createElement(BlockList, null)
+                createElement(BlockList, {
+                    renderAppender: function () {
+                        return createElement(DefaultBlockAppender, null);
+                    },
+                })
             )
         );
 
