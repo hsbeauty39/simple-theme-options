@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\AdvancedRepeaterControl;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -22,10 +23,12 @@ defined( 'ABSPATH' ) || exit;
  * reorder (**jQuery UI Sortable**), **collapse / expand** per item, **remove** row. New rows match the same **collapsed /
  * expanded** default as the initial markup. Optional **`default_collapsed`** (bool) on **`register()`** — when **true**
  * (default), every root and nested item renders **collapsed** until the user expands it. Set **`default_collapsed` =>
- * false** for legacy “open by default” behaviour. **No per-breakpoint `responsive` maps**
+ * false** for legacy “open by default” behaviour. Optional **`repeater_title_view`** (schema leaf **`id`**) shows that
+ * field’s value in the collapsed row header when non-empty, otherwise **Item N** / **Nested item N**. **No per-breakpoint `responsive` maps**
  * on sub-fields inside the repeater in this version (values are scalars or nested JSON only — carve-out documented
- * in project rules / README). Conditional **`required`** on the **repeater row** uses global **`sto_options`** only;
- * inner-cell **`required`** is not evaluated server-side for visibility (extend later). **`html_required`** on
+ * in project rules / README). Conditional **`required`** on the **repeater row** uses global **`sto_options`** only.
+ * Inner schema leaves may declare **`required`** (OR-of-AND groups keyed by sibling leaf ids); admin visibility is
+ * evaluated per row in **`sto-advanced-repeater-field.js`** via **`data-sto-adv-rep-required`**. **`html_required`** on
  * schema leaves is enforced when saving.
  */
 final class AdvancedRepeaterControl {
@@ -92,6 +95,8 @@ final class AdvancedRepeaterControl {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -122,6 +127,7 @@ final class AdvancedRepeaterControl {
 		$field['max']            = $max;
 		$field['default_rows']        = $this->normalize_default_items( isset( $field['default'] ) ? $field['default'] : array(), $schema, $max );
 		$field['default_collapsed']   = array_key_exists( 'default_collapsed', $field ) ? (bool) $field['default_collapsed'] : true;
+		$field['repeater_title_view']   = isset( $field['repeater_title_view'] ) ? sanitize_key( (string) $field['repeater_title_view'] ) : '';
 
 		if ( ! isset( $this->fields_by_section[ $section_slug ] ) ) {
 			$this->fields_by_section[ $section_slug ] = array();
@@ -210,14 +216,15 @@ final class AdvancedRepeaterControl {
 				}
 				$def_rows = $this->normalize_default_items( isset( $item['default'] ) ? $item['default'] : array(), $sub, $mx );
 				$out[]    = array(
-					'type'          => 'advanced_repeater',
-					'id'            => $id,
-					'title'         => isset( $item['title'] ) ? (string) $item['title'] : '',
-					'description'   => isset( $item['description'] ) ? (string) $item['description'] : '',
-					'fields'        => $sub,
-					'max'           => $mx,
-					'default_rows'  => $def_rows,
-					'html_required' => ! empty( $item['html_required'] ),
+					'type'               => 'advanced_repeater',
+					'id'                 => $id,
+					'title'              => isset( $item['title'] ) ? (string) $item['title'] : '',
+					'description'        => isset( $item['description'] ) ? (string) $item['description'] : '',
+					'fields'             => $sub,
+					'max'                => $mx,
+					'default_rows'       => $def_rows,
+					'html_required'      => ! empty( $item['html_required'] ),
+					'repeater_title_view' => isset( $item['repeater_title_view'] ) ? sanitize_key( (string) $item['repeater_title_view'] ) : '',
 				);
 				++$count;
 				continue;
@@ -231,6 +238,7 @@ final class AdvancedRepeaterControl {
 					'title'         => isset( $item['title'] ) ? (string) $item['title'] : '',
 					'description'   => isset( $item['description'] ) ? (string) $item['description'] : '',
 					'default'       => $def_sw,
+					'required'      => $this->normalize_leaf_required( $item ),
 					'html_required' => ! empty( $item['html_required'] ),
 				);
 				++$count;
@@ -248,6 +256,7 @@ final class AdvancedRepeaterControl {
 					'min'           => isset( $item['min'] ) ? (string) $item['min'] : '',
 					'max'           => isset( $item['max'] ) ? (string) $item['max'] : '',
 					'step'          => isset( $item['step'] ) ? (string) $item['step'] : '',
+					'required'      => $this->normalize_leaf_required( $item ),
 					'html_required' => ! empty( $item['html_required'] ),
 				);
 				++$count;
@@ -270,6 +279,7 @@ final class AdvancedRepeaterControl {
 					'placeholder'   => isset( $item['placeholder'] ) ? (string) $item['placeholder'] : '',
 					'options'       => $opts,
 					'default'       => $default_key,
+					'required'      => $this->normalize_leaf_required( $item ),
 					'html_required' => ! empty( $item['html_required'] ),
 				);
 				++$count;
@@ -316,6 +326,34 @@ final class AdvancedRepeaterControl {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * @param array<string, mixed> $item Raw schema leaf from register().
+	 * @return array<int|string, mixed>
+	 */
+	private function normalize_leaf_required( array $item ): array {
+		if ( ! isset( $item['required'] ) || ! is_array( $item['required'] ) ) {
+			return array();
+		}
+
+		return $item['required'];
+	}
+
+	/**
+	 * @param array<string, mixed> $node Normalized schema leaf.
+	 */
+	private function leaf_adv_rep_required_attr( array $node ): string {
+		if ( empty( $node['required'] ) || ! is_array( $node['required'] ) ) {
+			return '';
+		}
+
+		$json = wp_json_encode( $node['required'] );
+		if ( ! is_string( $json ) || $json === '' ) {
+			return '';
+		}
+
+		return ' data-sto-adv-rep-required="' . esc_attr( $json ) . '"';
 	}
 
 	/**
@@ -543,6 +581,7 @@ final class AdvancedRepeaterControl {
 		$max           = isset( $field['max'] ) ? absint( $field['max'] ) : 0;
 		$default_rows       = isset( $field['default_rows'] ) && is_array( $field['default_rows'] ) ? $field['default_rows'] : array();
 		$default_collapsed  = ! empty( $field['default_collapsed'] );
+		$repeater_title_view = isset( $field['repeater_title_view'] ) ? sanitize_key( (string) $field['repeater_title_view'] ) : '';
 		$is_inner           = ( 'group_inner' === $context );
 
 		$row_classes = array( 'sto-field-row', 'sto-field-row-advanced-repeater' );
@@ -560,13 +599,13 @@ final class AdvancedRepeaterControl {
 		}
 
 		$i18n = array(
-			'addItem'         => __( 'Add item', 'simple-theme-options' ),
-			'remove'          => __( 'Remove item', 'simple-theme-options' ),
-			'drag'            => __( 'Drag to reorder', 'simple-theme-options' ),
-			'collapse'        => __( 'Collapse', 'simple-theme-options' ),
-			'expand'          => __( 'Expand', 'simple-theme-options' ),
-			'itemLabel'       => __( 'Item', 'simple-theme-options' ),
-			'nestedItemLabel' => __( 'Nested item', 'simple-theme-options' ),
+			'addItem'         => __( 'Add item', 'topten-simple-theme-options' ),
+			'remove'          => __( 'Remove item', 'topten-simple-theme-options' ),
+			'drag'            => __( 'Drag to reorder', 'topten-simple-theme-options' ),
+			'collapse'        => __( 'Collapse', 'topten-simple-theme-options' ),
+			'expand'          => __( 'Expand', 'topten-simple-theme-options' ),
+			'itemLabel'       => __( 'Item', 'topten-simple-theme-options' ),
+			'nestedItemLabel' => __( 'Nested item', 'topten-simple-theme-options' ),
 		);
 
 		$input_name = 'sto_options[' . $field_id . ']';
@@ -574,7 +613,10 @@ final class AdvancedRepeaterControl {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -591,6 +633,9 @@ final class AdvancedRepeaterControl {
 				class="sto-adv-rep"
 				data-sto-adv-rep="1"
 				data-sto-adv-rep-max="<?php echo esc_attr( $max_attr ); ?>"
+				<?php if ( $repeater_title_view !== '' ) : ?>
+					data-sto-adv-rep-title-view="<?php echo esc_attr( $repeater_title_view ); ?>"
+				<?php endif; ?>
 				data-sto-adv-rep-i18n="<?php echo esc_attr( wp_json_encode( $i18n ) ); ?>"
 			>
 				<input
@@ -615,7 +660,7 @@ final class AdvancedRepeaterControl {
 									<i class="fa-light fa-grip-dots-vertical" aria-hidden="true"></i>
 								</button>
 								<button type="button" class="sto-adv-rep__toggle" data-sto-adv-rep-toggle aria-expanded="<?php echo $row_exp ? 'true' : 'false'; ?>">
-									<span class="sto-adv-rep__toggle-text"><?php echo esc_html( $i18n['itemLabel'] . ' ' . ( (int) $idx + 1 ) ); ?></span>
+									<span class="sto-adv-rep__toggle-text"><?php echo esc_html( $this->format_row_toggle_label( $i18n['itemLabel'], (int) $idx, $repeater_title_view, $item_row ) ); ?></span>
 									<i class="fa-light fa-chevron-<?php echo $row_exp ? 'up' : 'down'; ?> sto-adv-rep__chev" aria-hidden="true"></i>
 								</button>
 								<button type="button" class="sto-adv-rep__remove" data-sto-adv-rep-remove aria-label="<?php echo esc_attr( $i18n['remove'] ); ?>">
@@ -675,7 +720,8 @@ final class AdvancedRepeaterControl {
 				if ( $inner_list === array() ) {
 					$inner_list = array( $this->empty_item_for_schema( $node['fields'] ) );
 				}
-				$mx = isset( $node['max'] ) ? absint( $node['max'] ) : 0;
+				$mx                  = isset( $node['max'] ) ? absint( $node['max'] ) : 0;
+				$nested_title_view   = isset( $node['repeater_title_view'] ) ? sanitize_key( (string) $node['repeater_title_view'] ) : '';
 				?>
 				<div
 					class="sto-adv-rep sto-adv-rep--nested"
@@ -683,6 +729,9 @@ final class AdvancedRepeaterControl {
 					data-sto-adv-rep-nested="1"
 					data-sto-adv-rep-nested-key="<?php echo esc_attr( $id ); ?>"
 					data-sto-adv-rep-max="<?php echo esc_attr( (string) ( $mx > 0 ? $mx : 0 ) ); ?>"
+					<?php if ( $nested_title_view !== '' ) : ?>
+						data-sto-adv-rep-title-view="<?php echo esc_attr( $nested_title_view ); ?>"
+					<?php endif; ?>
 				>
 					<?php if ( $title !== '' ) : ?>
 						<div class="sto-adv-rep__nested-label"><?php echo esc_html( $title ); ?></div>
@@ -698,14 +747,14 @@ final class AdvancedRepeaterControl {
 							?>
 							<li class="sto-adv-rep__item sto-adv-rep__item--nested" data-sto-adv-rep-item>
 								<div class="sto-adv-rep__head">
-									<button type="button" class="sto-adv-rep__drag" data-sto-adv-rep-drag aria-label="<?php echo esc_attr__( 'Drag to reorder', 'simple-theme-options' ); ?>">
+									<button type="button" class="sto-adv-rep__drag" data-sto-adv-rep-drag aria-label="<?php echo esc_attr__( 'Drag to reorder', 'topten-simple-theme-options' ); ?>">
 										<i class="fa-light fa-grip-dots-vertical" aria-hidden="true"></i>
 									</button>
 									<button type="button" class="sto-adv-rep__toggle" data-sto-adv-rep-toggle aria-expanded="<?php echo $nexp ? 'true' : 'false'; ?>">
-										<span class="sto-adv-rep__toggle-text" data-sto-adv-rep-nested-label="1"><?php echo esc_html( sprintf( /* translators: %d: 1-based nested row index */ __( 'Nested item %d', 'simple-theme-options' ), (int) $j + 1 ) ); ?></span>
+										<span class="sto-adv-rep__toggle-text" data-sto-adv-rep-nested-label="1"><?php echo esc_html( $this->format_row_toggle_label( __( 'Nested item', 'topten-simple-theme-options' ), (int) $j, $nested_title_view, $inner_row ) ); ?></span>
 										<i class="fa-light fa-chevron-<?php echo $nexp ? 'up' : 'down'; ?> sto-adv-rep__chev" aria-hidden="true"></i>
 									</button>
-									<button type="button" class="sto-adv-rep__remove" data-sto-adv-rep-remove aria-label="<?php echo esc_attr__( 'Remove item', 'simple-theme-options' ); ?>">
+									<button type="button" class="sto-adv-rep__remove" data-sto-adv-rep-remove aria-label="<?php echo esc_attr__( 'Remove item', 'topten-simple-theme-options' ); ?>">
 										<i class="fa-light fa-trash-can" aria-hidden="true"></i>
 									</button>
 								</div>
@@ -715,7 +764,7 @@ final class AdvancedRepeaterControl {
 							</li>
 						<?php endforeach; ?>
 					</ul>
-					<button type="button" class="button sto-adv-rep__add" data-sto-adv-rep-add><?php echo esc_html__( 'Add item', 'simple-theme-options' ); ?></button>
+					<button type="button" class="button sto-adv-rep__add" data-sto-adv-rep-add><?php echo esc_html__( 'Add item', 'topten-simple-theme-options' ); ?></button>
 				</div>
 				<?php
 				continue;
@@ -730,7 +779,7 @@ final class AdvancedRepeaterControl {
 				$field_wrap_class = 'sto-adv-rep__field' . ( $type === 'textarea' ? ' sto-adv-rep__field--textarea' : '' );
 				$ctrl_mod         = $type === 'number' ? 'number' : ( $type === 'textarea' ? 'textarea' : 'text' );
 				?>
-				<div class="<?php echo esc_attr( $field_wrap_class ); ?>" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="<?php echo esc_attr( $type ); ?>">
+				<div class="<?php echo esc_attr( $field_wrap_class ); ?>" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="<?php echo esc_attr( $type ); ?>"<?php echo $this->leaf_adv_rep_required_attr( $node ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 					<?php if ( $title !== '' ) : ?>
 						<label class="sto-adv-rep__label" for="<?php echo esc_attr( $fid ); ?>"><?php echo esc_html( $title ); ?></label>
 					<?php endif; ?>
@@ -761,10 +810,10 @@ final class AdvancedRepeaterControl {
 
 			if ( $type === 'switcher' ) {
 				$on = ( $vstr === '1' );
-				$sw_on  = __( 'ON', 'simple-theme-options' );
-				$sw_off = __( 'OFF', 'simple-theme-options' );
+				$sw_on  = __( 'ON', 'topten-simple-theme-options' );
+				$sw_off = __( 'OFF', 'topten-simple-theme-options' );
 				?>
-				<div class="sto-adv-rep__field sto-adv-rep__field--switcher" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="switcher">
+				<div class="sto-adv-rep__field sto-adv-rep__field--switcher" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="switcher"<?php echo $this->leaf_adv_rep_required_attr( $node ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 					<?php if ( $title !== '' ) : ?>
 						<span class="sto-adv-rep__label"><?php echo esc_html( $title ); ?></span>
 					<?php endif; ?>
@@ -789,7 +838,7 @@ final class AdvancedRepeaterControl {
 
 			if ( $type === 'select' ) {
 				?>
-				<div class="sto-adv-rep__field" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="select">
+				<div class="sto-adv-rep__field" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="select"<?php echo $this->leaf_adv_rep_required_attr( $node ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 					<?php if ( $title !== '' ) : ?>
 						<label class="sto-adv-rep__label" for="<?php echo esc_attr( $fid ); ?>"><?php echo esc_html( $title ); ?></label>
 					<?php endif; ?>
@@ -946,7 +995,7 @@ final class AdvancedRepeaterControl {
 				$stitle = isset( $node['title'] ) ? trim( (string) $node['title'] ) : $id;
 				$out[]  = sprintf(
 					/* translators: 1: repeater field title, 2: row number, 3: inner field title */
-					__( '“%1$s” (row %2$d) — “%3$s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+					__( '“%1$s” (row %2$d) — “%3$s” must be filled in before this section can be saved.', 'topten-simple-theme-options' ),
 					$field_label,
 					$row_index + 1,
 					$stitle
@@ -1087,5 +1136,76 @@ final class AdvancedRepeaterControl {
 		$parsed = json_decode( static::sanitize_posted_value( $field_id, $json ), true );
 
 		return is_array( $parsed ) ? $parsed : array();
+	}
+
+	/**
+	 * Collapsed row label: title-view field value, or "{prefix} {n}".
+	 *
+	 * @param string               $fallback_prefix e.g. "Item" or "Nested item".
+	 * @param int                  $index           0-based row index.
+	 * @param string               $title_view_key  Schema leaf id (empty = index only).
+	 * @param array<string, mixed> $item_row
+	 */
+	private function format_row_toggle_label( string $fallback_prefix, int $index, string $title_view_key, array $item_row ): string {
+		$title_view_key = sanitize_key( $title_view_key );
+		if ( $title_view_key !== '' ) {
+			$custom = $this->format_title_view_value( $item_row, $title_view_key );
+			if ( $custom !== '' ) {
+				return $custom;
+			}
+		}
+
+		return trim( $fallback_prefix ) . ' ' . ( (int) $index + 1 );
+	}
+
+	/**
+	 * @param array<string, mixed> $item_row
+	 */
+	private function format_title_view_value( array $item_row, string $title_view_key ): string {
+		$raw = $this->find_item_value_by_key( $item_row, $title_view_key );
+		if ( is_array( $raw ) ) {
+			return '';
+		}
+
+		$text = trim( wp_strip_all_tags( (string) $raw ) );
+		if ( $text === '' ) {
+			return '';
+		}
+
+		if ( function_exists( 'mb_strlen' ) && function_exists( 'mb_substr' ) ) {
+			if ( mb_strlen( $text ) > 100 ) {
+				return mb_substr( $text, 0, 97 ) . '...';
+			}
+
+			return $text;
+		}
+
+		if ( strlen( $text ) > 100 ) {
+			return substr( $text, 0, 97 ) . '...';
+		}
+
+		return $text;
+	}
+
+	/**
+	 * @param array<string, mixed> $data
+	 * @return mixed|null
+	 */
+	private function find_item_value_by_key( array $data, string $key ) {
+		if ( array_key_exists( $key, $data ) ) {
+			return $data[ $key ];
+		}
+
+		foreach ( $data as $value ) {
+			if ( ! is_array( $value ) ) {
+				continue;
+			}
+			$found = $this->find_item_value_by_key( $value, $key );
+			if ( null !== $found && '' !== $found && array() !== $found ) {
+				return $found;
+			}
+		}
+
+		return null;
 	}
 }
