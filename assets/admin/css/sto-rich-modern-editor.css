@@ -47,7 +47,11 @@
 	min-height: calc(var(--sto-rich-modern-editor-min-height, 320px) - 60px);
 }
 
-.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__input {
+/* Hidden mirror for form POST — block markup must not show as a second “HTML view”. */
+.sto-rich-modern-editor .sto-rich-modern-editor__input,
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__input,
+.sto-option-panel-wrapper .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__input,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-rich-modern-editor .sto-rich-modern-editor__input {
 	position: absolute !important;
 	width: 1px !important;
 	height: 1px !important;
@@ -55,9 +59,12 @@
 	padding: 0 !important;
 	overflow: hidden !important;
 	clip: rect(0, 0, 0, 0) !important;
+	clip-path: inset(50%) !important;
 	white-space: nowrap !important;
 	border: 0 !important;
+	resize: none !important;
 	pointer-events: none !important;
+	opacity: 0 !important;
 }
 
 /* Block toolbar + inserter (+) inside STO panels */

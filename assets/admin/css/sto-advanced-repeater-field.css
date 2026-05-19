@@ -154,7 +154,7 @@
 	font-weight: 500;
 }
 
-.sto-adv-rep__input,
+.sto-adv-rep__input:not(.sto-rich-modern-editor__input),
 .sto-adv-rep__select {
 	width: 100%;
 	max-width: 100%;
