@@ -90,6 +90,12 @@
 	z-index: 100001;
 }
 
+/* wp.media library modal must sit above WooCommerce product data panels. */
+#woocommerce-product-data .media-modal,
+#woocommerce-product-data .media-modal-backdrop {
+	z-index: 160020 !important;
+}
+
 /* Responsive panes: defer mount until active (JS); hide inert canvas */
 .sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-responsive-pane:not(.sto-responsive-pane--active) .sto-rich-modern-editor__mount {
 	visibility: hidden;

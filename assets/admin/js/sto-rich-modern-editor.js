@@ -24,6 +24,44 @@
     var DropZoneProvider = wp.components.DropZoneProvider;
 
     var coreBlocksRegistered = false;
+    var mediaUploadFilterAdded = false;
+
+    /**
+     * Full editor registers editor.MediaUpload → wp.mediaUtils.MediaUpload.
+     * STO embeds only wp-block-editor, so image blocks need the same hook on WC / Theme Settings.
+     */
+    function ensureMediaUploadIntegration() {
+        if (mediaUploadFilterAdded || !wp.hooks || !wp.mediaUtils || !wp.mediaUtils.MediaUpload) {
+            return;
+        }
+        wp.hooks.addFilter(
+            'editor.MediaUpload',
+            'sto/rich-modern-editor/media-upload',
+            function () {
+                return wp.mediaUtils.MediaUpload;
+            }
+        );
+        mediaUploadFilterAdded = true;
+    }
+
+    function resolveMediaUploadFn() {
+        if (typeof wp.blockEditor.getDefaultSettings === 'function') {
+            var defaults = wp.blockEditor.getDefaultSettings() || {};
+            if (typeof defaults.mediaUpload === 'function') {
+                return defaults.mediaUpload;
+            }
+        }
+        if (wp.blockEditor.__experimentalGetDefaultSettings) {
+            var experimental = wp.blockEditor.__experimentalGetDefaultSettings() || {};
+            if (typeof experimental.mediaUpload === 'function') {
+                return experimental.mediaUpload;
+            }
+        }
+        if (wp.mediaUtils && typeof wp.mediaUtils.uploadMedia === 'function') {
+            return wp.mediaUtils.uploadMedia;
+        }
+        return null;
+    }
 
     function registerCoreBlocksOnce() {
         if (coreBlocksRegistered) {
@@ -69,6 +107,17 @@
         });
         if (!mediaUploadEnabled) {
             next.mediaUpload = false;
+            return next;
+        }
+        var uploadFn = resolveMediaUploadFn();
+        if (uploadFn) {
+            next.mediaUpload = uploadFn;
+        }
+        if (window.wp && window.wp.media && window.wp.media.view && window.wp.media.view.settings) {
+            var mimeTypes = window.wp.media.view.settings.mimeTypes;
+            if (mimeTypes && !next.allowedMimeTypes) {
+                next.allowedMimeTypes = mimeTypes;
+            }
         }
         return next;
     }
@@ -175,6 +224,7 @@
             return;
         }
 
+        ensureMediaUploadIntegration();
         registerCoreBlocksOnce();
 
         mountNode.innerHTML = '';

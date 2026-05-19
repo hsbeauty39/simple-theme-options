@@ -673,7 +673,7 @@ final class RichModernEditor {
 			wp_enqueue_media();
 		}
 
-		$scripts = array( 'wp-blocks', 'wp-element', 'wp-components', 'wp-data', 'wp-compose', 'wp-hooks', 'wp-block-editor', 'wp-block-library', 'wp-format-library', 'wp-rich-text', 'wp-keycodes' );
+		$scripts = array( 'wp-blocks', 'wp-element', 'wp-components', 'wp-data', 'wp-compose', 'wp-hooks', 'wp-api-fetch', 'wp-media-utils', 'wp-block-editor', 'wp-block-library', 'wp-format-library', 'wp-rich-text', 'wp-keycodes' );
 		foreach ( $scripts as $script_handle ) {
 			if ( wp_script_is( $script_handle, 'registered' ) ) {
 				wp_enqueue_script( $script_handle );

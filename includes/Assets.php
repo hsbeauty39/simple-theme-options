@@ -1039,6 +1039,8 @@ final class Assets {
 					'wp-hooks',
 					'wp-compose',
 					'wp-components',
+					'wp-api-fetch',
+					'wp-media-utils',
 					'wp-block-editor',
 					'wp-block-library',
 					'wp-format-library',
