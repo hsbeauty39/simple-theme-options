@@ -1,0 +1,58 @@
+/**
+ * Rich modern editor (block editor) — scoped to STO field rows.
+ */
+
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor {
+	box-sizing: border-box;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	background: #fff;
+	overflow: hidden;
+}
+
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__mount {
+	min-height: var(--sto-rich-modern-editor-min-height, 320px);
+}
+
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__canvas-inner {
+	min-height: var(--sto-rich-modern-editor-min-height, 320px);
+	padding: 12px 14px 16px;
+}
+
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__canvas-inner .block-editor-writing-flow {
+	min-height: calc(var(--sto-rich-modern-editor-min-height, 320px) - 48px);
+}
+
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor__input {
+	position: absolute !important;
+	width: 1px !important;
+	height: 1px !important;
+	margin: -1px !important;
+	padding: 0 !important;
+	overflow: hidden !important;
+	clip: rect(0, 0, 0, 0) !important;
+	white-space: nowrap !important;
+	border: 0 !important;
+}
+
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-rich-modern-editor--initialized .sto-rich-modern-editor__input {
+	display: block;
+}
+
+/* Block toolbar inside STO panels */
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .block-editor-block-toolbar {
+	z-index: 20;
+}
+
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .components-popover {
+	z-index: 100001;
+}
+
+/* Responsive panes: let hidden editors repaint when shown */
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-responsive-pane:not(.sto-responsive-pane--active) .sto-rich-modern-editor__mount {
+	visibility: hidden;
+}
+
+.sto-option-panel-wrapper .sto-field-row-rich-modern-editor .sto-responsive-pane.sto-responsive-pane--active .sto-rich-modern-editor__mount {
+	visibility: visible;
+}

@@ -32,7 +32,8 @@ final class RenderSectionContentPriority {
 	public const TABS                = 207;
 	public const ACCORDION           = 208;
 	public const INPUT               = 209;
-	public const CODE_EDITOR         = 210;
-	public const TYPOGRAPHY          = 211;
+	public const RICH_MODERN_EDITOR  = 210;
+	public const CODE_EDITOR         = 211;
+	public const TYPOGRAPHY          = 212;
 	public const GROUP               = 220;
 }

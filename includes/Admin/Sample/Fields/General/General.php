@@ -4,6 +4,7 @@ namespace SimpleThemeOptions\Admin\Sample\Fields\General;
 use SimpleThemeOptions\Admin\Options\Fields\BorderControl\BorderControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
+use SimpleThemeOptions\Admin\Options\Fields\RichModernEditor\RichModernEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
@@ -14,7 +15,6 @@ use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
 use SimpleThemeOptions\Admin\Options\Fields\RadioListsControl\RadioListsControl;
-use SimpleThemeOptions\Admin\Options\Fields\AdvancedRepeaterControl\AdvancedRepeaterControl;
 use SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl\GoogleMapControl;
 use SimpleThemeOptions\Admin\Options\Fields\Range\Range;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
@@ -31,6 +31,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Sample fields for **Field samples** subsections (`layout-nav`, `layout-type`, … under parent `field-samples`).
+ * Per-breakpoint demos live on leaf section **`responsive`** ({@see Responsive\Responsive}).
  */
 final class General {
 	use SingletonTrait;
@@ -48,7 +49,6 @@ final class General {
 		GalleryControl::instance();
 		MultiTextControl::instance();
 		RadioListsControl::instance();
-		AdvancedRepeaterControl::instance();
 		GoogleMapControl::instance();
 		AlignmentControl::instance();
 		Tabs::instance();
@@ -61,6 +61,7 @@ final class General {
 		BorderControl::instance();
 		ShadowControl::instance();
 		CodeEditor::instance();
+		RichModernEditor::instance();
 		$this->register_select_fields();
 	}
 
@@ -69,56 +70,24 @@ final class General {
 			array(
 				array(
 					'section_slug'  => 'layout-nav',
-					'id'            => 'layout_header',
-					'title'         => __( 'Site header', 'simple-theme-options' ),
-					'placeholder'   => __( 'Select', 'simple-theme-options' ),
-					'description'  => __( 'Default site header layout.', 'simple-theme-options' ),
-					'default'       => 'default_header_layout',
-					'responsive'    => true,
-					'options'       => array(
-						'none'                  => __( 'None', 'simple-theme-options' ),
-						'default_header_layout' => __( 'Default layout', 'simple-theme-options' ),
-					),
-				),
-				array(
-					'section_slug'  => 'layout-nav',
 					'id'            => 'layout_quick_links',
-					'title'         => __( 'Navigation shortcuts', 'simple-theme-options' ),
-					'description'  => __( 'Multi-select pages as chips.', 'simple-theme-options' ),
+					'title'         => __( 'Navigation shortcuts', 'topten-simple-theme-options' ),
+					'description'  => __( 'Multi-select pages as chips.', 'topten-simple-theme-options' ),
 					'multiple'      => true,
 					'max'           => 8,
-					'placeholder'   => __( 'Select pages…', 'simple-theme-options' ),
+					'placeholder'   => __( 'Select pages…', 'topten-simple-theme-options' ),
 					'default'       => array( 'shop_page', 'wishlist', 'cart', 'my_account', 'blog_page' ),
 					'options'       => array(
-						'shop_page'         => __( 'Shop page', 'simple-theme-options' ),
-						'off_canvas_sidebar'=> __( 'Off canvas sidebar', 'simple-theme-options' ),
-						'wishlist'          => __( 'Wishlist', 'simple-theme-options' ),
-						'cart'              => __( 'Cart', 'simple-theme-options' ),
-						'my_account'        => __( 'My account', 'simple-theme-options' ),
-						'blog_page'         => __( 'Blog page', 'simple-theme-options' ),
-						'contact_page'      => __( 'Contact page', 'simple-theme-options' ),
-						'compare'           => __( 'Compare', 'simple-theme-options' ),
+						'shop_page'         => __( 'Shop page', 'topten-simple-theme-options' ),
+						'off_canvas_sidebar'=> __( 'Off canvas sidebar', 'topten-simple-theme-options' ),
+						'wishlist'          => __( 'Wishlist', 'topten-simple-theme-options' ),
+						'cart'              => __( 'Cart', 'topten-simple-theme-options' ),
+						'my_account'        => __( 'My account', 'topten-simple-theme-options' ),
+						'blog_page'         => __( 'Blog page', 'topten-simple-theme-options' ),
+						'contact_page'      => __( 'Contact page', 'topten-simple-theme-options' ),
+						'compare'           => __( 'Compare', 'topten-simple-theme-options' ),
 					),
 				),
-			)
-		);
-
-		DynamicObject::register(
-			array(
-				'section_slug'  => 'layout-nav',
-				'id'            => 'layout_featured_page',
-				'title'         => __( 'Featured page (search)', 'simple-theme-options' ),
-				'description'  => __( 'AJAX page search, three characters minimum.', 'simple-theme-options' ),
-				'post_type'     => 'page',
-				'limit'         => 10,
-				'placeholder'   => __( 'Search pages… (min. 3 characters)', 'simple-theme-options' ),
-				'required'      => array(
-					'layout_header' => 'default_header_layout',
-				),
-				'tooltip'       => array(
-					'image' => 'https://picsum.photos/seed/sto-page-tooltip/520/720',
-				),
-				'responsive'    => true,
 			)
 		);
 
@@ -126,36 +95,16 @@ final class General {
 			array(
 				'section_slug'  => 'layout-nav',
 				'id'            => 'layout_featured_posts',
-				'title'         => __( 'Featured posts (multi)', 'simple-theme-options' ),
-				'description'  => __( 'Multi post picker, stores post IDs.', 'simple-theme-options' ),
+				'title'         => __( 'Featured posts (multi)', 'topten-simple-theme-options' ),
+				'description'  => __( 'Multi post picker, stores post IDs.', 'topten-simple-theme-options' ),
 				'post_type'     => 'post',
 				'multiple'      => true,
 				'max'           => 8,
 				'limit'         => 10,
-				'placeholder'   => __( 'Search posts… (min. 3 characters)', 'simple-theme-options' ),
+				'placeholder'   => __( 'Search posts… (min. 3 characters)', 'topten-simple-theme-options' ),
 				'default'       => array(),
 				'tooltip'       => array(
 					'image' => 'https://picsum.photos/seed/sto-posts-tooltip/520/720',
-				),
-			)
-		);
-
-		Typography::register(
-			array(
-				'section_slug' => 'layout-type',
-				'id'           => 'layout_body_typography',
-				'title'        => __( 'Body typography', 'simple-theme-options' ),
-				'description'  => __( 'Typography with live preview.', 'simple-theme-options' ),
-				'default'      => array(
-					'family'    => 'Inter',
-					'variant'   => 'regular',
-					'subset'    => 'latin',
-					'transform' => 'none',
-				),
-				'responsive'   => true,
-				'device'       => array( 'lg', 'md', 'mobile' ),
-				'required'     => array(
-					'layout_header' => 'default_header_layout',
 				),
 			)
 		);
@@ -164,37 +113,21 @@ final class General {
 			array(
 				array(
 					'section_slug'  => 'layout-nav',
-					'id'            => 'layout_demo_checkbox_single',
-					'title'         => __( 'Custom checkbox (single)', 'simple-theme-options' ),
-					'description'  => __( 'Custom checkbox tile, stores one or zero.', 'simple-theme-options' ),
-					'default'       => '0',
-					'labels'        => array(
-						'on'  => __( 'Feature enabled', 'simple-theme-options' ),
-						'off' => __( 'Feature disabled', 'simple-theme-options' ),
-					),
-					'responsive'    => true,
-					'device'        => array( 'lg', 'md', 'mobile' ),
-					'required'      => array(
-						'layout_header' => 'default_header_layout',
-					),
-				),
-				array(
-					'section_slug'  => 'layout-nav',
 					'id'            => 'layout_demo_checkbox_multi',
-					'title'         => __( 'Multi-check tiles', 'simple-theme-options' ),
-					'description'  => __( 'Multi-check tiles with optional max.', 'simple-theme-options' ),
+					'title'         => __( 'Multi-check tiles', 'topten-simple-theme-options' ),
+					'description'  => __( 'Multi-check tiles with optional max.', 'topten-simple-theme-options' ),
 					'multiple'      => true,
 					'max'           => 3,
 					'columns'       => 2,
 					'default'       => array( 'badge_sale', 'badge_new' ),
 					'options'       => array(
-						'badge_sale'   => __( 'Sale badge', 'simple-theme-options' ),
-						'badge_new'    => __( 'New badge', 'simple-theme-options' ),
+						'badge_sale'   => __( 'Sale badge', 'topten-simple-theme-options' ),
+						'badge_new'    => __( 'New badge', 'topten-simple-theme-options' ),
 						'badge_hot'    => array(
-							'label'   => __( 'Hot badge', 'simple-theme-options' ),
-							'tooltip' => __( 'Optional tooltip on the tile.', 'simple-theme-options' ),
+							'label'   => __( 'Hot badge', 'topten-simple-theme-options' ),
+							'tooltip' => __( 'Optional tooltip on the tile.', 'topten-simple-theme-options' ),
 						),
-						'badge_limited' => __( 'Limited stock', 'simple-theme-options' ),
+						'badge_limited' => __( 'Limited stock', 'topten-simple-theme-options' ),
 					),
 					'required'      => array(
 						'layout_header' => 'default_header_layout',
@@ -203,30 +136,18 @@ final class General {
 			)
 		);
 
-		BorderControl::register(
+		Typography::register(
 			array(
 				'section_slug' => 'layout-type',
-				'id'           => 'layout_banner_border',
-				'title'        => __( 'Border composite', 'simple-theme-options' ),
-				'description'  => __( 'Border radius, style, width, color.', 'simple-theme-options' ),
+				'id'           => 'layout_demo_typography',
+				'title'        => __( 'Sample typography', 'topten-simple-theme-options' ),
+				'description'  => __( 'Font family, weight, subset, and text transform with live preview.', 'topten-simple-theme-options' ),
 				'default'      => array(
-					'radius'      => '0',
-					'radius_unit' => 'px',
-					'style'       => 'none',
-					'width'       => '1',
-					'width_unit'  => 'px',
-					'color'       => '#1d2327',
+					'family'    => 'Inter',
+					'variant'   => 'regular',
+					'subset'    => 'latin',
+					'transform' => 'none',
 				),
-				'features'     => array( 'radius', 'style', 'width', 'color' ),
-				'radius_units' => array( 'px', '%' ),
-				'min_radius'   => 0,
-				'max_radius'   => 80,
-				'min_width'    => 0,
-				'max_width'    => 16,
-				'alpha'        => true,
-				'palettes'     => array( '#1d2327', '#2271b1', '#e6e8eb', '#ffffff' ),
-				'responsive'   => true,
-				'device'       => array( 'lg', 'md', 'mobile' ),
 			)
 		);
 
@@ -234,7 +155,7 @@ final class General {
 			array(
 				'section_slug' => 'layout-type',
 				'id'           => 'layout_demo_shadow_popup',
-				'title'        => __( 'Box shadow (popover)', 'simple-theme-options' ),
+				'title'        => __( 'Box shadow (popover)', 'topten-simple-theme-options' ),
 				'selector'     => '.sto-demo-shadow-target',
 				'popup'        => true,
 				'default'      => array(
@@ -249,33 +170,12 @@ final class General {
 			)
 		);
 
-		ShadowControl::register(
-			array(
-				'section_slug' => 'layout-type',
-				'id'           => 'layout_demo_shadow_inline',
-				'title'        => __( 'Box shadow (inline)', 'simple-theme-options' ),
-				'description'  => __( 'Same shadow field, inline controls.', 'simple-theme-options' ),
-				'selector'     => '#sto-site-header',
-				'responsive'   => true,
-				'device'       => array( 'lg', 'md', 'mobile' ),
-				'popup'        => false,
-				'default'      => array(
-					'color'      => 'rgba(34, 113, 177, 0.15)',
-					'horizontal' => '0',
-					'vertical'   => '2',
-					'blur'       => '8',
-					'spread'     => '0',
-					'position'   => 'outline',
-				),
-			)
-		);
-
 		RadioListsControl::register(
 			array(
 				'section_slug'     => 'layout-inputs',
 				'id'               => 'layout_sample_radio_list_single',
-				'title'            => __( 'Radio list (single row, outside group)', 'simple-theme-options' ),
-				'description'  => __( 'Stacked radio list outside group.', 'simple-theme-options' ),
+				'title'            => __( 'Radio list (single row, outside group)', 'topten-simple-theme-options' ),
+				'description'  => __( 'Stacked radio list outside group.', 'topten-simple-theme-options' ),
 				'repeatable'       => false,
 				'show_row_titles'  => false,
 				'radio_layout'     => 'stack',
@@ -287,30 +187,25 @@ final class General {
 				),
 				'options'          => array(
 					'compact'     => array(
-						'label'   => __( 'Compact', 'simple-theme-options' ),
-						'tooltip' => __( 'Tighter spacing.', 'simple-theme-options' ),
+						'label'   => __( 'Compact', 'topten-simple-theme-options' ),
+						'tooltip' => __( 'Tighter spacing.', 'topten-simple-theme-options' ),
 					),
 					'comfortable' => array(
-						'label'   => __( 'Comfortable', 'simple-theme-options' ),
-						'tooltip' => __( 'More breathing room.', 'simple-theme-options' ),
+						'label'   => __( 'Comfortable', 'topten-simple-theme-options' ),
+						'tooltip' => __( 'More breathing room.', 'topten-simple-theme-options' ),
 					),
-					'spacious'    => __( 'Spacious', 'simple-theme-options' ),
+					'spacious'    => __( 'Spacious', 'topten-simple-theme-options' ),
 				),
 			)
 		);
 
-		Group::register(
+		$input_control_fields = self::flattenFieldsWithMarginPadding(
 			array(
-				'section_slug'  => 'layout-inputs',
-				'id'            => 'input_controls',
-				'title'         => __( 'Text & number inputs', 'simple-theme-options' ),
-				'description'  => __( 'Sample text, number, date inputs.', 'simple-theme-options' ),
-				'fields'        => array(
 					array(
 						'type'            => 'text',
 						'id'              => 'layout_banner_link',
-						'title'           => __( 'Banner link', 'simple-theme-options' ),
-						'description'     => __( 'The link will be added to the whole banner area.', 'simple-theme-options' ),
+						'title'           => __( 'Banner link', 'topten-simple-theme-options' ),
+						'description'     => __( 'The link will be added to the whole banner area.', 'topten-simple-theme-options' ),
 						'default'         => '',
 						'placeholder'     => 'https://example.com',
 						'html_required'   => true,
@@ -318,108 +213,56 @@ final class General {
 					array(
 						'type'            => 'number',
 						'id'              => 'layout_column_count',
-						'title'           => __( 'Column count', 'simple-theme-options' ),
-						'description'     => __( 'Validated number between 1 and 12.', 'simple-theme-options' ),
+						'title'           => __( 'Column count', 'topten-simple-theme-options' ),
+						'description'     => __( 'Validated number between 1 and 12.', 'topten-simple-theme-options' ),
 						'default'         => '3',
 						'min'             => '1',
 						'max'             => '12',
 						'step'            => '1',
-						'placeholder'     => __( '1–12', 'simple-theme-options' ),
+						'placeholder'     => __( '1–12', 'topten-simple-theme-options' ),
 					),
 					array(
 						'type'            => 'email',
 						'id'              => 'layout_contact_email',
-						'title'           => __( 'Contact email', 'simple-theme-options' ),
-						'description'     => __( 'HTML email input; stored with sanitize_email.', 'simple-theme-options' ),
+						'title'           => __( 'Contact email', 'topten-simple-theme-options' ),
+						'description'     => __( 'HTML email input; stored with sanitize_email.', 'topten-simple-theme-options' ),
 						'default'         => '',
 						'placeholder'     => 'name@example.com',
 					),
 					array(
 						'type'            => 'password',
 						'id'              => 'layout_sample_api_secret',
-						'title'           => __( 'Sample API secret', 'simple-theme-options' ),
-						'description'  => __( 'Password field with show-hide toggle.', 'simple-theme-options' ),
+						'title'           => __( 'Sample API secret', 'topten-simple-theme-options' ),
+						'description'  => __( 'Password field with show-hide toggle.', 'topten-simple-theme-options' ),
 						'default'         => '',
-						'placeholder'     => __( 'Paste secret…', 'simple-theme-options' ),
+						'placeholder'     => __( 'Paste secret…', 'topten-simple-theme-options' ),
 					),
 					array(
 						'type'          => 'date',
 						'id'            => 'layout_sample_date',
-						'title'         => __( 'Sample date', 'simple-theme-options' ),
-						'description'  => __( 'Date picker, stored as Y-m-d.', 'simple-theme-options' ),
+						'title'         => __( 'Sample date', 'topten-simple-theme-options' ),
+						'description'  => __( 'Date picker, stored as Y-m-d.', 'topten-simple-theme-options' ),
 						'default'       => '',
-						'placeholder'   => __( 'Select a date…', 'simple-theme-options' ),
+						'placeholder'   => __( 'Select a date…', 'topten-simple-theme-options' ),
 						'min_date'      => '2000-01-01',
 						'max_date'      => '2035-12-31',
 					),
 					array(
-						'type'          => 'date',
-						'id'            => 'layout_responsive_date',
-						'title'         => __( 'Responsive date', 'simple-theme-options' ),
-						'description'  => __( 'Responsive date with conditional visibility.', 'simple-theme-options' ),
-						'default'       => '',
-						'placeholder'   => __( 'Select…', 'simple-theme-options' ),
-						'responsive'    => true,
-						'required'      => array( 'layout_header' => 'default_header_layout' ),
-					),
-					array(
 						'type'          => 'datetime',
 						'id'            => 'layout_sample_datetime',
-						'title'         => __( 'Sample date & time', 'simple-theme-options' ),
-						'description'   => __( 'Date and time, stored as Y-m-d H:i.', 'simple-theme-options' ),
+						'title'         => __( 'Sample date & time', 'topten-simple-theme-options' ),
+						'description'   => __( 'Date and time, stored as Y-m-d H:i.', 'topten-simple-theme-options' ),
 						'default'       => '',
-						'placeholder'   => __( 'Pick date & time…', 'simple-theme-options' ),
+						'placeholder'   => __( 'Pick date & time…', 'topten-simple-theme-options' ),
 						'min_date'      => '2000-01-01',
 						'max_date'      => '2035-12-31',
 						'time_step'     => 60,
 					),
 					array(
-						'type'          => 'dimension',
-						'id'            => 'layout_sample_dimension',
-						'title'         => __( 'Sample dimensions (TRBL)', 'simple-theme-options' ),
-						'description'  => __( 'Margin-style dimensions with linked sides.', 'simple-theme-options' ),
-						'units'         => array( 'px', 'rem', '%', 'custom' ),
-						'min'           => 0,
-						'max'           => 200,
-						'step'          => 1,
-						'default'       => array(
-							'u'      => 'px',
-							'linked' => true,
-							'values' => array(
-								'top'    => '0',
-								'right'  => '0',
-								'bottom' => '0',
-								'left'   => '0',
-							),
-						),
-					),
-					array(
-						'type'          => 'dimension',
-						'id'            => 'layout_responsive_dimension',
-						'title'         => __( 'Responsive dimensions', 'simple-theme-options' ),
-						'description'   => __( 'Same control per breakpoint; units limited to px and %.', 'simple-theme-options' ),
-						'responsive'    => true,
-						'units'         => array( 'px', '%' ),
-						'min'           => 0,
-						'max'           => 120,
-						'step'          => 1,
-						'show_link'     => true,
-						'default'       => array(
-							'u'      => 'px',
-							'linked' => false,
-							'values' => array(
-								'top'    => '8',
-								'right'  => '16',
-								'bottom' => '8',
-								'left'   => '16',
-							),
-						),
-					),
-					array(
 						'type'          => 'gallery',
 						'id'            => 'layout_sample_gallery',
-						'title'         => __( 'Sample gallery', 'simple-theme-options' ),
-						'description'  => __( 'Gallery of Media Library image IDs.', 'simple-theme-options' ),
+						'title'         => __( 'Sample gallery', 'topten-simple-theme-options' ),
+						'description'  => __( 'Gallery of Media Library image IDs.', 'topten-simple-theme-options' ),
 						'default'       => array(
 							101,
 							102,
@@ -430,105 +273,100 @@ final class General {
 					array(
 						'type'          => 'multi_text',
 						'id'            => 'layout_sample_multi_text',
-						'title'         => __( 'Repeater text lines', 'simple-theme-options' ),
+						'title'         => __( 'Repeater text lines', 'topten-simple-theme-options' ),
 						'default'       => array(
-							__( 'First bullet', 'simple-theme-options' ),
-							__( 'Second bullet', 'simple-theme-options' ),
-							__( 'Third bullet', 'simple-theme-options' ),
+							__( 'First bullet', 'topten-simple-theme-options' ),
+							__( 'Second bullet', 'topten-simple-theme-options' ),
+							__( 'Third bullet', 'topten-simple-theme-options' ),
 						),
-						'placeholder'   => __( 'Type a line…', 'simple-theme-options' ),
+						'placeholder'   => __( 'Type a line…', 'topten-simple-theme-options' ),
 						'max'           => 40,
 					),
 					array(
 						'type'          => 'radio_lists',
 						'id'            => 'layout_sample_radio_lists',
-						'title'         => __( 'Repeater radio lists', 'simple-theme-options' ),
+						'title'         => __( 'Repeater radio lists', 'topten-simple-theme-options' ),
 						'radio_layout'  => 'stack',
 						'default'       => array(
 							array(
-								'title' => __( 'Primary list', 'simple-theme-options' ),
+								'title' => __( 'Primary list', 'topten-simple-theme-options' ),
 								'value' => 'compact',
 							),
 							array(
-								'title' => __( 'Secondary list', 'simple-theme-options' ),
+								'title' => __( 'Secondary list', 'topten-simple-theme-options' ),
 								'value' => 'comfortable',
 							),
 						),
 						'max'           => 12,
 						'options'       => array(
 							'compact'    => array(
-								'label'   => __( 'Compact', 'simple-theme-options' ),
-								'tooltip' => __( 'Tighter spacing.', 'simple-theme-options' ),
+								'label'   => __( 'Compact', 'topten-simple-theme-options' ),
+								'tooltip' => __( 'Tighter spacing.', 'topten-simple-theme-options' ),
 							),
 							'comfortable' => array(
-								'label'   => __( 'Comfortable', 'simple-theme-options' ),
-								'tooltip' => __( 'More breathing room.', 'simple-theme-options' ),
+								'label'   => __( 'Comfortable', 'topten-simple-theme-options' ),
+								'tooltip' => __( 'More breathing room.', 'topten-simple-theme-options' ),
 							),
-							'spacious'   => __( 'Spacious', 'simple-theme-options' ),
+							'spacious'   => __( 'Spacious', 'topten-simple-theme-options' ),
 						),
 					),
 					array(
 						'type'        => 'alignment',
 						'id'          => 'layout_sample_alignment',
-						'title'       => __( 'Sample alignment', 'simple-theme-options' ),
-						'description' => __( 'Segmented alignment control with icons.', 'simple-theme-options' ),
+						'title'       => __( 'Sample alignment', 'topten-simple-theme-options' ),
+						'description' => __( 'Segmented alignment control with icons.', 'topten-simple-theme-options' ),
 						'default'     => 'center',
 						'options'     => array(
 							'left'   => array(
-								'label' => __( 'Left', 'simple-theme-options' ),
+								'label' => __( 'Left', 'topten-simple-theme-options' ),
 								'icon'  => 'fa-light fa-align-left',
 							),
 							'center' => array(
-								'label' => __( 'Center', 'simple-theme-options' ),
+								'label' => __( 'Center', 'topten-simple-theme-options' ),
 								'icon'  => 'fa-light fa-align-center',
 							),
 							'right'  => array(
-								'label' => __( 'Right', 'simple-theme-options' ),
+								'label' => __( 'Right', 'topten-simple-theme-options' ),
 								'icon'  => 'fa-light fa-align-right',
 							),
-						),
-						'css_map'     => array(
-							'left'   => 'flex-start',
-							'center' => 'center',
-							'right'  => 'flex-end',
 						),
 					),
 					array(
 						'type'          => 'icon_select',
 						'id'            => 'layout_sample_icon',
-						'title'         => __( 'Sample icon', 'simple-theme-options' ),
+						'title'         => __( 'Sample icon', 'topten-simple-theme-options' ),
 						'default'       => 'fa-light fa-star',
 						'allow_clear'   => true,
 					),
 					array(
 						'type'          => 'textarea',
 						'id'            => 'layout_notes',
-						'title'         => __( 'Notes', 'simple-theme-options' ),
-						'description'   => __( 'Multi-line plain text (textarea sanitization).', 'simple-theme-options' ),
+						'title'         => __( 'Notes', 'topten-simple-theme-options' ),
+						'description'   => __( 'Multi-line plain text (textarea sanitization).', 'topten-simple-theme-options' ),
 						'default'       => '',
 						'rows'          => 4,
-						'placeholder'   => __( 'Short internal notes…', 'simple-theme-options' ),
+						'placeholder'   => __( 'Short internal notes…', 'topten-simple-theme-options' ),
 					),
 					array(
 						'type'          => 'button_group',
 						'id'            => 'layout_page_title_size',
-						'title'         => __( 'Page title size', 'simple-theme-options' ),
-						'description'  => __( 'Segmented control with option tooltips.', 'simple-theme-options' ),
+						'title'         => __( 'Page title size', 'topten-simple-theme-options' ),
+						'description'  => __( 'Segmented control with option tooltips.', 'topten-simple-theme-options' ),
 						'default'       => 'default',
 						'options'       => array(
 							'default' => array(
-								'label'         => __( 'Default', 'simple-theme-options' ),
-								'tooltip'       => __( 'Theme default heading scale.', 'simple-theme-options' ),
+								'label'         => __( 'Default', 'topten-simple-theme-options' ),
+								'tooltip'       => __( 'Theme default heading scale.', 'topten-simple-theme-options' ),
 								'preview_image' => 'https://picsum.photos/seed/sto-title-default/640/360',
 							),
 							'small'   => array(
-								'label'         => __( 'Small', 'simple-theme-options' ),
-								'tooltip'       => __( 'Tighter title for dense layouts.', 'simple-theme-options' ),
+								'label'         => __( 'Small', 'topten-simple-theme-options' ),
+								'tooltip'       => __( 'Tighter title for dense layouts.', 'topten-simple-theme-options' ),
 								'preview_image' => 'https://picsum.photos/seed/sto-title-small/640/360',
 							),
 							'large'   => array(
-								'label'         => __( 'Large', 'simple-theme-options' ),
-								'tooltip'       => __( 'Hero-style title.', 'simple-theme-options' ),
+								'label'         => __( 'Large', 'topten-simple-theme-options' ),
+								'tooltip'       => __( 'Hero-style title.', 'topten-simple-theme-options' ),
 								'preview_image' => 'https://picsum.photos/seed/sto-title-large/640/360',
 							),
 						),
@@ -536,204 +374,76 @@ final class General {
 					array(
 						'type'          => 'button_group',
 						'id'            => 'layout_popup_text_scheme',
-						'title'         => __( 'Popup text color', 'simple-theme-options' ),
+						'title'         => __( 'Popup text color', 'topten-simple-theme-options' ),
 						'default'       => 'dark',
 						'options'       => array(
 							'dark'  => array(
-								'label'   => __( 'Dark', 'simple-theme-options' ),
-								'tooltip' => __( 'Light text on dark popups.', 'simple-theme-options' ),
+								'label'   => __( 'Dark', 'topten-simple-theme-options' ),
+								'tooltip' => __( 'Light text on dark popups.', 'topten-simple-theme-options' ),
 							),
 							'light' => array(
-								'label'   => __( 'Light', 'simple-theme-options' ),
-								'tooltip' => __( 'Dark text on light popups.', 'simple-theme-options' ),
+								'label'   => __( 'Light', 'topten-simple-theme-options' ),
+								'tooltip' => __( 'Dark text on light popups.', 'topten-simple-theme-options' ),
 							),
 						),
 					),
 					array(
 						'type'          => 'text',
 						'id'            => 'layout_popup_light_extra',
-						'title'         => __( 'Light scheme extra note', 'simple-theme-options' ),
-						'description'  => __( 'Shown when popup text is light.', 'simple-theme-options' ),
+						'title'         => __( 'Light scheme extra note', 'topten-simple-theme-options' ),
+						'description'  => __( 'Shown when popup text is light.', 'topten-simple-theme-options' ),
 						'default'       => '',
 						'required'      => array( 'layout_popup_text_scheme' => 'light' ),
 					),
 					array(
 						'type'            => 'editor',
 						'id'              => 'layout_content_block',
-						'title'           => __( 'Content block', 'simple-theme-options' ),
-						'description'     => __( 'Classic WordPress editor (Visual / Code, Add Media).', 'simple-theme-options' ),
-						'default'         => '<p>' . esc_html__( 'Hello world.', 'simple-theme-options' ) . '</p>',
+						'title'           => __( 'Content block', 'topten-simple-theme-options' ),
+						'description'     => __( 'Classic WordPress editor (Visual / Code, Add Media).', 'topten-simple-theme-options' ),
+						'default'         => '<p>' . esc_html__( 'Hello world.', 'topten-simple-theme-options' ) . '</p>',
 						'editor_height'   => 160,
-						'placeholder'     => __( 'Start typing your banner content…', 'simple-theme-options' ),
+						'placeholder'     => __( 'Start typing your banner content…', 'topten-simple-theme-options' ),
 						'toolbar_end'     => array(
-							'label'   => __( 'More', 'simple-theme-options' ),
-							'tooltip' => __( 'Insert a Read More tag after the kitchen-sink row.', 'simple-theme-options' ),
+							'label'   => __( 'More', 'topten-simple-theme-options' ),
+							'tooltip' => __( 'Insert a Read More tag after the kitchen-sink row.', 'topten-simple-theme-options' ),
 							'snippet' => '<!--more-->',
 						),
 					),
 					array(
 						'type'            => 'phone',
 						'id'              => 'layout_phone',
-						'title'           => __( 'Phone', 'simple-theme-options' ),
-						'description'     => __( 'Digits, spaces, and common phone symbols only.', 'simple-theme-options' ),
+						'space'           => '20px',
+						'title'           => __( 'Phone', 'topten-simple-theme-options' ),
+						'description'     => __( 'Digits, spaces, and common phone symbols only.', 'topten-simple-theme-options' ),
 						'default'         => '',
 						'placeholder'     => '+1 234 567 8900',
 					),
 					array(
 						'type'          => 'search',
 						'id'            => 'layout_search_placeholder',
-						'title'         => __( 'Search placeholder', 'simple-theme-options' ),
-						'description'   => __( 'HTML5 search input for UI copy (stored as plain text).', 'simple-theme-options' ),
+						'title'         => __( 'Search placeholder', 'topten-simple-theme-options' ),
+						'description'   => __( 'HTML5 search input for UI copy (stored as plain text).', 'topten-simple-theme-options' ),
 						'default'       => '',
-						'placeholder'   => __( 'Search…', 'simple-theme-options' ),
+						'placeholder'   => __( 'Search…', 'topten-simple-theme-options' ),
 					),
-				),
 			)
 		);
 
-		AdvancedRepeaterControl::register(
+		Group::register(
 			array(
 				'section_slug'  => 'layout-inputs',
-				'id'            => 'layout_sample_advanced_repeater',
-				'title'         => __( 'Advanced repeater', 'simple-theme-options' ),
-				'max'           => 12,
-				'default'       => array(
-					array(
-						'adv_block'    => array(
-							'adv_title'   => __( 'First block', 'simple-theme-options' ),
-							'adv_qty'     => '2',
-							'adv_summary' => __( 'Demo summary for this top-level item.', 'simple-theme-options' ),
-							'adv_tier'    => 'standard',
-							'adv_feature' => '0',
-						),
-						'adv_subitems' => array(
-							array(
-								'adv_note'  => __( 'Nested line A (level 1 note).', 'simple-theme-options' ),
-								'adv_cells' => array(
-									array(
-										'adv_cell_label' => __( 'Level-2 row', 'simple-theme-options' ),
-										'adv_cell_mode'  => 'mode_standard',
-										'adv_cell_on'    => '1',
-									),
-								),
-							),
-						),
-					),
-				),
-				'fields'        => array(
-					array(
-						'type'   => 'fieldset',
-						'id'     => 'adv_block',
-						'title'  => __( 'Primary fields (fieldset)', 'simple-theme-options' ),
-						'fields' => array(
-							array(
-								'type'          => 'text',
-								'id'            => 'adv_title',
-								'title'         => __( 'Block title', 'simple-theme-options' ),
-								'default'       => '',
-								'html_required' => true,
-							),
-							array(
-								'type'    => 'number',
-								'id'      => 'adv_qty',
-								'title'   => __( 'Quantity', 'simple-theme-options' ),
-								'default' => '1',
-								'min'     => '1',
-								'max'     => '99',
-								'step'    => '1',
-							),
-							array(
-								'type'        => 'textarea',
-								'id'          => 'adv_summary',
-								'title'       => __( 'Summary', 'simple-theme-options' ),
-								'description' => __( 'Longer copy inside the fieldset.', 'simple-theme-options' ),
-								'default'     => '',
-								'placeholder' => __( 'Optional summary…', 'simple-theme-options' ),
-							),
-							array(
-								'type'        => 'select',
-								'id'          => 'adv_tier',
-								'title'       => __( 'Tier (select)', 'simple-theme-options' ),
-								'placeholder' => __( 'Choose…', 'simple-theme-options' ),
-								'default'     => 'standard',
-								'options'     => array(
-									'standard' => __( 'Standard', 'simple-theme-options' ),
-									'premium'  => __( 'Premium', 'simple-theme-options' ),
-								),
-							),
-							array(
-								'type'        => 'switcher',
-								'id'          => 'adv_feature',
-								'title'       => __( 'Feature toggle (switcher)', 'simple-theme-options' ),
-								'description' => __( 'Example switcher inside the fieldset.', 'simple-theme-options' ),
-								'default'     => '0',
-							),
-						),
-					),
-					array(
-						'type'    => 'advanced_repeater',
-						'id'      => 'adv_subitems',
-						'title'   => __( 'Nested repeater (level 1)', 'simple-theme-options' ),
-						'max'     => 8,
-						'default' => array(
-							array(
-								'adv_note'  => '',
-								'adv_cells' => array(
-									array(
-										'adv_cell_label' => '',
-										'adv_cell_mode'  => 'mode_standard',
-										'adv_cell_on'    => '0',
-									),
-								),
-							),
-						),
-						'fields'  => array(
-							array(
-								'type'    => 'textarea',
-								'id'      => 'adv_note',
-								'title'   => __( 'Note (level 1)', 'simple-theme-options' ),
-								'default' => '',
-							),
-							array(
-								'type'    => 'advanced_repeater',
-								'id'      => 'adv_cells',
-								'title'   => __( 'Nested repeater (level 2)', 'simple-theme-options' ),
-								'max'     => 6,
-								'default' => array(
-									array(
-										'adv_cell_label' => '',
-										'adv_cell_mode'  => 'mode_standard',
-										'adv_cell_on'    => '0',
-									),
-								),
-								'fields'  => array(
-									array(
-										'type'    => 'text',
-										'id'      => 'adv_cell_label',
-										'title'   => __( 'Label (text)', 'simple-theme-options' ),
-										'default' => '',
-									),
-									array(
-										'type'    => 'select',
-										'id'      => 'adv_cell_mode',
-										'title'   => __( 'Mode (select)', 'simple-theme-options' ),
-										'default' => 'mode_standard',
-										'options' => array(
-											'mode_standard' => __( 'Standard', 'simple-theme-options' ),
-											'mode_alt'      => __( 'Alternate', 'simple-theme-options' ),
-										),
-									),
-									array(
-										'type'    => 'switcher',
-										'id'      => 'adv_cell_on',
-										'title'   => __( 'Inner toggle (level 2)', 'simple-theme-options' ),
-										'default' => '0',
-									),
-								),
-							),
-						),
-					),
-				),
+				'id'            => 'input_controls',
+				'title'         => __( 'Text & number inputs', 'topten-simple-theme-options' ),
+				'description'   => __( 'Sample inputs; each control is followed by Padding and Margin dimension fields (TRBL).', 'topten-simple-theme-options' ),
+				'fields'        => $input_control_fields,
+			)
+		);
+
+		Dimension::register_many(
+			self::standaloneMarginPaddingPair(
+				'layout-inputs',
+				'layout_sample_radio_list_single',
+				__( 'Radio list (single row, outside group)', 'topten-simple-theme-options' )
 			)
 		);
 
@@ -741,8 +451,8 @@ final class General {
 			array(
 				'section_slug'  => 'layout-inputs',
 				'id'            => 'layout_sample_google_map',
-				'title'         => __( 'Sample location map', 'simple-theme-options' ),
-				'description'  => __( 'Map search with synced address fields.', 'simple-theme-options' ),
+				'title'         => __( 'Sample location map', 'topten-simple-theme-options' ),
+				'description'  => __( 'Map search with synced address fields.', 'topten-simple-theme-options' ),
 				'default'       => array(
 					'formatted_address' => '1600 Pennsylvania Avenue NW, Washington, DC 20500, USA',
 					'address'           => '1600',
@@ -755,9 +465,18 @@ final class General {
 					'lng'               => '-77.0365298',
 				),
 				'tooltip'       => array(
+					// phpcs:ignore PluginCheck.CodeAnalysis.Localhost.Found -- Sample tooltip URL for Theme Settings demo only.
 					'image'     => 'http://woodmart-theme-options.local/wp-content/uploads/2013/09/dsc20040724_152504_532.jpg',
 					'preloader' => 'https://example.com/loader.mp4',
 				),
+			)
+		);
+
+		Dimension::register_many(
+			self::standaloneMarginPaddingPair(
+				'layout-inputs',
+				'layout_sample_google_map',
+				__( 'Sample location map', 'topten-simple-theme-options' )
 			)
 		);
 
@@ -765,40 +484,15 @@ final class General {
 			array(
 				array(
 					'section_slug' => 'layout-code-borders',
-					'id'           => 'layout_popup_width',
-					'title'        => __( 'Popup width', 'simple-theme-options' ),
-					'description'  => __( 'Popup width in pixels.', 'simple-theme-options' ),
-					'default'      => '760px',
-					'min'          => 200,
-					'max'          => 1400,
-					'responsive'   => true,
-					'device'       => array( 'lg', 'md', 'mobile' ),
-					'step'         => 1,
-					'units'        => array( 'px' ),
-				),
-				array(
-					'section_slug' => 'layout-code-borders',
 					'id'           => 'layout_popup_show_after_pages',
-					'title'        => __( 'Show after number of pages visited', 'simple-theme-options' ),
-					'description'  => __( 'Pages visited before popup shows.', 'simple-theme-options' ),
+					'title'        => __( 'Show after number of pages visited', 'topten-simple-theme-options' ),
+					'description'  => __( 'Pages visited before popup shows.', 'topten-simple-theme-options' ),
 					'default'      => '5',
 					'min'          => 0,
 					'max'          => 50,
 					'step'         => 1,
 					'units'        => array( 'custom' ),
-					'unit_label'   => __( 'PAGE', 'simple-theme-options' ),
-				),
-				array(
-					'section_slug' => 'layout-code-borders',
-					'id'           => 'layout_popup_padding',
-					'title'        => __( 'Popup padding', 'simple-theme-options' ),
-					'description'  => __( 'Popup padding per device tab.', 'simple-theme-options' ),
-					'default'      => '30px',
-					'min'          => 0,
-					'max'          => 120,
-					'step'         => 1,
-					'responsive'   => true,
-					'units'        => array( 'rem', 'em', 'custom' ),
+					'unit_label'   => __( 'PAGE', 'topten-simple-theme-options' ),
 				),
 			)
 		);
@@ -809,8 +503,8 @@ final class General {
 					'section_slug'  => 'layout-code-borders',
 					'type'          => 'text',
 					'id'            => 'portfolio_project_slug',
-					'title'         => __( 'Portfolio project URL slug', 'simple-theme-options' ),
-					'description'  => __( 'Resave permalinks after changing slug.', 'simple-theme-options' ),
+					'title'         => __( 'Portfolio project URL slug', 'topten-simple-theme-options' ),
+					'description'  => __( 'Resave permalinks after changing slug.', 'topten-simple-theme-options' ),
 					'default'       => '',
 					'placeholder'   => 'portfolio',
 				),
@@ -818,10 +512,49 @@ final class General {
 					'section_slug'  => 'layout-code-borders',
 					'type'          => 'text',
 					'id'            => 'portfolio_category_slug',
-					'title'         => __( 'Portfolio category URL slug', 'simple-theme-options' ),
-					'description'  => __( 'Resave permalinks after changing slug.', 'simple-theme-options' ),
+					'title'         => __( 'Portfolio category URL slug', 'topten-simple-theme-options' ),
+					'description'  => __( 'Resave permalinks after changing slug.', 'topten-simple-theme-options' ),
 					'default'       => '',
 					'placeholder'   => 'portfolio-category',
+				),
+			)
+		);
+
+		BorderControl::register_many(
+			array(
+				array(
+					'section_slug' => 'layout-code-borders',
+					'id'           => 'layout_code_border_full',
+					'title'        => __( 'Border (full)', 'topten-simple-theme-options' ),
+					'description'  => __( 'Radius, style, width, and color with alpha.', 'topten-simple-theme-options' ),
+					'default'      => array(
+						'radius'      => '8',
+						'radius_unit' => 'px',
+						'style'       => 'solid',
+						'width'       => '1',
+						'width_unit'  => 'px',
+						'color'       => '#e6e8eb',
+					),
+					'radius_units' => array( 'px', '%' ),
+					'min_radius'   => 0,
+					'max_radius'   => 60,
+					'min_width'    => 0,
+					'max_width'    => 12,
+				),
+				array(
+					'section_slug' => 'layout-code-borders',
+					'id'           => 'layout_code_border_simple',
+					'title'        => __( 'Border (radius + style)', 'topten-simple-theme-options' ),
+					'description'  => __( 'Border radius and style only.', 'topten-simple-theme-options' ),
+					'default'      => array(
+						'radius'      => '12',
+						'radius_unit' => 'px',
+						'style'       => 'dashed',
+						'width'       => '1',
+						'width_unit'  => 'px',
+						'color'       => '#c3c4c7',
+					),
+					'features'     => array( 'radius', 'style' ),
 				),
 			)
 		);
@@ -830,8 +563,8 @@ final class General {
 			array(
 				'section_slug' => 'layout-code-borders',
 				'id'           => 'custom_css',
-				'title'        => __( 'Code editor (auto-detect)', 'simple-theme-options' ),
-				'description'  => __( 'Auto-detect language; autocomplete enabled.', 'simple-theme-options' ),
+				'title'        => __( 'Code editor (auto-detect)', 'topten-simple-theme-options' ),
+				'description'  => __( 'Auto-detect language; autocomplete enabled.', 'topten-simple-theme-options' ),
 				'mode'         => 'auto',
 				'height'       => 320,
 				'autocomplete' => true,
@@ -844,8 +577,8 @@ final class General {
 			array(
 				'section_slug' => 'layout-code-borders',
 				'id'           => 'custom_header_html',
-				'title'        => __( 'Header HTML', 'simple-theme-options' ),
-				'description'  => __( 'HTML for the head tag.', 'simple-theme-options' ),
+				'title'        => __( 'Header HTML', 'topten-simple-theme-options' ),
+				'description'  => __( 'HTML for the head tag.', 'topten-simple-theme-options' ),
 				'mode'         => 'html',
 				'height'       => 220,
 				'placeholder'  => "<!-- Google Tag Manager, verification meta, etc. -->",
@@ -857,8 +590,8 @@ final class General {
 			array(
 				'section_slug' => 'layout-code-borders',
 				'id'           => 'custom_footer_js',
-				'title'        => __( 'Footer JavaScript', 'simple-theme-options' ),
-				'description'  => __( 'Footer JavaScript, output before body end.', 'simple-theme-options' ),
+				'title'        => __( 'Footer JavaScript', 'topten-simple-theme-options' ),
+				'description'  => __( 'Footer JavaScript, output before body end.', 'topten-simple-theme-options' ),
 				'mode'         => 'javascript',
 				'height'       => 220,
 				'placeholder'  => "// Custom analytics / chat-widget bootstrap",
@@ -866,44 +599,15 @@ final class General {
 			)
 		);
 
-		Group::register(
+		RichModernEditor::register(
 			array(
-				'section_slug' => 'layout-code-borders',
-				'id'           => 'border_controls',
-				'title'        => __( 'Border presets', 'simple-theme-options' ),
-				'description'  => __( 'Full border versus radius and style.', 'simple-theme-options' ),
-				'fields'       => array(
-					array(
-						'type'         => 'border',
-						'id'           => 'card_border',
-						'title'        => __( 'Card outline (full)', 'simple-theme-options' ),
-						'description'  => __( 'Radius (px / %), style, width, and color with alpha.', 'simple-theme-options' ),
-						'default'      => array(
-							'radius'      => '8',
-							'radius_unit' => 'px',
-							'style'       => 'solid',
-							'width'       => '1',
-							'width_unit'  => 'px',
-							'color'       => '#e6e8eb',
-						),
-						'radius_units' => array( 'px', '%' ),
-						'min_radius'   => 0,
-						'max_radius'   => 60,
-						'min_width'    => 0,
-						'max_width'    => 12,
-					),
-					array(
-						'type'        => 'border',
-						'id'          => 'card_border_simple',
-						'title'       => __( 'Card outline (radius + style)', 'simple-theme-options' ),
-						'description'  => __( 'Border radius and style only.', 'simple-theme-options' ),
-						'default'     => array(
-							'radius' => '12',
-							'style'  => 'dashed',
-						),
-						'features'    => array( 'radius', 'style' ),
-					),
-				),
+				'section_slug'  => 'layout-code-borders',
+				'id'            => 'layout_rich_modern_content',
+				'title'         => __( 'Rich modern editor (Gutenberg)', 'topten-simple-theme-options' ),
+				'description'   => __( 'Block editor for rich product or page copy; stores serialized block markup.', 'topten-simple-theme-options' ),
+				'editor_height' => 360,
+				'media_upload'  => true,
+				'default'       => "<!-- wp:paragraph -->\n<p>" . esc_html__( 'Start writing…', 'topten-simple-theme-options' ) . "</p>\n<!-- /wp:paragraph -->",
 			)
 		);
 
@@ -911,20 +615,20 @@ final class General {
 			array(
 				'section_slug'  => 'layout-tabs-side',
 				'id'            => 'layout_cust_btn',
-				'title'         => __( 'Button bar', 'simple-theme-options' ),
-				'description'  => __( 'Five tab slots share one template.', 'simple-theme-options' ),
+				'title'         => __( 'Button bar', 'topten-simple-theme-options' ),
+				'description'  => __( 'Five tab slots share one template.', 'topten-simple-theme-options' ),
 				'tabs'          => array(
-					array( 'id' => 'b1', 'label' => __( 'Slot 1', 'simple-theme-options' ) ),
-					array( 'id' => 'b2', 'label' => __( 'Slot 2', 'simple-theme-options' ) ),
-					array( 'id' => 'b3', 'label' => __( 'Slot 3', 'simple-theme-options' ) ),
-					array( 'id' => 'b4', 'label' => __( 'Slot 4', 'simple-theme-options' ) ),
-					array( 'id' => 'b5', 'label' => __( 'Slot 5', 'simple-theme-options' ) ),
+					array( 'id' => 'b1', 'label' => __( 'Slot 1', 'topten-simple-theme-options' ) ),
+					array( 'id' => 'b2', 'label' => __( 'Slot 2', 'topten-simple-theme-options' ) ),
+					array( 'id' => 'b3', 'label' => __( 'Slot 3', 'topten-simple-theme-options' ) ),
+					array( 'id' => 'b4', 'label' => __( 'Slot 4', 'topten-simple-theme-options' ) ),
+					array( 'id' => 'b5', 'label' => __( 'Slot 5', 'topten-simple-theme-options' ) ),
 				),
 				'fields'        => array(
 					array(
 						'type'        => 'text',
 						'id'          => 'btn_url',
-						'title'       => __( 'Link URL', 'simple-theme-options' ),
+						'title'       => __( 'Link URL', 'topten-simple-theme-options' ),
 						'default'     => '',
 						'placeholder' => 'https://',
 						'width'       => '1-3',
@@ -932,189 +636,112 @@ final class General {
 					array(
 						'type'    => 'text',
 						'id'      => 'btn_text',
-						'title'   => __( 'Label', 'simple-theme-options' ),
+						'title'   => __( 'Label', 'topten-simple-theme-options' ),
 						'default' => '',
 						'width'   => '1-3',
 					),
 					array(
 						'type'        => 'text',
 						'id'          => 'btn_icon',
-						'title'       => __( 'Icon URL', 'simple-theme-options' ),
-						'description'  => __( 'Icon URL or attachment ID text.', 'simple-theme-options' ),
+						'title'       => __( 'Icon URL', 'topten-simple-theme-options' ),
+						'description'  => __( 'Icon URL or attachment ID text.', 'topten-simple-theme-options' ),
 						'default'     => '',
 						'width'       => '1-3',
 					),
 				),
 			)
 		);
+	}
 
-		Tabs::register(
-			array(
-				'section_slug'  => 'layout-tabs-side',
-				'id'            => 'layout_standalone_tabs',
-				'title'         => __( 'Responsive tabs & grid', 'simple-theme-options' ),
-				'description'  => __( 'Responsive tabs with twelve-column grid.', 'simple-theme-options' ),
-				'responsive'    => true,
-				'tooltip'       => array(
-					'image' => 'https://picsum.photos/seed/sto-tabs-tooltip/520/720',
-				),
-				'device'        => array( 'xxl', 'md', 'mobile' ),
-				'tabs'          => array(
-					array( 'id' => 'slot_a', 'label' => __( 'Primary', 'simple-theme-options' ) ),
-					array( 'id' => 'slot_b', 'label' => __( 'Secondary', 'simple-theme-options' ) ),
-				),
-				'fields'        => array(
-					array(
-						'type'    => 'text',
-						'id'      => 'demo_col_1',
-						'title'   => __( 'Row 1 · column 1', 'simple-theme-options' ),
-						'default' => '',
-						'width'   => '1-3',
-					),
-					array(
-						'type'    => 'text',
-						'id'      => 'demo_col_2',
-						'title'   => __( 'Row 1 · column 2', 'simple-theme-options' ),
-						'default' => '',
-						'width'   => '1-3',
-					),
-					array(
-						'type'    => 'text',
-						'id'      => 'demo_col_3',
-						'title'   => __( 'Row 1 · column 3', 'simple-theme-options' ),
-						'default' => '',
-						'width'   => '1-3',
-					),
-					array(
-						'type'    => 'text',
-						'id'      => 'demo_col_4',
-						'title'   => __( 'Row 2 · column 1', 'simple-theme-options' ),
-						'default' => '',
-						'width'   => '1-3',
-						'tooltip' => array(
-							'image' => 'https://picsum.photos/seed/sto-banner-tooltip/520/720',
-						),
-					),
-					array(
-						'type'    => 'text',
-						'id'      => 'demo_col_5',
-						'title'   => __( 'Row 2 · column 2', 'simple-theme-options' ),
-						'default' => '',
-						'width'   => '1-3',
-					),
-					array(
-						'type'    => 'text',
-						'id'      => 'demo_col_6',
-						'title'   => __( 'Row 2 · column 3', 'simple-theme-options' ),
-						'default' => '',
-						'width'   => '1-3',
-					),
-				),
-			)
+	/**
+	 * Append padding + margin dimension rows after each leaf field in a group `fields` list.
+	 *
+	 * @param list<array<string, mixed>> $fields
+	 * @return list<array<string, mixed>>
+	 */
+	private static function flattenFieldsWithMarginPadding( array $fields ): array {
+		$flattened = array();
+		foreach ( $fields as $field_config ) {
+			foreach ( self::fieldWithMarginPadding( $field_config ) as $field_row ) {
+				$flattened[] = $field_row;
+			}
+		}
+
+		return $flattened;
+	}
+
+	/**
+	 * @param array<string, mixed> $field_config
+	 * @return list<array<string, mixed>>
+	 */
+	private static function fieldWithMarginPadding( array $field_config ): array {
+		if ( empty( $field_config['id'] ) || ( isset( $field_config['type'] ) && $field_config['type'] === 'dimension' ) ) {
+			return array( $field_config );
+		}
+
+		$field_id    = sanitize_key( (string) $field_config['id'] );
+		$field_title = isset( $field_config['title'] ) ? (string) $field_config['title'] : $field_id;
+
+		return array_merge(
+			array( $field_config ),
+			self::marginPaddingPairForField( $field_id, $field_title )
 		);
+	}
 
-		Group::register(
-			array(
-				'section_slug' => 'layout-tabs-side',
-				'id'           => 'sidebar',
-				'title'        => __( 'Sidebar layout', 'simple-theme-options' ),
-				'required'     => array(
-					'layout_header' => 'default_header_layout',
+	/**
+	 * @return list<array<string, mixed>>
+	 */
+	private static function marginPaddingPairForField( string $field_id, string $field_title ): array {
+		return array(
+			self::dimensionSpacingField( $field_id . '_padding', $field_title, 'padding' ),
+			self::dimensionSpacingField( $field_id . '_margin', $field_title, 'margin' ),
+		);
+	}
+
+	/**
+	 * @return list<array<string, mixed>>
+	 */
+	private static function standaloneMarginPaddingPair( string $section_slug, string $field_id, string $field_title ): array {
+		$pair = self::marginPaddingPairForField( $field_id, $field_title );
+		foreach ( $pair as $index => $field_config ) {
+			$pair[ $index ]['section_slug'] = $section_slug;
+		}
+
+		return $pair;
+	}
+
+	/**
+	 * @param 'padding'|'margin' $spacing_kind
+	 * @return array<string, mixed>
+	 */
+	private static function dimensionSpacingField( string $id, string $parent_title, string $spacing_kind ): array {
+		$spacing_label = $spacing_kind === 'margin'
+			? __( 'Margin', 'topten-simple-theme-options' )
+			: __( 'Padding', 'topten-simple-theme-options' );
+
+		return array(
+			'type'    => 'dimension',
+			'id'      => $id,
+			'title'   => sprintf(
+				/* translators: 1: parent field title, 2: Margin or Padding */
+				__( '%1$s — %2$s', 'topten-simple-theme-options' ),
+				$parent_title,
+				$spacing_label
+			),
+			'units'   => array( 'px', 'rem', '%', 'em' ),
+			'min'     => 0,
+			'max'     => 200,
+			'step'    => 1,
+			'default' => array(
+				'unit'   => 'px',
+				'linked' => true,
+				'values' => array(
+					'top'    => '0',
+					'right'  => '0',
+					'bottom' => '0',
+					'left'   => '0',
 				),
-				'fields'       => array(
-					array(
-						'type'          => 'image_select',
-						'id'            => 'sidebar_position',
-						'title'         => __( 'Position', 'simple-theme-options' ),
-						'description'  => __( 'Image tiles with responsive columns.', 'simple-theme-options' ),
-						'default'       => 'right',
-						// `columns` accepts an int (same on all viewports) or a per-tier map.
-						// xxl = default / desktop, md = ≤991px, mobile = ≤600px. Missing tiers cascade up.
-						'columns'       => array(
-							'xxl'    => 3,
-							'md'     => 2,
-							'mobile' => 1,
-						),
-						// Each option may use `image` (URL) for a custom thumbnail; add as many choices as needed.
-						// `label` doubles as a hover/focus tooltip on every tile so admins can identify thumbs even when columns are narrow.
-						'options'       => array(
-							'none'  => array(
-								'label' => __( 'No sidebar', 'simple-theme-options' ),
-								'image' => 'https://picsum.photos/seed/sto-sidebar-none/400/170',
-							),
-							'left'  => array(
-								'label' => __( 'Left sidebar', 'simple-theme-options' ),
-								'image' => 'https://picsum.photos/seed/sto-sidebar-left/400/170',
-							),
-							'right' => array(
-								'label' => __( 'Right sidebar', 'simple-theme-options' ),
-								'image' => 'https://picsum.photos/seed/sto-sidebar-right/400/170',
-							),
-						),
-					),
-					array(
-						'id'          => 'sidebar_size',
-						'title'       => __( 'Width preset', 'simple-theme-options' ),
-						'description' => __( 'Visible when the sidebar sits on the right.', 'simple-theme-options' ),
-						'default'     => 'medium',
-						'options'     => array(
-							'small'  => __( 'Small', 'simple-theme-options' ),
-							'medium' => __( 'Medium', 'simple-theme-options' ),
-							'large'  => __( 'Large', 'simple-theme-options' ),
-						),
-						'required'     => array(
-							'sidebar_position' => 'right',
-						),
-					),
-					array(
-						'type'          => 'switcher',
-						'id'            => 'sidebar_off_canvas_mobile',
-						'title'         => __( 'Off canvas sidebar for mobile', 'simple-theme-options' ),
-						'description'  => __( 'Off-canvas sidebar on mobile.', 'simple-theme-options' ),
-						'default'       => '0',
-						'required'      => array(
-							'sidebar_position' => 'right',
-						),
-						'tooltip'       => array(
-							'image' => 'https://picsum.photos/seed/sto-sidebar-tooltip/520/720',
-						),
-					),
-					array(
-						'type'        => 'typography',
-						'id'          => 'sidebar_typography',
-						'title'       => __( 'Sidebar typography', 'simple-theme-options' ),
-						'description' => __( 'Example typography control inside a nested group.', 'simple-theme-options' ),
-						'default'     => array(
-							'family'    => 'Open Sans',
-							'variant'   => 'regular',
-							'subset'    => 'latin',
-							'transform' => 'none',
-						),
-						'required'    => array(
-							array(
-								'sidebar_position' => 'right',
-								'sidebar_off_canvas_mobile' => '1',
-							),
-						),
-					),
-					array(
-						'id'          => 'sidebar_sticky',
-						'title'       => __( 'Sticky sidebar', 'simple-theme-options' ),
-						'description'  => __( 'When sidebar is right and large.', 'simple-theme-options' ),
-						'default'     => 'no',
-						'options'     => array(
-							'no'  => __( 'No', 'simple-theme-options' ),
-							'yes' => __( 'Yes', 'simple-theme-options' ),
-						),
-						'required'    => array(
-							array(
-								'sidebar_position' => 'right',
-								'sidebar_size'     => 'large',
-							),
-						),
-					),
-				),
-			)
+			),
 		);
 	}
 }

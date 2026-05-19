@@ -1,5 +1,14 @@
 # Topten Simple Theme Options — contributor rules
 
+## Regression safety (do not break other features)
+
+**Standing user policy:** plugin or sample changes must not break unrelated Theme Settings flows, theme integrations, or storefront behavior.
+
+- **Scope** — Prefer body-class / screen-specific CSS and context checks in PHP; avoid global selector or hook renames without grep and a migration note.
+- **Verify** after substantive edits: Theme Settings save + section nav, Tools → Simple Settings export/import, one theme menu (e.g. UAEBattery), packaged demo samples when demo is on.
+- **`php -l`** on every edited PHP file.
+- Workspace: **`.cursor/rules/regression-safety.mdc`** (always applied in this Local install).
+
 ## Deploy to GitHub (mandatory after every change)
 
 - Work inside **`wp-content/plugins/battery-simple-theme-options/`** (this fork’s git repo; do not use the wordpress.org **`simple-theme-options`** folder name).
@@ -21,6 +30,9 @@ Use **`git remote -v`** after a fork/changed remote.
 
 Push requires a GitHub identity with **push** rights (maintainer **`hsbeauty39`** or a collaborator).
 
+- **2026-05-18 — Export backup JSON:** `ajax_export` boots sample field modules + `FieldRegistrationDeferral::flush()` so the registry is populated on `admin-ajax.php`. Tools **Export scope** requires ≥1 checked menu; JS shows server error text instead of generic “Could not create the export” when possible.
+- **2026-05-18 — Plugin Check / text domain:** Plugin slug / **Text Domain** = **`topten-simple-theme-options`**. **`STO_TEXT_DOMAIN`** constant matches it (used for `load_plugin_textdomain()` only). **`__()` / `_n()` / `esc_html__()`** must pass the **literal** string `'topten-simple-theme-options'` (Plugin Check rejects a constant as the domain argument). Recommended install **folder** remains **`battery-simple-theme-options`** (`STO_PLUGIN_SLUG`). **PHPCS ruleset:** `docs/phpcs.xml` (not in org zip; avoids Plugin Check `application_detected` on `*.dist`). **Cursor rules:** workspace `.cursor/rules/topten-simple-theme-options-plugin.mdc` (plugin `.cursor/` removed so Plugin Check does not flag `ai_instruction_directory`). Run Plugin Check on a **distribution zip** before review; `.gitignore` / `.distignore` may still warn on a full dev tree scan.
+- **2026-05-18 — Theme Settings SPA nav:** `main.js` resolves links with **`stoAbsAdminHref()`** against **`trailingslashit( admin_url() )`** (trailing slash required — without it, `new URL('admin.php', base)` becomes `/admin.php` at site root). **`pushState`** only on the main settings screen under **`/wp-admin/`**; from Freemius Contact/Pricing, **`#adminmenu`** uses **`window.location.href`**. Broken URLs auto-redirect via **`stoRecoverBrokenThemeSettingsUrl()`**.
 - **2026-05-18 — Developer guide location:** HTML integrator bundle moved from plugin root to **`wp-content/plugins/instructions/`** (`instructions.html` + `scripts/`). Not shipped in plugin ZIP; deploy separately for live docs URL.
 - **2026-05-17 — Tools screen label:** **Tools → Simple Settings** (`sto-simple-backup`); first sidebar section **Settings** (`section=backup`), not “Simple Backup” / “Backup”.
 - **2026-05-17 — Premium panel banner:** When Pro is off, **`PremiumFieldGate::render_panel_banner()`** outputs a full-width upgrade alert + **Purchase Premium** CTA above the panel head on Theme Settings root screens; filter **`sto_show_premium_panel_banner`**.
@@ -31,7 +43,8 @@ Push requires a GitHub identity with **push** rights (maintainer **`hsbeauty39`*
 - **2026-05-17 — Freemius Plans & Pricing:** `StoFreemiusPricing` filters `templates/pricing.php` — STO panel header + purple design tokens on `#fs_pricing_app`; compact gradient **Upgrade** CTA. CSS: **`sto-freemius-pricing.css`**; body class **`sto-fs-pricing-screen`**.
 - **2026-05-17 — Gradient dock color picker:** Dock portaled to **`document.body`**; **`click.stoGradOutside`** ignores the open dock. Iris **`.iris-picker-inner { position: relative }`** (in-flow, same as palette UI) so square/strips do not overlap **`.sto-gradient-dock-palette`**. **`sto-color.css`** does not style the dock.
 - **2026-05-17 — Packaged demo + Freemius:** **Theme Settings** top-level menu **always** registers; demo mode only toggles sample nav/fields. Freemius defaults to **`theme-settings`** (`sto_freemius_menu_slug` filter optional).
-- **2026-05-16 — Premium fields:** DynamicObject, AdvancedRepeater, GoogleMap, CodeEditor, Tabs, Accordion, Group are Pro-only; check with `topten_sto()->can_use_premium_code__premium_only()` / `sto_can_use_premium_fields()`. Locked rows each show the full gradient upsell card (field name + type label + CTA) via **`PremiumFieldGate::render_controls_or_locked_placeholder( $title, $type )`**. Groups render free children when locked; Theme Settings samples use **one root group per section** and standalone premium field registration.
+- **2026-05-19 — Rich modern editor:** New premium field type **`rich_modern_editor`** (`RichModernEditor`) — Gutenberg block editor in Theme Settings / groups / tabs / accordions; stores serialized blocks; assets **`sto-rich-modern-editor`**; boot **`RichModernEditor::instance()`** before register.
+- **2026-05-16 — Premium fields:** DynamicObject, AdvancedRepeater, GoogleMap, CodeEditor, RichModernEditor, Tabs, Accordion, Group are Pro-only; check with `topten_sto()->can_use_premium_code__premium_only()` / `sto_can_use_premium_fields()`. Locked rows each show the full gradient upsell card (field name + type label + CTA) via **`PremiumFieldGate::render_controls_or_locked_placeholder( $title, $type )`**. Groups render free children when locked; Theme Settings samples use **one root group per section** and standalone premium field registration.
 - **2026-05-16 — Typography Select2:** Ship **`assets/admin/vendor/select2/`** (4.0.13); without it **`jQuery.fn.select2`** is missing. Use **`stoRefreshTypographySelect2`** after visibility / fieldset enable (**`sto-typography.js`**, **`main.js`**). **`initTypographySelectsInWrap`** must not destroy/re-init an already-attached control (fixes dropdown flash-close on click); **`refreshTypographySelect2`** skips while **`.select2-container--open`**.
 - **2026-05-16 — Theme Settings reset:** Footer **Reset section** / **Reset all fields** (confirm → POST). **`Menu::maybe_handle_reset_request()`** + **`ThemeSettingsDefaults`** restore registration defaults into **`sto_options`**; all-fields redirect drops **`section`** from the URL.
 - **2026-05-16 — Sample field copy:** Demo registrations under **`includes/Admin/Sample/`** keep **`description`** to **≤10 words** (long API/theme docs removed).

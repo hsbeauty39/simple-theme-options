@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\Tabs;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Accordion\Accordion;
 use SimpleThemeOptions\Admin\Options\Fields\BackgroundControl\BackgroundControl;
@@ -10,6 +11,7 @@ use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\Admin\Options\Fields\ButtonGroup\ButtonGroup;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
+use SimpleThemeOptions\Admin\Options\Fields\RichModernEditor\RichModernEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -496,10 +498,24 @@ final class Tabs {
 	}
 
 	/**
+	 * @param array<string, mixed> $inner
+	 */
+	private function is_rich_modern_editor_type( array $inner ) {
+		if ( empty( $inner['id'] ) ) {
+			return false;
+		}
+		$type = isset( $inner['type'] ) ? sanitize_key( (string) $inner['type'] ) : '';
+
+		return in_array( $type, array( 'rich_modern_editor', 'richmoderneditor', 'block_editor', 'gutenberg' ), true );
+	}
+
+	/**
 	 * @param array<string, mixed> $clone_reg
 	 * @return string Registered kind or empty on failure
 	 */
 	private function register_inner_field( array $clone_reg ) {
+		FieldSpacing::normalize_config( $clone_reg );
+
 		$section = $clone_reg['section_slug'];
 		$fid     = isset( $clone_reg['id'] ) ? sanitize_key( (string) $clone_reg['id'] ) : '';
 		if ( ! $fid ) {
@@ -621,6 +637,11 @@ final class Tabs {
 
 			return CodeEditor::get_field( $section, $fid ) ? 'code_editor' : '';
 		}
+		if ( $this->is_rich_modern_editor_type( $clone_reg ) ) {
+			RichModernEditor::register( $clone_reg );
+
+			return RichModernEditor::get_field( $section, $fid ) ? 'rich_modern_editor' : '';
+		}
 		if ( isset( $clone_reg['type'] ) && $clone_reg['type'] === 'link_color' ) {
 			LinkColor::register( $clone_reg );
 
@@ -727,7 +748,10 @@ final class Tabs {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-tabs-' . $tabs_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $config, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $tabs_id ); ?>"
 			<?php if ( empty( $breakpoints ) ) : ?>
 				data-sto-tabs="1"
@@ -918,7 +942,7 @@ final class Tabs {
 		}
 		ob_start();
 		?>
-		<div class="sto-tabs__toolbar<?php echo $master_sync ? ' sto-tabs__toolbar--sto-master' : ''; ?>" role="tablist" aria-label="<?php esc_attr_e( 'Tabs', 'simple-theme-options' ); ?>">
+		<div class="sto-tabs__toolbar<?php echo $master_sync ? ' sto-tabs__toolbar--sto-master' : ''; ?>" role="tablist" aria-label="<?php esc_attr_e( 'Tabs', 'topten-simple-theme-options' ); ?>">
 			<?php foreach ( $tab_defs as $ti => $tab ) : ?>
 				<?php
 				$tk      = $tab['id'];
@@ -1147,6 +1171,13 @@ final class Tabs {
 				if ( $f ) {
 					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
 					CodeEditor::instance()->render_field_markup( $f, $inner_ctx );
+				}
+				break;
+			case 'rich_modern_editor':
+				$f = RichModernEditor::get_field( $section_slug, $composite_id );
+				if ( $f ) {
+					$f = $this->with_tabs_responsive_pane_bp( $f, $parent_device_bp );
+					RichModernEditor::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
 			case 'link_color':

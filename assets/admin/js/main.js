@@ -351,6 +351,9 @@
                     if (typeof window.stoInitCodeEditors === 'function') {
                         window.stoInitCodeEditors($ap);
                     }
+                    if (typeof window.stoInitRichModernEditors === 'function') {
+                        window.stoInitRichModernEditors($ap);
+                    }
                     applyRequiredVisibility($ap);
                 }
             });
@@ -957,6 +960,9 @@
             }
             if (typeof window.stoInitCodeEditors === 'function') {
                 window.stoInitCodeEditors($activePanel);
+            }
+            if (typeof window.stoInitRichModernEditors === 'function') {
+                window.stoInitRichModernEditors($activePanel);
             }
         }, 0);
     }

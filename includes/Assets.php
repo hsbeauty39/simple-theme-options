@@ -1,6 +1,7 @@
 <?php
 namespace SimpleThemeOptions;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
 use SimpleThemeOptions\Admin\Options\Fields\AdvancedRepeaterControl\AdvancedRepeaterControl;
 use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
@@ -22,6 +23,7 @@ final class Assets {
 
 	public function init() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_styles' ), 10, 1 );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_freemius_upgrade_styles' ), 5, 1 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10, 1 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_public_scripts' ), 20 );
 	}
@@ -51,6 +53,37 @@ final class Assets {
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 
 		return $page !== '' && in_array( $page, $slugs, true );
+	}
+
+	/**
+	 * Freemius submenu screens (Contact, Account, Pricing, …) share the Theme Settings menu prefix.
+	 *
+	 * @param string $hook_suffix Current admin page hook.
+	 */
+	private function is_sto_freemius_sibling_screen( $hook_suffix = '' ): bool {
+		unset( $hook_suffix );
+
+		if ( ! is_admin() ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin screen detection only.
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( (string) $_GET['page'] ) ) : '';
+		if ( $page === '' ) {
+			return false;
+		}
+
+		foreach ( OptionsMenu::instance()->get_registered_menu_slugs() as $root_slug ) {
+			$root_slug = sanitize_key( (string) $root_slug );
+			if ( $root_slug === '' || $page === $root_slug ) {
+				continue;
+			}
+			if ( str_starts_with( $page, $root_slug . '-' ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -132,8 +165,38 @@ final class Assets {
 	 */
 	private function should_enqueue_theme_settings_assets( $hook_suffix = '' ): bool {
 		return $this->is_sto_options_screen( $hook_suffix )
+			|| $this->is_sto_freemius_sibling_screen( $hook_suffix )
 			|| $this->is_sto_theme_settings_metabox_screen( $hook_suffix )
+			|| $this->is_sto_woocommerce_product_data_screen( $hook_suffix )
 			|| $this->is_sto_theme_settings_term_screen( $hook_suffix );
+	}
+
+	/**
+	 * WooCommerce product edit when a menu root uses {@see OptionsMenu::uses_woocommerce_product_data_panels()}.
+	 *
+	 * @param string $hook_suffix Current admin page hook.
+	 */
+	private function is_sto_woocommerce_product_data_screen( $hook_suffix = '' ): bool {
+		if ( ! is_admin() ) {
+			return false;
+		}
+
+		if ( ! is_string( $hook_suffix ) || ( $hook_suffix !== 'post.php' && $hook_suffix !== 'post-new.php' ) ) {
+			return false;
+		}
+
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$post_type = ( $screen && isset( $screen->post_type ) ) ? sanitize_key( (string) $screen->post_type ) : '';
+		if ( $post_type !== 'product' || ! OptionsMenu::instance()->has_woocommerce_product_data_for_post_type( 'product' ) ) {
+			return false;
+		}
+
+		global $post;
+		if ( $post instanceof \WP_Post && (int) $post->ID > 0 ) {
+			return current_user_can( 'edit_post', (int) $post->ID );
+		}
+
+		return current_user_can( 'edit_products' );
 	}
 
 	public function enqueue_styles( $hook_suffix = '' ) {
@@ -146,6 +209,59 @@ final class Assets {
 			$version = $this->bust_cache_version( $style['src'], $style['version'] );
 			wp_enqueue_style( $handle, $style['src'], $style['deps'], $version );
 		}
+
+		if ( $this->should_enqueue_metabox_wc_tabs_styles( $hook_suffix ) ) {
+			$src     = STO_URL . 'assets/admin/css/sto-metabox-wc-tabs.css';
+			$version = $this->bust_cache_version( $src, STO_VERSION );
+			wp_enqueue_style( 'sto-metabox-wc-tabs', $src, array( 'sto-style' ), $version );
+		}
+
+		if ( $this->is_sto_woocommerce_product_data_screen( $hook_suffix ) ) {
+			$src     = STO_URL . 'assets/admin/css/sto-wc-product-data-panels.css';
+			$version = $this->bust_cache_version( $src, STO_VERSION );
+			wp_enqueue_style( 'sto-wc-product-data-panels', $src, array( 'sto-style', 'woocommerce_admin_styles' ), $version );
+		}
+	}
+
+	/**
+	 * Post editor metabox with at least one menu root using `metabox.nav_style` => `wc_tabs`.
+	 *
+	 * @param string $hook_suffix Current admin page hook.
+	 */
+	private function should_enqueue_metabox_wc_tabs_styles( $hook_suffix = '' ): bool {
+		if ( ! $this->is_sto_theme_settings_metabox_screen( $hook_suffix ) ) {
+			return false;
+		}
+
+		foreach ( ThemeSettingsMetabox::instance()->get_roots() as $menu_slug => $cfg ) {
+			unset( $cfg );
+			if ( OptionsMenu::instance()->metabox_uses_wc_tabs_nav( (string) $menu_slug ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Gradient Freemius “Upgrade” submenu + STO sidebar CTA (non-Pro sites).
+	 *
+	 * Loads on all admin screens so the WP left-menu Upgrade row stays styled; priority 99
+	 * runs after Freemius `fs_common` lime-green defaults.
+	 *
+	 * @param string $hook_suffix Current admin page hook.
+	 */
+	public function enqueue_freemius_upgrade_styles( $hook_suffix = '' ): void {
+		unset( $hook_suffix );
+
+		if ( ! is_admin() || ! class_exists( PremiumFieldGate::class ) || ! PremiumFieldGate::is_locked() ) {
+			return;
+		}
+
+		$src = STO_URL . 'assets/admin/css/sto-freemius-upgrade.css';
+		$version = $this->bust_cache_version( $src, STO_VERSION );
+
+		wp_enqueue_style( 'sto-freemius-upgrade', $src, array(), $version );
 	}
 
 	/**
@@ -206,7 +322,7 @@ final class Assets {
 			),
 			'sto-premium-locked' => array(
 				'src'     => STO_URL . 'assets/admin/css/sto-premium-locked.css',
-				'deps'    => array( 'sto-style' ),
+				'deps'    => array( 'sto-style', 'sto-freemius-upgrade' ),
 				'version' => STO_VERSION,
 			),
 			'sto-responsive' => array(
@@ -368,6 +484,11 @@ final class Assets {
 				'deps'    => array( 'sto-style', 'sto-select2' ),
 				'version' => STO_VERSION,
 			),
+			'sto-rich-modern-editor' => array(
+				'src'     => STO_URL . 'assets/admin/css/sto-rich-modern-editor.css',
+				'deps'    => array( 'sto-style', 'wp-components', 'wp-block-editor', 'wp-edit-blocks' ),
+				'version' => STO_VERSION,
+			),
 		);
 	}
 
@@ -390,8 +511,8 @@ final class Assets {
 			'sto-input-password',
 			'stoInputPassword',
 			array(
-				'show' => __( 'Show password', 'simple-theme-options' ),
-				'hide' => __( 'Hide password', 'simple-theme-options' ),
+				'show' => __( 'Show password', 'topten-simple-theme-options' ),
+				'hide' => __( 'Hide password', 'topten-simple-theme-options' ),
 			)
 		);
 
@@ -405,8 +526,9 @@ final class Assets {
 			$page_slug = ! empty( $slugs[0] ) ? (string) $slugs[0] : 'theme-settings';
 		}
 
-		$on_post_metabox  = $this->is_sto_theme_settings_metabox_screen( $hook_suffix );
-		$on_term_screen   = $this->is_sto_theme_settings_term_screen( $hook_suffix );
+		$on_post_metabox       = $this->is_sto_theme_settings_metabox_screen( $hook_suffix );
+		$on_wc_product_data    = $this->is_sto_woocommerce_product_data_screen( $hook_suffix );
+		$on_term_screen        = $this->is_sto_theme_settings_term_screen( $hook_suffix );
 		$metabox_post_id = 0;
 		$term_id         = 0;
 		$term_taxonomy   = '';
@@ -470,13 +592,27 @@ final class Assets {
 		}
 
 		$metabox_js = array(
-			'active' => $on_post_metabox ? 1 : 0,
+			'active' => ( $on_post_metabox || $on_wc_product_data ) ? 1 : 0,
 		);
 		$term_js    = array(
 			'active' => ( $on_term_screen && $term_taxonomy !== '' ) ? 1 : 0,
 			'is_add' => ( $on_term_screen && $term_taxonomy !== '' && $term_id <= 0 ) ? 1 : 0,
 		);
-		if ( $on_post_metabox && $metabox_post_id > 0 ) {
+		if ( $on_wc_product_data && $metabox_post_id <= 0 && function_exists( 'get_current_screen' ) ) {
+			global $post;
+			if ( $post instanceof \WP_Post ) {
+				$metabox_post_id = (int) $post->ID;
+			}
+		}
+		if ( $on_wc_product_data && $metabox_post_id > 0 ) {
+			foreach ( OptionsMenu::instance()->get_registered_menu_slugs() as $wc_menu_slug ) {
+				if ( OptionsMenu::instance()->uses_woocommerce_product_data_panels( (string) $wc_menu_slug ) ) {
+					$page_slug = (string) $wc_menu_slug;
+					break;
+				}
+			}
+		}
+		if ( ( $on_post_metabox || $on_wc_product_data ) && $metabox_post_id > 0 ) {
 			$raw_base = get_edit_post_link( $metabox_post_id, 'raw' );
 			$base     = is_string( $raw_base ) && $raw_base !== ''
 				? remove_query_arg( array( 'sto_saved', 'sto_imported', 'sto_validation_error', 'sto-metabox-saved', 'message' ), $raw_base )
@@ -487,8 +623,8 @@ final class Assets {
 			$metabox_js['ajax_save_nonce']  = wp_create_nonce( 'sto_save_theme_options_metabox' );
 			$metabox_js['ajax_action']      = 'sto_save_theme_options_metabox';
 			$metabox_js['i18n']             = array(
-				'saved'       => __( 'Settings saved.', 'simple-theme-options' ),
-				'save_failed' => __( 'Could not save settings.', 'simple-theme-options' ),
+				'saved'       => __( 'Settings saved.', 'topten-simple-theme-options' ),
+				'save_failed' => __( 'Could not save settings.', 'topten-simple-theme-options' ),
 			);
 		}
 		if ( $on_term_screen && $term_id > 0 && $term_taxonomy !== '' ) {
@@ -503,14 +639,14 @@ final class Assets {
 			$term_js['ajax_save_nonce'] = wp_create_nonce( 'sto_save_theme_options_term' );
 			$term_js['ajax_action']     = 'sto_save_theme_options_term';
 			$term_js['i18n']            = array(
-				'saved'       => __( 'Settings saved.', 'simple-theme-options' ),
-				'save_failed' => __( 'Could not save settings.', 'simple-theme-options' ),
+				'saved'       => __( 'Settings saved.', 'topten-simple-theme-options' ),
+				'save_failed' => __( 'Could not save settings.', 'topten-simple-theme-options' ),
 			);
 		}
 
 		wp_localize_script(
 			'display-section-on-menu',
-			'simple_theme_options',
+			'battery_simple_theme_options',
 			array(
 				'ajax_url'   => admin_url( 'admin-ajax.php' ),
 				'nonce'      => wp_create_nonce( 'sto_display_section_on_menu' ),
@@ -519,10 +655,12 @@ final class Assets {
 						? ThemeSettingsImportExport::TOOLS_SECTION_BACKUP
 						: $options_menu->get_default_leaf_section_slug_for_menu_page( $page_slug ),
 					'wp_submenu_for_leaf' => $wp_submenu_for_leaf,
+					'admin_url'           => trailingslashit( admin_url() ),
+					'page'                => $page_slug,
 				),
 				'sto_search' => array(
 					'items'       => $options_menu->get_search_items_for_menu_page( $page_slug ),
-					'admin_base'  => admin_url( 'admin.php' ),
+					'admin_base'  => trailingslashit( admin_url() ) . 'admin.php',
 					'page'        => $page_slug,
 					'max_results' => 50,
 				),
@@ -533,9 +671,9 @@ final class Assets {
 					'action'   => 'sto_typography_fonts',
 					'nonce'    => wp_create_nonce( 'sto_typography_fonts' ),
 					'i18n'     => array(
-						'select_font' => __( 'Select font', 'simple-theme-options' ),
-						'style'       => __( 'Style', 'simple-theme-options' ),
-						'custom'      => __( 'Custom', 'simple-theme-options' ),
+						'select_font' => __( 'Select font', 'topten-simple-theme-options' ),
+						'style'       => __( 'Style', 'topten-simple-theme-options' ),
+						'custom'      => __( 'Custom', 'topten-simple-theme-options' ),
 					),
 				),
 				'sto_dynamic_object' => array(
@@ -543,16 +681,22 @@ final class Assets {
 					'action'   => 'sto_dynamic_object_search',
 					'nonce'    => wp_create_nonce( 'sto_dynamic_object_search' ),
 					'i18n'     => array(
-						'input_too_short' => __( 'Type at least %d characters to search for posts.', 'simple-theme-options' ),
+						/* translators: %d: minimum character count before AJAX search runs */
+						'input_too_short' => __( 'Type at least %d characters to search for posts.', 'topten-simple-theme-options' ),
 					),
 				),
 				'sto_field_help'     => array(
-					'loading'      => __( 'Loading preview…', 'simple-theme-options' ),
-					'loading_hint' => __( 'Please wait.', 'simple-theme-options' ),
-					'not_found'    => __( 'Preview not found', 'simple-theme-options' ),
-					'error_hint'   => __( 'This image could not be loaded. Check the URL or your connection.', 'simple-theme-options' ),
+					'loading'      => __( 'Loading preview…', 'topten-simple-theme-options' ),
+					'loading_hint' => __( 'Please wait.', 'topten-simple-theme-options' ),
+					'not_found'    => __( 'Preview not found', 'topten-simple-theme-options' ),
+					'error_hint'   => __( 'This image could not be loaded. Check the URL or your connection.', 'topten-simple-theme-options' ),
 				),
 			)
+		);
+		wp_add_inline_script(
+			'display-section-on-menu',
+			'window.simple_theme_options=window.battery_simple_theme_options;',
+			'after'
 		);
 
 		if ( GoogleMapControl::instance()->registry_has_fields() ) {
@@ -561,7 +705,7 @@ final class Assets {
 				'stoGoogleMapField',
 				array(
 					'nominatim' => array(
-						'email' => (string) apply_filters( 'sto_nominatim_contact_email', '' ),
+						'email' => (string) apply_filters( 'sto_nominatim_contact_email', '' ), // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 					),
 				)
 			);
@@ -575,7 +719,7 @@ final class Assets {
 					'manifestUrl' => STO_URL . 'assets/admin/data/sto-icon-select-manifest.json',
 					'dashicons'   => IconSelect::get_dashicons_for_localize(),
 					'i18n'        => array(
-						'noIcon' => __( 'No icon', 'simple-theme-options' ),
+						'noIcon' => __( 'No icon', 'topten-simple-theme-options' ),
 					),
 				)
 			);
@@ -595,29 +739,31 @@ final class Assets {
 				'actionImportEntryExport'    => 'sto_theme_settings_import_entry_export',
 				'actionImportEntriesRemove'  => 'sto_theme_settings_import_entries_remove',
 				'importReloadUrl'            => $on_backup_settings ? admin_url( 'tools.php?page=' . rawurlencode( ThemeSettingsImportExport::SETTINGS_ADVANCE_PAGE ) ) : '',
-				'demoCapability'             => ( $options_menu->is_demo_capability_allowed() && ( $on_backup_settings || ! $options_menu->is_packaged_demo_menu() ) ) ? 1 : 0,
+				'demoCapability'             => ( $on_backup_settings || ! $options_menu->is_packaged_demo_menu() ) ? 1 : 0,
 				'sectionSlug'              => ThemeSettingsImportExport::get_advance_section_slug_for_menu_page( $options_menu, $options_menu->get_request_options_menu_slug() ),
 				'i18n'                     => array(
-					'confirmImport'          => __( 'Merge these keys into your existing Theme Settings storage? Values in the file overwrite matching keys. Other keys on the site are left as they are. You cannot undo this.', 'simple-theme-options' ),
-					'confirmImportReplace'   => __( 'Replace the entire Theme Settings option store with only the keys in this file? Every other stored key will be removed. You cannot undo this.', 'simple-theme-options' ),
-					'confirmDeleteImport'    => __( 'Delete this import from the log and permanently remove every Theme Settings option key that was applied with this file from the database? This cannot be undone.', 'simple-theme-options' ),
-					'confirmBulkDeleteImport' => __( 'Delete the selected imports from the log and permanently remove every Theme Settings option key that was applied with those files from the database? This cannot be undone.', 'simple-theme-options' ),
-					'pasteImportLabel'       => __( 'pasted-backup.json', 'simple-theme-options' ),
-					'savingDemo'                 => __( 'Saving…', 'simple-theme-options' ),
-					'demoSaveFailed'             => __( 'Could not save demo mode. Try again.', 'simple-theme-options' ),
-					'savingDisplayLocations'     => __( 'Saving…', 'simple-theme-options' ),
-					'displayLocationsSaved'      => __( 'Display settings saved.', 'simple-theme-options' ),
-					'displayLocationsFailed'     => __( 'Could not save display settings. Try again.', 'simple-theme-options' ),
-					'fileDownloaded'         => __( 'JSON file download started.', 'simple-theme-options' ),
-					'clipboardCopied'        => __( 'Backup JSON copied to the clipboard.', 'simple-theme-options' ),
-					'clipboardDenied'        => __( 'Your browser blocked clipboard access. Copy from the downloaded file instead.', 'simple-theme-options' ),
-					'clipboardManualHint'    => __( 'Backup JSON is in the import box below — select all (Ctrl+A) and copy (Ctrl+C), or use Download JSON file.', 'simple-theme-options' ),
-					'exportFailed'           => __( 'Could not create the export. Try again.', 'simple-theme-options' ),
-					'importFailed'           => __( 'Import failed.', 'simple-theme-options' ),
-					'emptyPayload'           => __( 'Add a JSON file or paste export text before importing.', 'simple-theme-options' ),
-					'invalidFile'            => __( 'Could not read that file as UTF-8 text.', 'simple-theme-options' ),
-					'readClipboardFailed'    => __( 'Could not read the clipboard. Paste the JSON into the box instead.', 'simple-theme-options' ),
-					'importSuccessReloading' => __( 'Settings imported. Reloading…', 'simple-theme-options' ),
+					'confirmImport'          => __( 'Merge these keys into your existing Theme Settings storage? Values in the file overwrite matching keys. Other keys on the site are left as they are. You cannot undo this.', 'topten-simple-theme-options' ),
+					'confirmImportReplace'   => __( 'Replace the entire Theme Settings option store with only the keys in this file? Every other stored key will be removed. You cannot undo this.', 'topten-simple-theme-options' ),
+					'confirmDeleteImport'    => __( 'Delete this import from the log and permanently remove every Theme Settings option key that was applied with this file from the database? This cannot be undone.', 'topten-simple-theme-options' ),
+					'confirmBulkDeleteImport' => __( 'Delete the selected imports from the log and permanently remove every Theme Settings option key that was applied with those files from the database? This cannot be undone.', 'topten-simple-theme-options' ),
+					'pasteImportLabel'       => __( 'pasted-backup.json', 'topten-simple-theme-options' ),
+					'savingDemo'                 => __( 'Saving…', 'topten-simple-theme-options' ),
+					'demoSaveFailed'             => __( 'Could not save demo mode. Try again.', 'topten-simple-theme-options' ),
+					'savingDisplayLocations'     => __( 'Saving…', 'topten-simple-theme-options' ),
+					'displayLocationsSaved'      => __( 'Display settings saved.', 'topten-simple-theme-options' ),
+					'displayLocationsFailed'     => __( 'Could not save display settings. Try again.', 'topten-simple-theme-options' ),
+					'fileDownloaded'         => __( 'JSON file download started.', 'topten-simple-theme-options' ),
+					'clipboardCopied'        => __( 'Backup JSON copied to the clipboard.', 'topten-simple-theme-options' ),
+					'clipboardDenied'        => __( 'Your browser blocked clipboard access. Copy from the downloaded file instead.', 'topten-simple-theme-options' ),
+					'clipboardManualHint'    => __( 'Backup JSON is in the import box below — select all (Ctrl+A) and copy (Ctrl+C), or use Download JSON file.', 'topten-simple-theme-options' ),
+					'exportFailed'           => __( 'Could not create the export. Try again.', 'topten-simple-theme-options' ),
+					'exportScopeRequired'    => __( 'Select at least one screen under Export scope, then try again.', 'topten-simple-theme-options' ),
+					'exportConfigMissing'    => __( 'Export is not configured on this screen. Reload the page and try again.', 'topten-simple-theme-options' ),
+					'importFailed'           => __( 'Import failed.', 'topten-simple-theme-options' ),
+					'emptyPayload'           => __( 'Add a JSON file or paste export text before importing.', 'topten-simple-theme-options' ),
+					'invalidFile'            => __( 'Could not read that file as UTF-8 text.', 'topten-simple-theme-options' ),
+					'readClipboardFailed'    => __( 'Could not read the clipboard. Paste the JSON into the box instead.', 'topten-simple-theme-options' ),
+					'importSuccessReloading' => __( 'Settings imported. Reloading…', 'topten-simple-theme-options' ),
 				),
 			)
 		);
@@ -634,41 +780,41 @@ final class Assets {
 				'actionDelete'  => 'sto_custom_fonts_delete',
 				'liveData'      => CustomFontsRegistry::get_live_preview_data(),
 				'categories'    => array(
-					'sans-serif'  => __( 'Sans-serif', 'simple-theme-options' ),
-					'serif'       => __( 'Serif', 'simple-theme-options' ),
-					'display'     => __( 'Display', 'simple-theme-options' ),
-					'monospace'   => __( 'Monospace', 'simple-theme-options' ),
-					'handwriting' => __( 'Handwriting', 'simple-theme-options' ),
+					'sans-serif'  => __( 'Sans-serif', 'topten-simple-theme-options' ),
+					'serif'       => __( 'Serif', 'topten-simple-theme-options' ),
+					'display'     => __( 'Display', 'topten-simple-theme-options' ),
+					'monospace'   => __( 'Monospace', 'topten-simple-theme-options' ),
+					'handwriting' => __( 'Handwriting', 'topten-simple-theme-options' ),
 				),
 				'i18n'          => array(
-					'pickTitle'        => __( 'Choose a font file or ZIP', 'simple-theme-options' ),
-					'pickButton'       => __( 'Use this file', 'simple-theme-options' ),
-					'mediaUnavailable' => __( 'Media library is not available.', 'simple-theme-options' ),
-					'invalidFile'      => __( 'Could not read that file. Upload a font (WOFF2, WOFF, TTF, OTF) or a ZIP that contains font files.', 'simple-theme-options' ),
-					'detecting'        => __( 'Scanning file…', 'simple-theme-options' ),
-					'uploading'        => __( 'Uploading…', 'simple-theme-options' ),
-					'uploadFailed'     => __( 'Could not upload that file. Try again.', 'simple-theme-options' ),
-					'saving'           => __( 'Saving…', 'simple-theme-options' ),
-					'added'            => __( 'Custom font added.', 'simple-theme-options' ),
-					'deleted'          => __( 'Custom font removed.', 'simple-theme-options' ),
-					'addFailed'        => __( 'Could not add the font. Try again.', 'simple-theme-options' ),
-					'deleteFailed'     => __( 'Could not delete the font.', 'simple-theme-options' ),
-					'confirmDelete'    => __( 'Delete this font from the site? It will be removed from Typography font lists.', 'simple-theme-options' ),
-					'confirmDeleteMany' => __( 'Delete {count} selected font(s) from the site? They will be removed from Typography font lists.', 'simple-theme-options' ),
-					'confirmReplace'   => __( 'The following font(s) already exist (same family, weight, and style) and will replace the saved version if you continue:', 'simple-theme-options' ),
-					'confirmReplaceContinue' => __( 'Replace existing font(s)?', 'simple-theme-options' ),
-					'duplicatePreview' => __( 'Duplicate: {family} — weight {weight}, {style} ({file})', 'simple-theme-options' ),
-					'duplicatesHeading' => __( 'Existing fonts that will be replaced:', 'simple-theme-options' ),
-					'bulkDeleteNone'   => __( 'Select one or more fonts to delete.', 'simple-theme-options' ),
-					'styleNormal'      => __( 'Normal', 'simple-theme-options' ),
-					'styleItalic'      => __( 'Italic', 'simple-theme-options' ),
-					'addOne'           => __( 'Add font', 'simple-theme-options' ),
-					'addMany'          => __( 'Add {count} fonts', 'simple-theme-options' ),
-					'zipFound'         => __( '{count} font files found in ZIP', 'simple-theme-options' ),
-					'livePending'      => __( 'Previewing fonts from your upload (not saved yet).', 'simple-theme-options' ),
-					'liveImported'     => __( 'Previewing imported custom fonts.', 'simple-theme-options' ),
-					'liveFamily'       => __( 'Font family', 'simple-theme-options' ),
-					'liveVariant'      => __( 'Font style', 'simple-theme-options' ),
+					'pickTitle'        => __( 'Choose a font file or ZIP', 'topten-simple-theme-options' ),
+					'pickButton'       => __( 'Use this file', 'topten-simple-theme-options' ),
+					'mediaUnavailable' => __( 'Media library is not available.', 'topten-simple-theme-options' ),
+					'invalidFile'      => __( 'Could not read that file. Upload a font (WOFF2, WOFF, TTF, OTF) or a ZIP that contains font files.', 'topten-simple-theme-options' ),
+					'detecting'        => __( 'Scanning file…', 'topten-simple-theme-options' ),
+					'uploading'        => __( 'Uploading…', 'topten-simple-theme-options' ),
+					'uploadFailed'     => __( 'Could not upload that file. Try again.', 'topten-simple-theme-options' ),
+					'saving'           => __( 'Saving…', 'topten-simple-theme-options' ),
+					'added'            => __( 'Custom font added.', 'topten-simple-theme-options' ),
+					'deleted'          => __( 'Custom font removed.', 'topten-simple-theme-options' ),
+					'addFailed'        => __( 'Could not add the font. Try again.', 'topten-simple-theme-options' ),
+					'deleteFailed'     => __( 'Could not delete the font.', 'topten-simple-theme-options' ),
+					'confirmDelete'    => __( 'Delete this font from the site? It will be removed from Typography font lists.', 'topten-simple-theme-options' ),
+					'confirmDeleteMany' => __( 'Delete {count} selected font(s) from the site? They will be removed from Typography font lists.', 'topten-simple-theme-options' ),
+					'confirmReplace'   => __( 'The following font(s) already exist (same family, weight, and style) and will replace the saved version if you continue:', 'topten-simple-theme-options' ),
+					'confirmReplaceContinue' => __( 'Replace existing font(s)?', 'topten-simple-theme-options' ),
+					'duplicatePreview' => __( 'Duplicate: {family} — weight {weight}, {style} ({file})', 'topten-simple-theme-options' ),
+					'duplicatesHeading' => __( 'Existing fonts that will be replaced:', 'topten-simple-theme-options' ),
+					'bulkDeleteNone'   => __( 'Select one or more fonts to delete.', 'topten-simple-theme-options' ),
+					'styleNormal'      => __( 'Normal', 'topten-simple-theme-options' ),
+					'styleItalic'      => __( 'Italic', 'topten-simple-theme-options' ),
+					'addOne'           => __( 'Add font', 'topten-simple-theme-options' ),
+					'addMany'          => __( 'Add {count} fonts', 'topten-simple-theme-options' ),
+					'zipFound'         => __( '{count} font files found in ZIP', 'topten-simple-theme-options' ),
+					'livePending'      => __( 'Previewing fonts from your upload (not saved yet).', 'topten-simple-theme-options' ),
+					'liveImported'     => __( 'Previewing imported custom fonts.', 'topten-simple-theme-options' ),
+					'liveFamily'       => __( 'Font family', 'topten-simple-theme-options' ),
+					'liveVariant'      => __( 'Font style', 'topten-simple-theme-options' ),
 				),
 			)
 		);
@@ -679,7 +825,7 @@ final class Assets {
 	 * Enable with `add_filter( 'sto_enqueue_viewport_script', '__return_true' );` in the theme.
 	 */
 	public function enqueue_public_scripts() {
-		if ( ! apply_filters( 'sto_enqueue_viewport_script', false ) ) {
+		if ( ! apply_filters( 'sto_enqueue_viewport_script', false ) ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 			return;
 		}
 
@@ -880,6 +1026,20 @@ final class Assets {
 				// `sto-select2-vendor` provides `jQuery.fn.select2` for the chrome-bar language
 				// switcher upgrade — see `initLangSelect2()` in `sto-code-editor.js`.
 				'deps'      => array( 'jquery', 'code-editor', 'sto-select2-vendor', 'display-section-on-menu' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
+			'sto-rich-modern-editor' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-rich-modern-editor.js',
+				'deps'      => array(
+					'jquery',
+					'wp-blocks',
+					'wp-element',
+					'wp-components',
+					'wp-block-editor',
+					'wp-block-library',
+					'display-section-on-menu',
+				),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),

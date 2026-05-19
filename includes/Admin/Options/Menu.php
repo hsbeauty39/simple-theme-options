@@ -1,6 +1,7 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options;
 
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
 use SimpleThemeOptions\Admin\Options\Fields\Select\Select;
@@ -10,6 +11,7 @@ use SimpleThemeOptions\Admin\Options\Fields\BorderControl\BorderControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
+use SimpleThemeOptions\Admin\Options\Fields\RichModernEditor\RichModernEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Switcher\Switcher;
@@ -44,6 +46,9 @@ final class Menu {
 	/** Legacy `options-general.php?page=` slug; redirects to {@see ThemeSettingsImportExport::SETTINGS_ADVANCE_PAGE} under Tools. */
 	public const PACKAGED_DEMO_SETTINGS_PAGE = 'sto-packaged-theme-settings-demo';
 
+	/** Plugin sample menu slug (field samples); demo visibility is {@see is_demo_mode_enabled()} from Tools → Simple Settings. */
+	public const PACKAGED_DEMO_MENU_SLUG = 'theme-settings';
+
 	private $sections = array();
 	private $sub_sections = array();
 	private $parent_menu_slug = '';
@@ -77,27 +82,25 @@ final class Menu {
 	private $registered_menu_labels = array();
 
 	/**
-	 * Whether each registered `admin.php?page=` root is the packaged STO demo (that root gets no Advance leaf).
+	 * Whether each registered root appears under **Appearance → …** / wp-admin menu (false = metabox / term panel only).
 	 *
 	 * @var array<string, bool>
 	 */
-	private $menu_root_packaged_demo = array();
+	private $menu_root_show_in_admin_menu = array();
 
 	/**
-	 * When **true**, this registration is the plugin’s packaged **Theme Settings** demo only: no **Advance** UI,
-	 * and the top-level admin menu is omitted while {@see is_demo_mode_enabled()} is false (Redux-style off).
+	 * Post editor metabox navigation style per menu root (`wc_tabs` = flat vertical tabs like WooCommerce product data).
 	 *
-	 * @var bool
+	 * @var array<string, string>
 	 */
-	private $packaged_demo_menu = false;
+	private $menu_root_metabox_nav_style = array();
 
 	/**
-	 * When false, sample sections cannot be shown (no Field samples / Colors & surfaces / Accordion).
-	 * User-facing demo visibility also requires {@see is_demo_mode_enabled()} (stored preference, default off).
+	 * Menu roots that render inside WooCommerce **Product data** (not a separate post metabox).
 	 *
-	 * @var bool
+	 * @var array<string, bool>
 	 */
-	private $demo_capability_allowed = true;
+	private $menu_root_woocommerce_product_data = array();
 
 	/**
 	 * Stack of post IDs for {@see filter_option_sto_options_metabox_overlay()} while rendering the Theme Settings metabox.
@@ -115,16 +118,13 @@ final class Menu {
 
 	/**
 	 * Whether the packaged **Field samples** / **Colors & surfaces** / **Accordion** demo UI is active.
-	 * Requires {@see is_demo_capability_allowed()} and option **`sto_theme_settings_ui_demo_enabled`** (default off).
-	 * For **client** menus, that option is toggled from **Advance**; for {@see is_packaged_demo_menu()}, use **Tools → Simple Backup** (Demo mode).
-	 * Filter {@see 'sto_theme_settings_demo_mode'} receives this combined boolean.
+	 * Controlled by option **`sto_theme_settings_ui_demo_enabled`** (default off) — **Tools → Simple Settings** for the packaged menu,
+	 * or **Advance** on client menu roots. Filter {@see 'sto_theme_settings_demo_mode'} receives the stored boolean.
 	 */
 	public function is_demo_mode_enabled() {
 		$ui_on = wp_validate_boolean( get_option( ThemeSettingsImportExport::OPTION_UI_DEMO_ENABLED, false ) );
 
-		$base = $this->demo_capability_allowed && $ui_on;
-
-		return (bool) apply_filters( 'sto_theme_settings_demo_mode', $base );
+		return (bool) apply_filters( 'sto_theme_settings_demo_mode', $ui_on ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 	}
 
 	/**
@@ -143,7 +143,7 @@ final class Menu {
 			return false;
 		}
 
-		return (bool) apply_filters( 'sto_theme_settings_metabox_ui_enabled', true );
+		return (bool) apply_filters( 'sto_theme_settings_metabox_ui_enabled', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 	}
 
 	/**
@@ -162,7 +162,7 @@ final class Menu {
 			return false;
 		}
 
-		return (bool) apply_filters( 'sto_theme_settings_term_metabox_ui_enabled', true );
+		return (bool) apply_filters( 'sto_theme_settings_term_metabox_ui_enabled', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 	}
 
 	/**
@@ -300,26 +300,325 @@ final class Menu {
 	}
 
 	/**
-	 * Whether `register()` allows the demo UI at all (`'demo' => false` forbids it; no Advance switcher).
+	 * `admin.php?page=` slugs for the packaged STO sample menu (no Advance leaf; demo toggle under Tools → Simple Settings).
+	 *
+	 * @return array<int, string>
 	 */
-	public function is_demo_capability_allowed() {
-		return $this->demo_capability_allowed;
+	public static function get_packaged_demo_menu_slugs(): array {
+		$slugs = array( self::PACKAGED_DEMO_MENU_SLUG );
+
+		/**
+		 * @param array<int, string> $slugs Menu page slugs treated as packaged demo roots.
+		 */
+		$filtered = apply_filters( 'sto_packaged_demo_menu_slugs', $slugs ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
+
+		if ( ! is_array( $filtered ) ) {
+			return $slugs;
+		}
+
+		$out = array();
+		foreach ( $filtered as $slug ) {
+			$key = sanitize_key( (string) $slug );
+			if ( $key !== '' ) {
+				$out[] = $key;
+			}
+		}
+
+		return $out !== array() ? array_values( array_unique( $out ) ) : $slugs;
 	}
 
 	/**
-	 * Whether this `admin.php?page=` root was registered with **`packaged_demo` => true** (no Advance on that root).
+	 * Whether this `admin.php?page=` root is the packaged sample menu (no Advance on that root).
 	 */
 	public function is_menu_root_packaged_demo( $slug ): bool {
 		$slug = sanitize_key( (string) $slug );
+		if ( $slug === '' ) {
+			return false;
+		}
 
-		return ! empty( $this->menu_root_packaged_demo[ $slug ] );
+		return in_array( $slug, self::get_packaged_demo_menu_slugs(), true );
 	}
 
 	/**
-	 * Whether the packaged **Theme Settings** demo is active for the **first** registered root (legacy helper).
+	 * Whether the primary packaged **Theme Settings** sample menu is {@see PACKAGED_DEMO_MENU_SLUG}.
 	 */
 	public function is_packaged_demo_menu(): bool {
-		return $this->packaged_demo_menu;
+		return $this->is_menu_root_packaged_demo( $this->get_parent_menu_slug() );
+	}
+
+	/**
+	 * Whether a registered root has a wp-admin top-level menu (false = metabox / term panel only).
+	 */
+	public function is_menu_root_visible_in_admin( $slug ): bool {
+		$slug = sanitize_key( (string) $slug );
+		if ( $slug === '' ) {
+			return false;
+		}
+
+		return ! isset( $this->menu_root_show_in_admin_menu[ $slug ] ) || $this->menu_root_show_in_admin_menu[ $slug ];
+	}
+
+	/**
+	 * Metabox navigation style for a registered menu root (`wc_tabs` or empty).
+	 */
+	public function get_metabox_nav_style( string $menu_slug ): string {
+		$menu_slug = sanitize_key( $menu_slug );
+		if ( $menu_slug === '' || ! isset( $this->menu_root_metabox_nav_style[ $menu_slug ] ) ) {
+			return '';
+		}
+
+		return sanitize_key( (string) $this->menu_root_metabox_nav_style[ $menu_slug ] );
+	}
+
+	/**
+	 * Whether a menu root uses WooCommerce-style flat vertical tabs in the post metabox.
+	 */
+	public function metabox_uses_wc_tabs_nav( string $menu_slug ): bool {
+		return $this->get_metabox_nav_style( $menu_slug ) === 'wc_tabs';
+	}
+
+	/**
+	 * Whether a menu root renders inside WooCommerce **Product data** tabs.
+	 */
+	public function uses_woocommerce_product_data_panels( string $menu_slug ): bool {
+		$menu_slug = sanitize_key( $menu_slug );
+
+		return $menu_slug !== '' && ! empty( $this->menu_root_woocommerce_product_data[ $menu_slug ] );
+	}
+
+	/**
+	 * Any registered root uses WooCommerce **Product data** for this post type.
+	 */
+	public function has_woocommerce_product_data_for_post_type( string $post_type ): bool {
+		$post_type = sanitize_key( $post_type );
+		if ( $post_type === '' ) {
+			return false;
+		}
+
+		foreach ( array_keys( $this->menu_root_woocommerce_product_data ) as $menu_slug ) {
+			if ( ! $this->uses_woocommerce_product_data_panels( (string) $menu_slug ) ) {
+				continue;
+			}
+			$leaf_sections = $this->get_leaf_sections_for_navigation_for_menu_page( (string) $menu_slug );
+			if ( $leaf_sections !== array() ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Render one STO leaf section inside a WooCommerce product data panel.
+	 */
+	public function render_woocommerce_product_data_section_panel( string $menu_page_slug, string $section_slug, int $post_id ): void {
+		$menu_page_slug = sanitize_key( $menu_page_slug );
+		$section_slug   = sanitize_key( $section_slug );
+		$post_id        = (int) $post_id;
+		if ( $menu_page_slug === '' || $section_slug === '' || $post_id <= 0 ) {
+			return;
+		}
+		if ( ! $this->uses_woocommerce_product_data_panels( $menu_page_slug ) ) {
+			return;
+		}
+
+		$section = $this->get_section_by_slug( $section_slug );
+		if ( ! $section || ! isset( $section['slug'] ) ) {
+			return;
+		}
+
+		$this->push_sto_options_metabox_overlay( $post_id );
+		try {
+			ThemeSettingsDisplayLocations::instance()->set_render_surface(
+				ThemeSettingsDisplayLocations::SURFACE_METABOX,
+				array( 'post_type' => 'product' )
+			);
+			$this->render_section_panel(
+				$section,
+				$section_slug,
+				ThemeSettingsDisplayLocations::SURFACE_METABOX,
+				array( 'post_type' => 'product' )
+			);
+		} finally {
+			$this->pop_sto_options_metabox_overlay();
+		}
+	}
+
+	/**
+	 * Persist every leaf for a menu root from `$_POST['sto_options']` into post meta.
+	 *
+	 * @param array<string, mixed> $posted_options_raw Unslashed `sto_options` from the product form.
+	 * @return true|\WP_Error
+	 */
+	public function persist_all_post_option_leaves_from_request( string $menu_page_slug, int $post_id, array $posted_options_raw ) {
+		$menu_page_slug = sanitize_key( $menu_page_slug );
+		$post_id        = (int) $post_id;
+		if ( $menu_page_slug === '' || $post_id <= 0 ) {
+			return new \WP_Error( 'sto_theme_settings_bad_context', __( 'Invalid save context.', 'topten-simple-theme-options' ) );
+		}
+		if ( ! $this->uses_woocommerce_product_data_panels( $menu_page_slug ) ) {
+			return new \WP_Error( 'sto_theme_settings_bad_menu', __( 'Invalid Theme Settings menu.', 'topten-simple-theme-options' ) );
+		}
+
+		$last_error = null;
+		foreach ( $this->get_leaf_sections_for_navigation_for_menu_page( $menu_page_slug ) as $leaf_section ) {
+			$leaf_slug = isset( $leaf_section['slug'] ) ? sanitize_key( (string) $leaf_section['slug'] ) : '';
+			if ( $leaf_slug === '' ) {
+				continue;
+			}
+			$result = $this->persist_theme_settings_leaf( $menu_page_slug, $leaf_slug, $posted_options_raw, false, $post_id );
+			if ( is_wp_error( $result ) ) {
+				$last_error = $result;
+			}
+		}
+
+		return $last_error instanceof \WP_Error ? $last_error : true;
+	}
+
+	/**
+	 * Full STO panel inside one WooCommerce **Product data** tab (menu label + section / subsection sidebar).
+	 *
+	 * Fields submit with the product **#post** form (no nested `<form>`). Persist via
+	 * {@see persist_all_post_option_leaves_from_request()} on product save.
+	 *
+	 * @param int                 $post_id     Product post ID.
+	 * @param \WP_Post|mixed|null $editor_post Optional post object.
+	 */
+	public function render_woocommerce_product_data_panel( string $menu_page_slug, int $post_id, $editor_post = null ): void {
+		$menu_page_slug = sanitize_key( $menu_page_slug );
+		$post_id        = (int) $post_id;
+		if ( $menu_page_slug === '' || ! in_array( $menu_page_slug, $this->registered_menu_slugs, true ) ) {
+			return;
+		}
+		if ( ! $this->uses_woocommerce_product_data_panels( $menu_page_slug ) ) {
+			return;
+		}
+		if ( $post_id <= 0 ) {
+			return;
+		}
+
+		$current_section_slug = $this->get_metabox_active_leaf_slug( $menu_page_slug );
+		$current_section      = $this->get_section_by_slug( $current_section_slug );
+
+		$content_title = '';
+		if ( $current_section && isset( $current_section['name'] ) && (string) $current_section['name'] !== '' ) {
+			$content_title = (string) $current_section['name'];
+		}
+		if ( $content_title === '' ) {
+			$content_title = $this->get_leaf_breadcrumb_label( $current_section_slug );
+		}
+
+		$content_icon    = $current_section && isset( $current_section['icon'] ) ? $current_section['icon'] : 'fa-light fa-circle-question';
+		$leaf_sections   = $this->get_leaf_sections_for_navigation_for_menu_page( $menu_page_slug );
+		$nav_sections    = $this->get_sections_for_navigation_for_menu_page( $menu_page_slug );
+		$default_leaf    = $this->get_default_leaf_section_slug_for_menu_page( $menu_page_slug );
+		$sidebar_base    = $this->get_metabox_post_editor_base_url( $post_id, $editor_post );
+		if ( $sidebar_base === '' ) {
+			return;
+		}
+
+		$metabox_post_type = 'product';
+		if ( $editor_post instanceof \WP_Post ) {
+			$metabox_post_type = sanitize_key( (string) $editor_post->post_type );
+		} elseif ( $post_id > 0 ) {
+			$metabox_post_obj = get_post( $post_id );
+			if ( $metabox_post_obj instanceof \WP_Post ) {
+				$metabox_post_type = sanitize_key( (string) $metabox_post_obj->post_type );
+			}
+		}
+
+		$wc_wrapper_classes = array(
+			'sto-option-panel-wrapper',
+			'sto-option-panel-wrapper--wc-product-data',
+			'sto-theme-settings-metabox-inner',
+		);
+		if ( count( $leaf_sections ) <= 1 ) {
+			$wc_wrapper_classes[] = 'sto-option-panel-wrapper--wc-single-leaf';
+		}
+
+		FieldRegistrationDeferral::flush( $this );
+
+		$this->push_sto_options_metabox_overlay( $post_id );
+		try {
+			ThemeSettingsDisplayLocations::instance()->set_render_surface(
+				ThemeSettingsDisplayLocations::SURFACE_ADMIN,
+				array()
+			);
+			?>
+			<div
+				class="<?php echo esc_attr( implode( ' ', $wc_wrapper_classes ) ); ?>"
+				data-sto-default-leaf="<?php echo esc_attr( $default_leaf ); ?>"
+				data-sto-menu-page="<?php echo esc_attr( $menu_page_slug ); ?>"
+				data-sto-post-edit-base="<?php echo esc_attr( $sidebar_base ); ?>"
+				data-sto-post-id="<?php echo esc_attr( (string) $post_id ); ?>"
+				data-sto-wc-product-data="1"
+			>
+				<div class="sto-option-panel-body">
+					<div class="sto-option-panel-nav-layout">
+						<div class="sto-option-panel-sidebar-wrap">
+							<ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php esc_attr_e( 'Theme Settings sections', 'topten-simple-theme-options' ); ?>">
+								<?php foreach ( $nav_sections as $section ) { ?>
+									<?php $this->render_sidebar_item( $section, $current_section_slug, false, $menu_page_slug, $sidebar_base ); ?>
+								<?php } ?>
+							</ul>
+						</div>
+						<div class="sto-option-panel-main">
+							<div class="sto-option-panel-content-head sto-option-panel-content-head--wc-product-data">
+								<div class="sto-option-panel-content-head__lead">
+									<span class="sto-option-panel-content-icon-wrap">
+										<i class="<?php echo esc_attr( $content_icon ); ?> sto-option-panel-content-icon"></i>
+									</span>
+									<h3 class="sto-option-panel-content-title"><?php echo esc_html( $content_title ); ?></h3>
+								</div>
+								<div class="sto-quick-search" data-sto-quick-search>
+									<div class="sto-quick-search-field">
+										<span class="sto-quick-search-icon-wrap" aria-hidden="true">
+											<i class="sto-quick-search-icon fa-light fa-magnifying-glass"></i>
+										</span>
+										<input
+											type="search"
+											class="sto-quick-search-input"
+											placeholder="<?php esc_attr_e( 'Start typing to find options…', 'topten-simple-theme-options' ); ?>"
+											autocomplete="off"
+											aria-autocomplete="list"
+											aria-controls="sto-quick-search-results-wc-product-data"
+											aria-expanded="false"
+											id="sto-quick-search-input-wc-product-data"
+										/>
+									</div>
+									<div
+										class="sto-quick-search-results"
+										id="sto-quick-search-results-wc-product-data"
+										role="listbox"
+										aria-labelledby="sto-quick-search-input-wc-product-data"
+										hidden
+									></div>
+								</div>
+							</div>
+							<div class="sto-options-form sto-options-form--wc-product-data" data-sto-wc-product-data-form="1">
+								<input type="hidden" name="sto_ts_page" value="<?php echo esc_attr( $menu_page_slug ); ?>" />
+								<input type="hidden" name="sto_ts_section" value="<?php echo esc_attr( $current_section_slug ); ?>" />
+								<div class="sto-option-panel-content-body">
+									<?php foreach ( $leaf_sections as $section ) { ?>
+										<?php
+										$this->render_section_panel(
+											$section,
+											$current_section_slug,
+											ThemeSettingsDisplayLocations::SURFACE_ADMIN,
+											array( 'post_type' => $metabox_post_type )
+										);
+										?>
+									<?php } ?>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<?php
+		} finally {
+			$this->pop_sto_options_metabox_overlay();
+		}
 	}
 
 	/**
@@ -327,6 +626,32 @@ final class Menu {
 	 *
 	 * @return array<int, string>
 	 */
+	/**
+	 * Parent section slugs for the packaged field-sample / colors / accordion demo tree.
+	 *
+	 * @return array<int, string>
+	 */
+	public static function get_packaged_demo_sample_parent_slugs(): array {
+		return array( 'field-samples', 'colors-surfaces', 'accordion' );
+	}
+
+	/**
+	 * Whether packaged demo sample items should be hidden from nav / panels (menu shell remains).
+	 */
+	public function is_packaged_demo_sample_nav_hidden(): bool {
+		return $this->is_packaged_demo_menu() && ! $this->is_demo_mode_enabled();
+	}
+
+	/**
+	 * @param string $section_slug Section or leaf slug.
+	 */
+	public function is_packaged_demo_sample_nav_slug( string $section_slug ): bool {
+		$section_slug = sanitize_key( $section_slug );
+
+		return in_array( $section_slug, self::get_packaged_demo_sample_leaf_slugs(), true )
+			|| in_array( $section_slug, self::get_packaged_demo_sample_parent_slugs(), true );
+	}
+
 	public static function get_packaged_demo_sample_leaf_slugs(): array {
 		$slugs = array(
 			'layout-nav',
@@ -346,7 +671,7 @@ final class Menu {
 		 *
 		 * @param array<int, string> $slugs
 		 */
-		$filtered = apply_filters( 'sto_packaged_demo_sample_leaf_slugs', $slugs );
+		$filtered = apply_filters( 'sto_packaged_demo_sample_leaf_slugs', $slugs ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 
 		return is_array( $filtered ) ? array_values( array_unique( array_map( 'sanitize_key', $filtered ) ) ) : $slugs;
 	}
@@ -380,7 +705,7 @@ final class Menu {
 		 * @param array<int, string> $keys Sanitized option ids.
 		 * @param Menu               $menu
 		 */
-		$filtered = apply_filters( 'sto_theme_settings_export_option_keys', $keys, $this, null );
+		$filtered = apply_filters( 'sto_theme_settings_export_option_keys', $keys, $this, null ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 
 		if ( ! is_array( $filtered ) ) {
 			return $keys;
@@ -441,7 +766,7 @@ final class Menu {
 		$keys           = array_keys( $by_key );
 		$menu_slugs_arg = array_keys( $want );
 
-		$filtered = apply_filters( 'sto_theme_settings_export_option_keys', $keys, $this, $menu_slugs_arg );
+		$filtered = apply_filters( 'sto_theme_settings_export_option_keys', $keys, $this, $menu_slugs_arg ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 
 		if ( ! is_array( $filtered ) ) {
 			return $keys;
@@ -474,12 +799,14 @@ final class Menu {
 	}
 
 	/**
-	 * Register a top-level Theme Settings–style admin page (or an additional one). Call once for the primary menu, then again for extra roots (e.g. **Theme Settings** + **Store**). Only the **first** call applies **`demo`** and **`packaged_demo`**; later calls add another **`add_menu_page`** + scoped navigation. Sections added while this method runs bind to this slug unless **`sto_menu_page`** is set on the section args.
+	 * Register a top-level Theme Settings–style admin page (or an additional one). Call again for extra roots (e.g. **Theme Settings** + **UAEBattery**).
+	 * The packaged sample root uses slug {@see PACKAGED_DEMO_MENU_SLUG} (no **Advance**; demo on/off under **Tools → Simple Settings**).
+	 * Any other slug is a client menu (**Advance** + scoped export). Sections added while this method runs bind to this slug unless **`sto_menu_page`** is set on the section args.
 	 *
 	 * @param string               $name Admin menu page title.
-	 * @param string               $slug Top-level `page` slug (e.g. `theme-settings`).
+	 * @param string               $slug Top-level `page` slug (e.g. `theme-settings`, `uaebattery-settings`).
 	 * @param string               $icon Dashicon class or URL.
-	 * @param array<string, mixed> $args Optional. **`demo`** (bool) — default **true** (samples may show when {@see is_demo_mode_enabled()}). **`packaged_demo`** (bool) — when **true** (plugin sample menu only): no **Advance**; top-level menu hidden while demo is off; use **Tools → Simple Backup** (Demo mode) to turn the panel on or off. Omit or **false** for a theme‑registered client menu (**Advance** + export of registered keys on all leaves). **Read on first call only** for **`demo`** / **`packaged_demo`**. **`metabox`** => array( **post_types** => array( 'post', 'page' ), optional **title**, **context**, **priority** ) registers the same Theme Settings UI as a post editor metabox on those types (writes that post’s overrides to meta **`_sto_theme_settings_post`** via AJAX when the post is saved — no separate **Save options** button; merged over global `sto_options` while editing; do not stack duplicate `#sto-theme-settings-options-form` ids on one screen). Shorthand: **`enable_metabox`** => true with optional **`metabox_post_types`** (defaults to post + page when enabled). Visibility is also gated by option **`sto_theme_settings_ui_metabox_enabled`** (default **on**), toggled from **Advance** or **Tools → Simple Backup** when any metabox root exists; see {@see should_show_theme_settings_metaboxes()}.
+	 * @param array<string, mixed> $args Optional. **`show_in_admin_menu`** => **false** registers fields + metabox/term panels only (no wp-admin top-level menu, no **Advance** leaf, omitted from admin bar). **`metabox`** => array( **post_types** => array( 'product' ), optional **title**, **context**, **priority** ) registers the same Theme Settings UI as a post editor metabox on those types (writes that post’s overrides to meta **`_sto_theme_settings_post`** via AJAX when the post is saved — no separate **Save options** button; merged over global `sto_options` while editing; do not stack duplicate `#sto-theme-settings-options-form` ids on one screen). Shorthand: **`enable_metabox`** => true with optional **`metabox_post_types`** (defaults to post + page when enabled). **`woocommerce_product_data`** => **true** marks this root for WooCommerce **Product data** tabs on `product` edit (per-post meta **`_sto_theme_settings_post`**; theme wires `woocommerce_product_data_*` hooks and calls {@see render_woocommerce_product_data_panel()} / {@see persist_all_post_option_leaves_from_request()} — do not combine with **`metabox`** on `product` for the same root). Visibility is also gated by option **`sto_theme_settings_ui_metabox_enabled`** (default **on**), toggled from **Advance** or **Tools → Simple Backup** when any metabox root exists; see {@see should_show_theme_settings_metaboxes()}.
 	 */
 	public function register( $name, $slug, $icon, $args = array() ) {
 		$args   = is_array( $args ) ? $args : array();
@@ -488,24 +815,21 @@ final class Menu {
 			return;
 		}
 
+		$show_in_admin_menu = ! array_key_exists( 'show_in_admin_menu', $args ) || (bool) $args['show_in_admin_menu'];
+
 		$is_first_root = empty( $this->registered_menu_slugs );
 
-		$packaged_this = array_key_exists( 'packaged_demo', $args ) ? (bool) $args['packaged_demo'] : false;
-
 		if ( $is_first_root ) {
-			$this->parent_menu_slug        = $slug_s;
-			$this->demo_capability_allowed = array_key_exists( 'demo', $args ) ? (bool) $args['demo'] : true;
-			$this->packaged_demo_menu      = $packaged_this;
+			$this->parent_menu_slug = $slug_s;
 		}
-
-		$this->menu_root_packaged_demo[ $slug_s ] = $packaged_this;
 
 		if ( ! in_array( $slug_s, $this->registered_menu_slugs, true ) ) {
 			$this->registered_menu_slugs[] = $slug_s;
 		}
 
-		$this->registration_context_slug     = $slug_s;
-		$this->registered_menu_labels[ $slug_s ] = is_string( $name ) ? $name : '';
+		$this->registration_context_slug           = $slug_s;
+		$this->registered_menu_labels[ $slug_s ]     = is_string( $name ) ? $name : '';
+		$this->menu_root_show_in_admin_menu[ $slug_s ] = $show_in_admin_menu;
 
 		if ( ! $this->core_admin_hooks_attached ) {
 			$this->core_admin_hooks_attached = true;
@@ -517,88 +841,94 @@ final class Menu {
 			add_action( 'admin_init', array( $this, 'redirect_theme_settings_to_canonical_leaf' ), 1 );
 		}
 
-		add_action(
-			'admin_menu',
-			function () use ( $name, $slug_s, $icon ) {
-				if ( $this->is_packaged_demo_menu() && ! $this->is_demo_mode_enabled() && $slug_s === $this->parent_menu_slug ) {
-					return;
-				}
+		if ( $show_in_admin_menu ) {
+			add_action(
+				'admin_menu',
+				function () use ( $name, $slug_s, $icon ) {
+					add_menu_page( $name, $name, 'manage_options', $slug_s, array( $this, 'render_menu_page' ), $icon, 10 );
 
-				add_menu_page( $name, $name, 'manage_options', $slug_s, array( $this, 'render_menu_page' ), $icon, 10 );
-
-				foreach ( $this->get_sections_for_navigation_for_menu_page( $slug_s ) as $section ) {
-					add_submenu_page(
-						$slug_s,
-						$section['name'],
-						$section['name'],
-						'manage_options',
-						$slug_s . '&section=' . $section['slug'],
-						array( $this, 'render_menu_page' )
-					);
-				}
-			},
-			10
-		);
-
-		// Remove WP auto-added duplicate parent submenu after all submenu items are registered.
-		add_action(
-			'admin_menu',
-			function () use ( $slug_s ) {
-				remove_submenu_page( $slug_s, $slug_s );
-
-				global $submenu;
-				if ( isset( $submenu[ $slug_s ] ) && is_array( $submenu[ $slug_s ] ) ) {
-					foreach ( $submenu[ $slug_s ] as $index => $submenu_item ) {
-						if ( isset( $submenu_item[2] ) && $submenu_item[2] === $slug_s ) {
-							unset( $submenu[ $slug_s ][ $index ] );
-						}
+					foreach ( $this->get_sections_for_navigation_for_menu_page( $slug_s ) as $section ) {
+						add_submenu_page(
+							$slug_s,
+							$section['name'],
+							$section['name'],
+							'manage_options',
+							$slug_s . '&section=' . $section['slug'],
+							array( $this, 'render_menu_page' )
+						);
 					}
-					$submenu[ $slug_s ] = array_values( $submenu[ $slug_s ] );
+				},
+				10
+			);
+
+			// Remove WP auto-added duplicate parent submenu after all submenu items are registered.
+			add_action(
+				'admin_menu',
+				function () use ( $slug_s ) {
+					remove_submenu_page( $slug_s, $slug_s );
+
+					global $submenu;
+					if ( isset( $submenu[ $slug_s ] ) && is_array( $submenu[ $slug_s ] ) ) {
+						foreach ( $submenu[ $slug_s ] as $index => $submenu_item ) {
+							if ( isset( $submenu_item[2] ) && $submenu_item[2] === $slug_s ) {
+								unset( $submenu[ $slug_s ][ $index ] );
+							}
+						}
+						$submenu[ $slug_s ] = array_values( $submenu[ $slug_s ] );
+					}
+				},
+				999
+			);
+
+			add_filter(
+				'parent_file',
+				function ( $parent_file ) use ( $slug_s ) {
+					// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+					if ( isset( $_GET['page'] ) && sanitize_key( wp_unslash( $_GET['page'] ) ) === $slug_s && isset( $_GET['section'] ) ) {
+						return $slug_s;
+					}
+
+					return $parent_file;
 				}
-			},
-			999
-		);
+			);
 
-		add_filter(
-			'parent_file',
-			function ( $parent_file ) use ( $slug_s ) {
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				if ( isset( $_GET['page'] ) && sanitize_key( wp_unslash( $_GET['page'] ) ) === $slug_s && isset( $_GET['section'] ) ) {
-					return $slug_s;
+			add_filter(
+				'submenu_file',
+				function ( $submenu_file ) use ( $slug_s ) {
+					// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+					if ( ! isset( $_GET['page'] ) || sanitize_key( wp_unslash( $_GET['page'] ) ) !== $slug_s ) {
+						return $submenu_file;
+					}
+
+					$leaf = $this->get_current_section_slug();
+					if ( $leaf === '' ) {
+						return $submenu_file;
+					}
+
+					$highlight = $this->get_wp_submenu_highlight_slug_for_leaf( $leaf );
+
+					return $highlight !== '' ? $slug_s . '&section=' . $highlight : $submenu_file;
 				}
+			);
 
-				return $parent_file;
-			}
-		);
-
-		add_filter(
-			'submenu_file',
-			function ( $submenu_file ) use ( $slug_s ) {
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				if ( ! isset( $_GET['page'] ) || sanitize_key( wp_unslash( $_GET['page'] ) ) !== $slug_s ) {
-					return $submenu_file;
-				}
-
-				$leaf = $this->get_current_section_slug();
-				if ( $leaf === '' ) {
-					return $submenu_file;
-				}
-
-				$highlight = $this->get_wp_submenu_highlight_slug_for_leaf( $leaf );
-
-				return $highlight !== '' ? $slug_s . '&section=' . $highlight : $submenu_file;
-			}
-		);
-
-		ThemeSettingsCleanScreen::instance()->hook_clean_screen( $slug_s );
+			ThemeSettingsCleanScreen::instance()->hook_clean_screen( $slug_s );
+		}
 
 		if ( ! $this->option_fields_included ) {
 			$this->option_fields_included = true;
 			$this->include_fields();
 		}
 
+		FieldRegistrationDeferral::flush( $this );
+
 		$metabox_cfg = $this->parse_metabox_register_args( $args );
-		if ( ! empty( $metabox_cfg['post_types'] ) ) {
+		if ( isset( $metabox_cfg['nav_style'] ) && is_string( $metabox_cfg['nav_style'] ) && $metabox_cfg['nav_style'] !== '' ) {
+			$this->menu_root_metabox_nav_style[ $slug_s ] = sanitize_key( $metabox_cfg['nav_style'] );
+		}
+		if ( ! empty( $args['woocommerce_product_data'] ) ) {
+			$this->menu_root_woocommerce_product_data[ $slug_s ] = true;
+		}
+		if ( ! empty( $metabox_cfg['post_types'] ) && empty( $args['woocommerce_product_data'] ) ) {
 			ThemeSettingsMetabox::instance()->register_root(
 				$slug_s,
 				array(
@@ -638,6 +968,7 @@ final class Menu {
 			'title'      => '',
 			'context'    => 'normal',
 			'priority'   => 'low',
+			'nav_style'  => '',
 		);
 
 		$from_nested = isset( $args['metabox'] ) && is_array( $args['metabox'] ) ? $args['metabox'] : array();
@@ -669,6 +1000,9 @@ final class Menu {
 		}
 		if ( isset( $from_nested['priority'] ) && is_string( $from_nested['priority'] ) && $from_nested['priority'] !== '' ) {
 			$out['priority'] = $from_nested['priority'];
+		}
+		if ( isset( $from_nested['nav_style'] ) && is_string( $from_nested['nav_style'] ) && $from_nested['nav_style'] !== '' ) {
+			$out['nav_style'] = sanitize_key( $from_nested['nav_style'] );
 		}
 
 		return $out;
@@ -769,6 +1103,7 @@ final class Menu {
 		}
 
 		$args = array();
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Safe admin redirect; each query arg sanitized in loop.
 		foreach ( $_GET as $key => $value ) {
 			$key = sanitize_key( wp_unslash( (string) $key ) );
 			if ( $key === '' || is_array( $value ) ) {
@@ -780,6 +1115,7 @@ final class Menu {
 			}
 			$args[ $key ] = sanitize_text_field( $value );
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		$args['page'] = ThemeSettingsImportExport::SETTINGS_ADVANCE_PAGE;
 
 		wp_safe_redirect( add_query_arg( $args, admin_url( 'tools.php' ) ) );
@@ -787,29 +1123,10 @@ final class Menu {
 	}
 
 	/**
-	 * Block direct `admin.php?page=…` access when the packaged demo menu is turned off.
+	 * Legacy no-op: packaged demo screens stay reachable when demo mode is off (menu shell + Freemius).
 	 */
 	public function redirect_packaged_demo_blocked_screen(): void {
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-			return;
-		}
-
-		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		if ( ! $this->is_packaged_demo_menu() || $this->is_demo_mode_enabled() ) {
-			return;
-		}
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
-		if ( $page === '' || $page !== $this->parent_menu_slug ) {
-			return;
-		}
-
-		wp_safe_redirect( admin_url( 'tools.php?page=' . rawurlencode( ThemeSettingsImportExport::SETTINGS_ADVANCE_PAGE ) ) );
-		exit;
+		// Packaged demo page remains available when demo mode is off (menu shell + Freemius).
 	}
 
     /**
@@ -872,22 +1189,6 @@ final class Menu {
     }
 
     /**
-     * Canonical leaf `section` for a save request (parent slug → first child; unknown → default leaf).
-     */
-    private function resolve_canonical_leaf_for_save( $section_slug ) {
-        $menu_ctx = $this->get_parent_menu_slug();
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        if ( isset( $_POST['sto_ts_page'] ) ) {
-            $p = sanitize_key( wp_unslash( $_POST['sto_ts_page'] ) );
-            if ( $p !== '' && in_array( $p, $this->registered_menu_slugs, true ) ) {
-                $menu_ctx = $p;
-            }
-        }
-
-        return $this->resolve_canonical_leaf_for_menu_and_section( $menu_ctx, (string) $section_slug );
-    }
-
-    /**
      * All `sto_options` keys registered for one leaf panel (standalone + group-inner fields).
      *
      * @return array<int, string>
@@ -921,6 +1222,7 @@ final class Menu {
             AlignmentControl::get_field_ids_for_section( $section_slug ),
             Range::get_field_ids_for_section( $section_slug ),
             CodeEditor::get_field_ids_for_section( $section_slug ),
+            RichModernEditor::get_field_ids_for_section( $section_slug ),
             Typography::get_field_ids_for_section( $section_slug ),
             DynamicObject::get_field_ids_for_section( $section_slug ),
         );
@@ -958,27 +1260,27 @@ final class Menu {
     public function persist_theme_settings_leaf( string $menu_page_slug, string $requested_section_slug, array $posted_options_raw, bool $store_validation_transient = true, int $metabox_post_id = 0, int $term_id = 0 ) {
         $menu_page_slug = sanitize_key( $menu_page_slug );
         if ( $menu_page_slug === '' || ! in_array( $menu_page_slug, $this->registered_menu_slugs, true ) ) {
-            return new \WP_Error( 'sto_theme_settings_bad_menu', __( 'Invalid Theme Settings menu.', 'simple-theme-options' ) );
+            return new \WP_Error( 'sto_theme_settings_bad_menu', __( 'Invalid Theme Settings menu.', 'topten-simple-theme-options' ) );
         }
 
         $metabox_post_id = (int) $metabox_post_id;
         $term_id         = (int) $term_id;
         if ( $metabox_post_id > 0 && $term_id > 0 ) {
-            return new \WP_Error( 'sto_theme_settings_bad_context', __( 'Invalid save context.', 'simple-theme-options' ) );
+            return new \WP_Error( 'sto_theme_settings_bad_context', __( 'Invalid save context.', 'topten-simple-theme-options' ) );
         }
         if ( $metabox_post_id > 0 && ! current_user_can( 'edit_post', $metabox_post_id ) ) {
-            return new \WP_Error( 'sto_theme_settings_bad_post', __( 'You cannot edit this post’s Theme Settings.', 'simple-theme-options' ) );
+            return new \WP_Error( 'sto_theme_settings_bad_post', __( 'You cannot edit this post’s Theme Settings.', 'topten-simple-theme-options' ) );
         }
         if ( $term_id > 0 ) {
             $term = get_term( $term_id );
             if ( ! $term instanceof \WP_Term ) {
-                return new \WP_Error( 'sto_theme_settings_bad_term', __( 'Invalid term.', 'simple-theme-options' ) );
+                return new \WP_Error( 'sto_theme_settings_bad_term', __( 'Invalid term.', 'topten-simple-theme-options' ) );
             }
             if ( ! current_user_can( 'manage_options' ) ) {
-                return new \WP_Error( 'sto_theme_settings_bad_term', __( 'You cannot edit this term’s Theme Settings.', 'simple-theme-options' ) );
+                return new \WP_Error( 'sto_theme_settings_bad_term', __( 'You cannot edit this term’s Theme Settings.', 'topten-simple-theme-options' ) );
             }
             if ( ! ThemeSettingsTermBox::instance()->menu_root_allows_taxonomy( $menu_page_slug, (string) $term->taxonomy ) ) {
-                return new \WP_Error( 'sto_theme_settings_bad_term', __( 'Theme Settings are not available for this taxonomy.', 'simple-theme-options' ) );
+                return new \WP_Error( 'sto_theme_settings_bad_term', __( 'Theme Settings are not available for this taxonomy.', 'topten-simple-theme-options' ) );
             }
         }
 
@@ -1150,6 +1452,12 @@ final class Menu {
                 continue;
             }
 
+            if ( RichModernEditor::is_registered_field_id( $option_key ) ) {
+                $raw_rich = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
+                $sanitized_options[ $option_key ] = RichModernEditor::sanitize_posted_value( $option_key, $raw_rich );
+                continue;
+            }
+
             if ( ButtonGroup::is_registered_field_id( $option_key ) ) {
                 $raw_bg = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
                 $sanitized_options[ $option_key ] = ButtonGroup::sanitize_posted_value( $option_key, $raw_bg );
@@ -1196,7 +1504,7 @@ final class Menu {
          * @param array<string, mixed> $sanitized_options
          * @param string                 $section_slug    Active leaf section slug.
          */
-        $sanitized_options = apply_filters( 'sto_options_before_save', $sanitized_options, $section_slug );
+        $sanitized_options = apply_filters( 'sto_options_before_save', $sanitized_options, $section_slug ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 
         /**
          * Extra validation errors when saving one leaf section (HTML required, etc.).
@@ -1206,26 +1514,22 @@ final class Menu {
          * @param array<string, mixed> $sanitized_options Full merged preview.
          * @param array<string, mixed> $posted_options    Posted `sto_options` slice for this request.
          */
-        $validation_errors = apply_filters(
-            'sto_theme_settings_validation_errors',
-            array_merge(
-                CodeEditor::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                Input::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                DateField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                DateTimeField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                Dimension::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                IconSelect::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                GalleryControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                MultiTextControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                RadioListsControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                AdvancedRepeaterControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                GoogleMapControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-                AlignmentControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options )
-            ),
-            $section_slug,
-            $sanitized_options,
-            $posted_options
+        $base_validation_errors = array_merge(
+            CodeEditor::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            RichModernEditor::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            Input::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            DateField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            DateTimeField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            Dimension::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            IconSelect::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            GalleryControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            MultiTextControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            RadioListsControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            AdvancedRepeaterControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            GoogleMapControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
+            AlignmentControl::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options )
         );
+        $validation_errors = apply_filters( 'sto_theme_settings_validation_errors', $base_validation_errors, $section_slug, $sanitized_options, $posted_options ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 
         if ( ! empty( $validation_errors ) ) {
             if ( $store_validation_transient ) {
@@ -1241,7 +1545,7 @@ final class Menu {
 
             return new \WP_Error(
                 'sto_theme_settings_validation',
-                __( 'Validation failed.', 'simple-theme-options' ),
+                __( 'Validation failed.', 'topten-simple-theme-options' ),
                 array(
                     'messages' => array_values( array_filter( array_map( 'strval', $validation_errors ) ) ),
                 )
@@ -1317,7 +1621,7 @@ final class Menu {
             $section_slug = sanitize_key( wp_unslash( $_POST['sto_ts_section'] ) );
         }
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized per field in persist_theme_settings_leaf().
         $posted_raw = isset( $_POST['sto_options'] ) && is_array( $_POST['sto_options'] ) ? wp_unslash( $_POST['sto_options'] ) : array();
 
         $result = $this->persist_theme_settings_leaf( $page, $section_slug, $posted_raw, true );
@@ -1346,9 +1650,9 @@ final class Menu {
      * Reset current section or all registered fields to registration defaults (POST + confirm in UI).
      */
     public function maybe_handle_reset_request() {
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Early exit; nonce verified before reset runs.
         $reset_section = isset( $_POST['sto_reset_section'] ) && (string) wp_unslash( $_POST['sto_reset_section'] ) === '1';
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Early exit; nonce verified before reset runs.
         $reset_all = isset( $_POST['sto_reset_all'] ) && (string) wp_unslash( $_POST['sto_reset_all'] ) === '1';
 
         if ( ! $reset_section && ! $reset_all ) {
@@ -1437,7 +1741,7 @@ final class Menu {
      * Fires after menu filters are attached. Register option fields on this hook.
      */
     private function include_fields() {
-        do_action( 'sto_include_option_fields', $this );
+        do_action( 'sto_include_option_fields', $this ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
     }
 
     /**
@@ -1572,6 +1876,7 @@ final class Menu {
             ShadowControl::get_all_fields_for_search(),
             GradientControl::get_all_fields_for_search(),
             CodeEditor::get_all_fields_for_search(),
+            RichModernEditor::get_all_fields_for_search(),
             LinkColor::get_all_fields_for_search()
         );
 
@@ -1620,7 +1925,7 @@ final class Menu {
          * @param array<int, array<string, mixed>> $items
          * @param Menu                             $menu
          */
-        return apply_filters( 'sto_search_items', $items, $this );
+        return apply_filters( 'sto_search_items', $items, $this ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
     }
 
     /**
@@ -1674,6 +1979,9 @@ final class Menu {
         $locked   = array();
         foreach ( $this->sections as $section ) {
             if ( ! $this->is_section_show_in_menu( $section ) ) {
+                continue;
+            }
+            if ( isset( $section['slug'] ) && $this->is_packaged_demo_sample_nav_hidden() && $this->is_packaged_demo_sample_nav_slug( (string) $section['slug'] ) ) {
                 continue;
             }
             if ( ! empty( $section['nav_locked'] ) ) {
@@ -1825,11 +2133,13 @@ final class Menu {
 
         $selected_slug = '';
 
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Admin screen navigation; values sanitized below.
         if ( isset( $_GET['section'] ) ) {
             $selected_slug = sanitize_key( wp_unslash( $_GET['section'] ) );
         }
 
         if ( ! $selected_slug && isset( $_GET['page'] ) ) {
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Parsed for embedded section slug; sanitized via sanitize_key().
             $page = wp_unslash( $_GET['page'] );
             if ( strpos( $page, '&section=' ) !== false ) {
                 $parts = explode( '&section=', $page );
@@ -1838,6 +2148,7 @@ final class Menu {
                 }
             }
         }
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
         if ( ! $selected_slug ) {
             $nav = $this->get_sections_for_navigation_for_menu_page( $req_page );
@@ -1885,6 +2196,9 @@ final class Menu {
                         return false;
                     }
                     if ( $visible_in_menu_only && ! $this->is_section_show_in_menu( $sub_section ) ) {
+                        return false;
+                    }
+                    if ( isset( $sub_section['slug'] ) && $this->is_packaged_demo_sample_nav_hidden() && $this->is_packaged_demo_sample_nav_slug( (string) $sub_section['slug'] ) ) {
                         return false;
                     }
 
@@ -1945,6 +2259,9 @@ final class Menu {
             if ( $slug === '' ) {
                 continue;
             }
+            if ( $this->is_packaged_demo_sample_nav_hidden() && $this->is_packaged_demo_sample_nav_slug( $slug ) ) {
+                continue;
+            }
             $meta = $this->get_section_by_slug( $slug );
             if ( $meta && ! empty( $meta['nav_locked'] ) ) {
                 $locked[] = $leaf;
@@ -1954,6 +2271,28 @@ final class Menu {
         }
 
         return array_merge( $unlocked, $locked );
+    }
+
+    /**
+     * Empty-state copy when packaged demo samples are off (Freemius / license hub).
+     */
+    private function render_packaged_demo_disabled_notice(): void {
+        $settings_url = admin_url(
+            'tools.php?page=' . rawurlencode( ThemeSettingsImportExport::SETTINGS_ADVANCE_PAGE ) . '&section=backup'
+        );
+        ?>
+        <div class="sto-packaged-demo-off-notice" role="status">
+            <p class="sto-packaged-demo-off-notice__title"><?php esc_html_e( 'Demo field samples are turned off', 'topten-simple-theme-options' ); ?></p>
+            <p class="sto-packaged-demo-off-notice__lead">
+                <?php esc_html_e( 'This menu stays available for licensing and plugin settings. Turn on Demo mode under Tools → Simple Settings to show sample sections and fields again.', 'topten-simple-theme-options' ); ?>
+            </p>
+            <p>
+                <a class="button button-secondary" href="<?php echo esc_url( $settings_url ); ?>">
+                    <?php esc_html_e( 'Open Simple Settings', 'topten-simple-theme-options' ); ?>
+                </a>
+            </p>
+        </div>
+        <?php
     }
 
     /**
@@ -1997,6 +2336,7 @@ final class Menu {
             return;
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Canonical leaf redirect; page/section sanitized.
         $req = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
         if ( $req === '' || ! in_array( $req, $this->registered_menu_slugs, true ) ) {
             return;
@@ -2007,6 +2347,7 @@ final class Menu {
             return;
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $requested = isset( $_GET['section'] ) ? sanitize_key( wp_unslash( $_GET['section'] ) ) : '';
         $leaf      = $this->get_current_section_slug();
 
@@ -2093,14 +2434,14 @@ final class Menu {
              * Developers can hook here and output section-specific fields/UI.
              */
             PremiumFieldGate::begin_section_render( (string) $section['slug'] );
-            do_action( 'sto_render_section_content', $section['slug'], $section, $this );
+            do_action( 'sto_render_section_content', $section['slug'], $section, $this ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
             if ( ! has_action( 'sto_render_section_content' ) ) :
                 ?>
                 <p class="sto-option-panel-section-placeholder">
                     <?php
                     printf(
                         /* translators: %s is section name. */
-                        esc_html__( 'Add fields for "%s" by hooking into sto_render_section_content.', 'simple-theme-options' ),
+                        esc_html__( 'Add fields for "%s" by hooking into sto_render_section_content.', 'topten-simple-theme-options' ),
                         esc_html( $section['name'] )
                     );
                     ?>
@@ -2179,7 +2520,7 @@ final class Menu {
                 <i class="sto-option-panel-icon <?php echo esc_attr( $item['icon'] ); ?>"></i>
                 <span class="sto-option-panel-sidebar-item-title"><?php echo esc_html( $item['name'] ); ?></span>
                 <?php if ( ! empty( $item['nav_locked'] ) ) { ?>
-                    <span class="screen-reader-text"><?php esc_html_e( '(Plugin section)', 'simple-theme-options' ); ?></span>
+                    <span class="screen-reader-text"><?php esc_html_e( '(Plugin section)', 'topten-simple-theme-options' ); ?></span>
                 <?php } ?>
                 <?php if ( $has_children ) { ?>
                     <span class="sto-option-panel-sidebar-toggle <?php echo esc_attr( $toggle_icon ); ?>" aria-hidden="true"></span>
@@ -2200,7 +2541,7 @@ final class Menu {
         $req                  = $this->get_request_options_menu_slug();
         $panel_heading        = isset( $this->registered_menu_labels[ $req ] ) && $this->registered_menu_labels[ $req ] !== ''
             ? (string) $this->registered_menu_labels[ $req ]
-            : __( 'Theme Settings', 'simple-theme-options' );
+            : __( 'Theme Settings', 'topten-simple-theme-options' );
         $current_section_slug = $this->get_current_section_slug();
         $current_section      = $this->get_current_section();
         $content_title        = '';
@@ -2220,6 +2561,7 @@ final class Menu {
         ob_start();
         ?>
         <div class="wrap sto-section-content">
+            <?php PremiumFieldGate::render_panel_banner( $panel_heading ); ?>
             <div class="sto-option-panel-wrapper" data-sto-default-leaf="<?php echo esc_attr( $default_leaf ); ?>">
                 <div class="sto-option-panel-head sto-panel-head-with-search">
                     <h1 class="sto-option-panel-title"><?php echo esc_html( $panel_heading ); ?></h1>
@@ -2231,7 +2573,7 @@ final class Menu {
                             <input
                                 type="search"
                                 class="sto-quick-search-input"
-                                placeholder="<?php esc_attr_e( 'Start typing to find options…', 'simple-theme-options' ); ?>"
+                                placeholder="<?php esc_attr_e( 'Start typing to find options…', 'topten-simple-theme-options' ); ?>"
                                 autocomplete="off"
                                 aria-autocomplete="list"
                                 aria-controls="sto-quick-search-results"
@@ -2251,10 +2593,11 @@ final class Menu {
                 <div class="sto-option-panel-body">
                     <div class="sto-option-panel-nav-layout">
                         <div class="sto-option-panel-sidebar-wrap">
-                            <ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php esc_attr_e( 'Theme Settings sections', 'simple-theme-options' ); ?>">
+                            <ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php esc_attr_e( 'Theme Settings sections', 'topten-simple-theme-options' ); ?>">
                                 <?php foreach ( $this->get_sections_for_navigation_for_menu_page( $req ) as $section ) { ?>
                                     <?php $this->render_sidebar_item( $section, $current_section_slug, false, $req ); ?>
                                 <?php } ?>
+                                <?php PremiumFieldGate::render_sidebar_upgrade_cta(); ?>
                             </ul>
                         </div>
                         <div class="sto-option-panel-main">
@@ -2264,20 +2607,24 @@ final class Menu {
                                 </span>
                                 <h2 class="sto-option-panel-content-title"><?php echo esc_html( $content_title ); ?></h2>
                             </div>
+                            <?php
+                            // phpcs:disable WordPress.Security.NonceVerification.Recommended -- One-time admin notices after redirect; values sanitized.
+                            ?>
                             <?php if ( isset( $_GET['sto_saved'] ) && sanitize_text_field( wp_unslash( $_GET['sto_saved'] ) ) === '1' ) { ?>
-                                <div class="sto-save-notice"><?php esc_html_e( 'Settings are successfully saved.', 'simple-theme-options' ); ?></div>
+                                <div class="sto-save-notice"><?php esc_html_e( 'Settings are successfully saved.', 'topten-simple-theme-options' ); ?></div>
                             <?php } ?>
                             <?php if ( isset( $_GET['sto_imported'] ) && sanitize_text_field( wp_unslash( $_GET['sto_imported'] ) ) === '1' ) { ?>
-                                <div class="sto-save-notice"><?php esc_html_e( 'Settings were imported from your backup.', 'simple-theme-options' ); ?></div>
+                                <div class="sto-save-notice"><?php esc_html_e( 'Settings were imported from your backup.', 'topten-simple-theme-options' ); ?></div>
                             <?php } ?>
                             <?php if ( isset( $_GET['sto_reset_section'] ) && sanitize_text_field( wp_unslash( $_GET['sto_reset_section'] ) ) === '1' ) { ?>
-                                <div class="sto-save-notice"><?php esc_html_e( 'This section was reset to its default values.', 'simple-theme-options' ); ?></div>
+                                <div class="sto-save-notice"><?php esc_html_e( 'This section was reset to its default values.', 'topten-simple-theme-options' ); ?></div>
                             <?php } ?>
                             <?php if ( isset( $_GET['sto_reset_all'] ) && sanitize_text_field( wp_unslash( $_GET['sto_reset_all'] ) ) === '1' ) { ?>
-                                <div class="sto-save-notice"><?php esc_html_e( 'All Theme Settings fields were reset to their default values.', 'simple-theme-options' ); ?></div>
+                                <div class="sto-save-notice"><?php esc_html_e( 'All Theme Settings fields were reset to their default values.', 'topten-simple-theme-options' ); ?></div>
                             <?php } ?>
                             <?php
                             $sto_val_err = isset( $_GET['sto_validation_error'] ) ? sanitize_text_field( wp_unslash( $_GET['sto_validation_error'] ) ) : '';
+                            // phpcs:enable WordPress.Security.NonceVerification.Recommended
                             if ( $sto_val_err === '1' ) {
                                 $verr = get_transient( $this->get_validation_notice_transient_name() );
                                 delete_transient( $this->get_validation_notice_transient_name() );
@@ -2286,8 +2633,8 @@ final class Menu {
                                 if ( $vslug === $current_section_slug && ! empty( $vmsgs ) ) {
                                     ?>
                                     <div class="sto-validation-notice" role="alert">
-                                        <p class="sto-validation-notice-title"><?php esc_html_e( 'This section could not be saved yet', 'simple-theme-options' ); ?></p>
-                                        <p class="sto-validation-notice-lead"><?php esc_html_e( 'Fix the following, then publish or update the post again:', 'simple-theme-options' ); ?></p>
+                                        <p class="sto-validation-notice-title"><?php esc_html_e( 'This section could not be saved yet', 'topten-simple-theme-options' ); ?></p>
+                                        <p class="sto-validation-notice-lead"><?php esc_html_e( 'Fix the following, then publish or update the post again:', 'topten-simple-theme-options' ); ?></p>
                                         <ul class="sto-validation-notice-list">
                                             <?php foreach ( $vmsgs as $one ) { ?>
                                                 <li><?php echo esc_html( (string) $one ); ?></li>
@@ -2307,24 +2654,28 @@ final class Menu {
                                 <input type="hidden" name="sto_ts_page" value="<?php echo esc_attr( $req ); ?>" />
                                 <input type="hidden" name="sto_ts_section" value="<?php echo esc_attr( $current_section_slug ); ?>" />
                                 <div class="sto-option-panel-content-body">
+                                    <?php if ( empty( $leaf_sections ) && $this->is_packaged_demo_sample_nav_hidden() ) : ?>
+                                        <?php $this->render_packaged_demo_disabled_notice(); ?>
+                                    <?php else : ?>
                                     <?php foreach ( $leaf_sections as $section ) { ?>
                                         <?php $this->render_section_panel( $section, $current_section_slug ); ?>
                                     <?php } ?>
+                                    <?php endif; ?>
                                 </div>
-                                <?php if ( ! ThemeSettingsImportExport::is_advance_leaf_slug( $current_section_slug ) ) : ?>
+                                <?php if ( ! ThemeSettingsImportExport::is_advance_leaf_slug( $current_section_slug ) && ! ( empty( $leaf_sections ) && $this->is_packaged_demo_sample_nav_hidden() ) ) : ?>
                                 <?php
                                 $sto_reset_section_confirm = esc_js(
-                                    __( 'Reset every field in this section to its default value? This cannot be undone.', 'simple-theme-options' )
+                                    __( 'Reset every field in this section to its default value? This cannot be undone.', 'topten-simple-theme-options' )
                                 );
                                 $sto_reset_all_confirm     = esc_js(
-                                    __( 'Reset ALL Theme Settings fields on this page to their default values? This cannot be undone.', 'simple-theme-options' )
+                                    __( 'Reset ALL Theme Settings fields on this page to their default values? This cannot be undone.', 'topten-simple-theme-options' )
                                 );
                                 ?>
                                 <div class="sto-options-form-footer sto-section-actions">
                                     <div class="sto-options-form-footer__actions">
                                         <button type="submit" form="sto-theme-settings-options-form" name="sto_save_options" value="1" class="button button-primary">
                                             <i class="fa-light fa-floppy-disk" aria-hidden="true"></i>
-                                            <?php esc_html_e( 'Save options', 'simple-theme-options' ); ?>
+                                            <?php esc_html_e( 'Save options', 'topten-simple-theme-options' ); ?>
                                         </button>
                                         <button
                                             type="submit"
@@ -2334,7 +2685,7 @@ final class Menu {
                                             class="button"
                                             onclick="return window.confirm('<?php echo $sto_reset_section_confirm; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>');"
                                         >
-                                            <?php esc_html_e( 'Reset section', 'simple-theme-options' ); ?>
+                                            <?php esc_html_e( 'Reset section', 'topten-simple-theme-options' ); ?>
                                         </button>
                                         <button
                                             type="submit"
@@ -2344,7 +2695,7 @@ final class Menu {
                                             class="button"
                                             onclick="return window.confirm('<?php echo $sto_reset_all_confirm; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>');"
                                         >
-                                            <?php esc_html_e( 'Reset all fields', 'simple-theme-options' ); ?>
+                                            <?php esc_html_e( 'Reset all fields', 'topten-simple-theme-options' ); ?>
                                         </button>
                                     </div>
                                 </div>
@@ -2436,7 +2787,7 @@ final class Menu {
 
         $panel_heading = isset( $this->registered_menu_labels[ $req ] ) && $this->registered_menu_labels[ $req ] !== ''
             ? (string) $this->registered_menu_labels[ $req ]
-            : __( 'Theme Settings', 'simple-theme-options' );
+            : __( 'Theme Settings', 'topten-simple-theme-options' );
 
         $current_section_slug = $this->get_metabox_active_leaf_slug( $req );
         $current_section      = $this->get_section_by_slug( $current_section_slug );
@@ -2455,6 +2806,10 @@ final class Menu {
         $content_icon  = $current_section && isset( $current_section['icon'] ) ? $current_section['icon'] : 'fa-light fa-circle-question';
         $leaf_sections = $this->get_leaf_sections_for_navigation_for_menu_page( $req );
         $default_leaf  = $this->get_default_leaf_section_slug_for_menu_page( $req );
+        $wc_tabs_nav   = $this->metabox_uses_wc_tabs_nav( $req );
+        $nav_sections  = $wc_tabs_nav
+            ? $this->get_leaf_sections_for_navigation_for_menu_page( $req )
+            : $this->get_sections_for_navigation_for_menu_page( $req );
 
         $sidebar_base = $this->get_metabox_post_editor_base_url( $post_id, $editor_post );
         if ( $sidebar_base === '' ) {
@@ -2478,14 +2833,15 @@ final class Menu {
         ob_start();
         try {
         ?>
-        <div class="sto-section-content sto-theme-settings-metabox-inner">
+        <div class="sto-section-content sto-theme-settings-metabox-inner<?php echo $wc_tabs_nav ? ' sto-theme-settings-metabox-inner--wc-tabs' : ''; ?>">
             <div
-                class="sto-option-panel-wrapper sto-option-panel-wrapper--metabox"
+                class="sto-option-panel-wrapper sto-option-panel-wrapper--metabox<?php echo $wc_tabs_nav ? ' sto-metabox-nav--wc-tabs' : ''; ?>"
                 data-sto-default-leaf="<?php echo esc_attr( $default_leaf ); ?>"
                 data-sto-menu-page="<?php echo esc_attr( $req ); ?>"
                 data-sto-post-edit-base="<?php echo esc_attr( $sidebar_base ); ?>"
                 data-sto-post-id="<?php echo esc_attr( (string) $post_id ); ?>"
             >
+                <?php if ( ! $wc_tabs_nav ) { ?>
                 <div
                     class="sto-metabox-alert"
                     role="status"
@@ -2496,9 +2852,9 @@ final class Menu {
                             <i class="fa-light fa-circle-info"></i>
                         </span>
                         <p class="sto-metabox-alert__text">
-                            <?php esc_html_e( 'These fields apply to this post only (they override the same keys from global Theme Settings on the front). They are stored when you publish or update the post.', 'simple-theme-options' ); ?>
+                            <?php esc_html_e( 'These fields apply to this post only (they override the same keys from global Theme Settings on the front). They are stored when you publish or update the post.', 'topten-simple-theme-options' ); ?>
                         </p>
-                        <button type="button" class="sto-metabox-alert__dismiss" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'simple-theme-options' ); ?>">
+                        <button type="button" class="sto-metabox-alert__dismiss" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'topten-simple-theme-options' ); ?>">
                             <span class="sto-metabox-alert__dismiss-icon" aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -2515,7 +2871,7 @@ final class Menu {
                             <input
                                 type="search"
                                 class="sto-quick-search-input"
-                                placeholder="<?php esc_attr_e( 'Start typing to find options…', 'simple-theme-options' ); ?>"
+                                placeholder="<?php esc_attr_e( 'Start typing to find options…', 'topten-simple-theme-options' ); ?>"
                                 autocomplete="off"
                                 aria-autocomplete="list"
                                 aria-controls="sto-quick-search-results"
@@ -2532,27 +2888,35 @@ final class Menu {
                         ></div>
                     </div>
                 </div>
+                <?php } ?>
                 <div class="sto-option-panel-body">
                     <div class="sto-option-panel-nav-layout">
                         <div class="sto-option-panel-sidebar-wrap">
-                            <ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php esc_attr_e( 'Theme Settings sections', 'simple-theme-options' ); ?>">
-                                <?php foreach ( $this->get_sections_for_navigation_for_menu_page( $req ) as $section ) { ?>
+                            <ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php echo $wc_tabs_nav ? esc_attr__( 'Sections', 'topten-simple-theme-options' ) : esc_attr__( 'Theme Settings sections', 'topten-simple-theme-options' ); ?>">
+                                <?php foreach ( $nav_sections as $section ) { ?>
                                     <?php $this->render_sidebar_item( $section, $current_section_slug, false, $req, $sidebar_base ); ?>
+                                <?php } ?>
+                                <?php if ( ! $wc_tabs_nav ) { ?>
+                                    <?php PremiumFieldGate::render_sidebar_upgrade_cta(); ?>
                                 <?php } ?>
                             </ul>
                         </div>
                         <div class="sto-option-panel-main">
+                            <?php if ( ! $wc_tabs_nav ) { ?>
                             <div class="sto-option-panel-content-head">
                                 <span class="sto-option-panel-content-icon-wrap">
                                     <i class="<?php echo esc_attr( $content_icon ); ?> sto-option-panel-content-icon"></i>
                                 </span>
                                 <h3 class="sto-option-panel-content-title"><?php echo esc_html( $content_title ); ?></h3>
                             </div>
+                            <?php } ?>
+                            <?php // phpcs:disable WordPress.Security.NonceVerification.Recommended -- Metabox redirect notice; value sanitized. ?>
                             <?php if ( isset( $_GET['sto-metabox-saved'] ) && sanitize_text_field( wp_unslash( $_GET['sto-metabox-saved'] ) ) === '1' ) { ?>
-                                <div class="sto-save-notice"><?php esc_html_e( 'Settings are successfully saved.', 'simple-theme-options' ); ?></div>
+                                <div class="sto-save-notice"><?php esc_html_e( 'Settings are successfully saved.', 'topten-simple-theme-options' ); ?></div>
                             <?php } ?>
                             <?php
                             $sto_val_err = isset( $_GET['sto-metabox-validation'] ) ? sanitize_text_field( wp_unslash( $_GET['sto-metabox-validation'] ) ) : '';
+                            // phpcs:enable WordPress.Security.NonceVerification.Recommended
                             if ( $sto_val_err === '1' ) {
                                 $verr = get_transient( $this->get_validation_notice_transient_name() );
                                 delete_transient( $this->get_validation_notice_transient_name() );
@@ -2561,8 +2925,8 @@ final class Menu {
                                 if ( $vslug === $current_section_slug && ! empty( $vmsgs ) ) {
                                     ?>
                                     <div class="sto-validation-notice" role="alert">
-                                        <p class="sto-validation-notice-title"><?php esc_html_e( 'This section could not be saved yet', 'simple-theme-options' ); ?></p>
-                                        <p class="sto-validation-notice-lead"><?php esc_html_e( 'Fix the following, then publish or update the post again:', 'simple-theme-options' ); ?></p>
+                                        <p class="sto-validation-notice-title"><?php esc_html_e( 'This section could not be saved yet', 'topten-simple-theme-options' ); ?></p>
+                                        <p class="sto-validation-notice-lead"><?php esc_html_e( 'Fix the following, then publish or update the post again:', 'topten-simple-theme-options' ); ?></p>
                                         <ul class="sto-validation-notice-list">
                                             <?php foreach ( $vmsgs as $one ) { ?>
                                                 <li><?php echo esc_html( (string) $one ); ?></li>
@@ -2721,7 +3085,7 @@ final class Menu {
 
         $panel_heading = isset( $this->registered_menu_labels[ $req ] ) && $this->registered_menu_labels[ $req ] !== ''
             ? (string) $this->registered_menu_labels[ $req ]
-            : __( 'Theme Settings', 'simple-theme-options' );
+            : __( 'Theme Settings', 'topten-simple-theme-options' );
 
         $current_section_slug = $this->get_term_active_leaf_slug( $req );
         $current_section      = $this->get_section_by_slug( $current_section_slug );
@@ -2779,13 +3143,13 @@ final class Menu {
                         <p class="sto-metabox-alert__text">
                             <?php
                             if ( $is_add ) {
-                                esc_html_e( 'These fields apply to this term only (they override the same keys from global Theme Settings on the front). They are stored when you add the term.', 'simple-theme-options' );
+                                esc_html_e( 'These fields apply to this term only (they override the same keys from global Theme Settings on the front). They are stored when you add the term.', 'topten-simple-theme-options' );
                             } else {
-                                esc_html_e( 'These fields apply to this term only (they override the same keys from global Theme Settings on the front). They are stored when you update the term.', 'simple-theme-options' );
+                                esc_html_e( 'These fields apply to this term only (they override the same keys from global Theme Settings on the front). They are stored when you update the term.', 'topten-simple-theme-options' );
                             }
                             ?>
                         </p>
-                        <button type="button" class="sto-metabox-alert__dismiss" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'simple-theme-options' ); ?>">
+                        <button type="button" class="sto-metabox-alert__dismiss" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'topten-simple-theme-options' ); ?>">
                             <span class="sto-metabox-alert__dismiss-icon" aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -2802,7 +3166,7 @@ final class Menu {
                             <input
                                 type="search"
                                 class="sto-quick-search-input"
-                                placeholder="<?php esc_attr_e( 'Start typing to find options…', 'simple-theme-options' ); ?>"
+                                placeholder="<?php esc_attr_e( 'Start typing to find options…', 'topten-simple-theme-options' ); ?>"
                                 autocomplete="off"
                                 aria-autocomplete="list"
                                 aria-controls="sto-quick-search-results-term"
@@ -2820,10 +3184,11 @@ final class Menu {
                 <div class="sto-option-panel-body">
                     <div class="sto-option-panel-nav-layout">
                         <div class="sto-option-panel-sidebar-wrap">
-                            <ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php esc_attr_e( 'Theme Settings sections', 'simple-theme-options' ); ?>">
+                            <ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php esc_attr_e( 'Theme Settings sections', 'topten-simple-theme-options' ); ?>">
                                 <?php foreach ( $this->get_sections_for_navigation_for_menu_page( $req ) as $section ) { ?>
                                     <?php $this->render_sidebar_item( $section, $current_section_slug, false, $req, $sidebar_base ); ?>
                                 <?php } ?>
+                                <?php PremiumFieldGate::render_sidebar_upgrade_cta(); ?>
                             </ul>
                         </div>
                         <div class="sto-option-panel-main">
@@ -2871,6 +3236,7 @@ final class Menu {
     }
 
     public function render_menu_page() {
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Admin markup from get_section_markup(); fields escape at output.
         echo $this->get_section_markup();
     }
 }
