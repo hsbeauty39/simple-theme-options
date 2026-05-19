@@ -1,0 +1,572 @@
+/**
+ * STO embedded in WooCommerce Product data (one tab, section / subsection sidebar).
+ *
+ * Do not add class `woocommerce_options_panel` to these wrappers — WC admin CSS floats
+ * labels, forces 50% input widths, and adds 162px left padding that breaks STO rows/repeaters.
+ */
+
+/* Match native WC product-data panel column width without `woocommerce_options_panel`. */
+#woocommerce-product-data .panel.sto-wc-product-data-panel {
+	float: left;
+	width: 80%;
+	min-height: 175px;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	background: #fff;
+	overflow: visible;
+}
+
+/*
+ * WC `.panel-wrap` must keep `overflow: hidden` so floated `.panel` siblings clear correctly.
+ * `overflow: visible` let hidden STO panels paint past the wrap and left a huge empty band
+ * below Product data when another WC tab (e.g. Inventory) was active.
+ */
+#woocommerce-product-data .panel-wrap.product_data {
+	overflow: hidden;
+}
+
+/* Popovers / Select2 / repeaters: only the visible STO panel may escape its box. */
+#woocommerce-product-data .panel-wrap.product_data > .panel.sto-wc-product-data-panel {
+	overflow: visible;
+}
+
+/* jQuery `.hide()` — zero footprint when another product-data tab is selected. */
+#woocommerce-product-data .panel-wrap.product_data > .panel.sto-wc-product-data-panel[style*="display: none"],
+#woocommerce-product-data .panel-wrap.product_data > .panel.sto-wc-product-data-panel[style*="display:none"] {
+	display: none !important;
+	min-height: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-wrapper--wc-product-data,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-body,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-nav-layout,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-main,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-options-form--wc-product-data,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-body {
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+@media only screen and (max-width: 900px) {
+	#woocommerce-product-data .panel.sto-wc-product-data-panel {
+		float: left;
+		width: 90%;
+		min-height: 0;
+	}
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-wrapper--wc-product-data {
+	max-width: none;
+	min-width: 0;
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-body {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-nav-layout {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	gap: 0;
+	width: 100%;
+	max-width: 100%;
+	min-height: 0;
+	max-height: none;
+	margin: 0;
+	border: 0;
+	background: #fff;
+	overflow: visible;
+	box-sizing: border-box;
+}
+
+/*
+ * Keep the section rail inside the panel (global STO uses sticky + overflow:visible,
+ * which detaches the sidebar as a floating popover over Product data).
+ */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar-wrap {
+	position: relative !important;
+	top: auto !important;
+	align-self: stretch !important;
+	flex: 0 0 min(220px, 34%);
+	width: min(220px, 34%);
+	max-width: min(240px, 38%);
+	min-width: 0;
+	max-height: none !important;
+	margin: 0;
+	padding: 8px;
+	overflow-x: hidden;
+	overflow-y: auto;
+	background: #f6f7f7;
+	border-right: 1px solid #dcdcde;
+	box-sizing: border-box;
+	-webkit-overflow-scrolling: touch;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar {
+	margin: 0;
+	width: 100%;
+	background: #f6f7f7;
+	border-radius: 4px;
+	box-shadow: inset 0 0 0 1px #dcdcde;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar-item-link {
+	color: #2c3338;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar-item-link:hover,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar-item-link:focus {
+	color: #1d2327;
+	background: rgba(0, 0, 0, 0.05);
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar-item.sto-is-active > .sto-option-panel-sidebar-item-link,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar-item-link.sto-is-active {
+	color: #fff;
+	background: #2271b1;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-main {
+	flex: 1 1 auto;
+	min-width: 0;
+	width: 100%;
+	max-width: 100%;
+	padding: 12px 16px 16px;
+	overflow-x: hidden;
+	overflow-y: visible;
+	box-sizing: border-box;
+}
+
+/* One leaf section: no redundant inner sidebar (e.g. Battery Specifications). */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-wrapper--wc-single-leaf .sto-option-panel-sidebar-wrap {
+	display: none !important;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-wrapper--wc-single-leaf .sto-option-panel-main {
+	padding: 12px 14px 16px;
+}
+
+/* Single-leaf WC tab: tab label is enough; skip duplicate title + quick search row. */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-wrapper--wc-single-leaf .sto-option-panel-content-head--wc-product-data {
+	display: none !important;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-head--wc-product-data {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px 16px;
+	margin: 0;
+	padding: 10px 0 12px;
+	border-bottom: 1px solid #e8e8e8;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-head__lead {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	flex: 1 1 12rem;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-head--wc-product-data .sto-option-panel-content-icon-wrap {
+	width: 36px;
+	height: 36px;
+	margin-inline-end: 10px;
+	flex: 0 0 36px;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-head--wc-product-data .sto-option-panel-content-icon {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-head--wc-product-data .sto-option-panel-content-title {
+	font-size: clamp(16px, 2.5vw, 18px);
+	line-height: 1.25;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-head--wc-product-data .sto-quick-search {
+	position: relative;
+	flex: 1 1 220px;
+	max-width: 100%;
+	min-width: min(100%, 200px);
+	margin: 0 0 0 auto;
+	z-index: 20;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-wrapper .sto-quick-search-input {
+	flex: 1 1 auto;
+	min-width: 0;
+	width: 1%;
+	max-width: none;
+	margin: 0;
+	padding: 8px 12px;
+	font-size: 13px;
+	line-height: 1.4;
+	border: 0;
+	border-radius: 0 6px 6px 0;
+	box-shadow: none;
+	background: #fff;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-quick-search-results {
+	z-index: 100;
+	max-width: min(100vw - 32px, 420px);
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-body {
+	margin-top: 0;
+	padding-top: 0;
+	padding-bottom: 16px;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-section.sto-is-hidden {
+	display: none;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-panel-section-fields {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	min-width: 0;
+	width: 100%;
+	max-width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-panel-section-fields:disabled {
+	opacity: 1;
+	pointer-events: none;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-section.sto-is-active > .sto-panel-section-fields {
+	pointer-events: auto;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group {
+	margin-bottom: 0;
+	max-width: 100%;
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group[data-sto-group-depth="0"] .sto-field-group-inner {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	column-gap: 16px;
+	row-gap: 1.25rem;
+	padding-bottom: 8px;
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group-cell {
+	grid-column: span 12;
+	min-width: 0;
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row {
+	max-width: 100%;
+	width: 100%;
+	padding-bottom: 16px;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row:last-child {
+	margin-bottom: 0;
+}
+
+/* Safety net if a parent ever has `woocommerce_options_panel` again. */
+#woocommerce-product-data .panel.sto-wc-product-data-panel input[type="text"],
+#woocommerce-product-data .panel.sto-wc-product-data-panel input[type="email"],
+#woocommerce-product-data .panel.sto-wc-product-data-panel input[type="number"],
+#woocommerce-product-data .panel.sto-wc-product-data-panel input[type="password"],
+#woocommerce-product-data .panel.sto-wc-product-data-panel input[type="search"],
+#woocommerce-product-data .panel.sto-wc-product-data-panel input[type="url"],
+#woocommerce-product-data .panel.sto-wc-product-data-panel select,
+#woocommerce-product-data .panel.sto-wc-product-data-panel textarea {
+	float: none !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	box-sizing: border-box;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel label,
+#woocommerce-product-data .panel.sto-wc-product-data-panel legend {
+	float: none !important;
+	width: auto !important;
+	margin: 0 !important;
+	display: block;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel p.form-field,
+#woocommerce-product-data .panel.sto-wc-product-data-panel fieldset.form-field {
+	padding: 0 !important;
+	margin: 0 0 12px !important;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel p.form-field::after {
+	display: none !important;
+}
+
+/* Segmented button groups: keep stock STO layout (inline-flex), not full-width grid cells. */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-button-group .sto-button-group-wrap {
+	width: fit-content;
+	max-width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-button-group .sto-button-group {
+	display: inline-flex;
+	flex-wrap: nowrap;
+	width: max-content;
+	max-width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-button-group .sto-button-group__segment {
+	flex: 0 0 auto;
+	width: max-content;
+	min-width: min-content;
+}
+
+/* Advanced repeater — full-width rows inside the narrow WC column. */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-advanced-repeater .sto-adv-rep {
+	max-width: 100%;
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__list {
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__item {
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__body {
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field {
+	width: 100%;
+	min-width: 0;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__label,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-title {
+	display: block;
+	width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__input,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__select,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-select-wrap {
+	width: 100% !important;
+	max-width: 100% !important;
+}
+
+/* Nested groups + advanced repeater (e.g. service sub-tabs) — prevent inputs wider than the WC column. */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested {
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-field-group-inner {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	column-gap: 16px;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-field-group-cell {
+	grid-column: 1 / -1;
+	min-width: 0;
+	max-width: 100%;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-field-row-advanced-repeater,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-field-row-advanced-repeater .sto-adv-rep,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-adv-rep__list,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-adv-rep__item,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-adv-rep__body,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-adv-rep__field,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-adv-rep__fieldset {
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-adv-rep__field .sto-input-wrap,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-adv-rep__field .sto-input-control,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested .sto-adv-rep__input {
+	width: 100% !important;
+	max-width: 100% !important;
+	min-width: 0 !important;
+	box-sizing: border-box;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-title-row {
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group--nested {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/* Undo Theme Settings metabox rail sizing inside the WC column (global `style.css` `.postbox` rules). */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-theme-settings-metabox-inner .sto-option-panel-nav-layout {
+	flex-wrap: wrap;
+	width: 100%;
+	min-width: 0;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-theme-settings-metabox-inner .sto-option-panel-main {
+	flex: 1 1 auto;
+	min-width: 0;
+	max-width: 100%;
+	overflow-x: hidden;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-title-row,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-title-row__leading,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-title {
+	float: none !important;
+	width: auto !important;
+	max-width: 100%;
+	margin-left: 0 !important;
+	clear: none;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-switcher .sto-switcher,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-switcher .sto-field-control {
+	float: none !important;
+	clear: both;
+}
+
+@media (max-width: 1200px) {
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar-wrap {
+		flex-basis: min(200px, 36%);
+		width: min(200px, 36%);
+	}
+}
+
+/*
+ * Product data content column is ~90% viewport minus ~10% WC tabs — stack inner nav earlier than Theme Settings.
+ */
+@media (max-width: 1100px) {
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-nav-layout {
+		flex-direction: column;
+		flex-wrap: nowrap;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar-wrap,
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-theme-settings-metabox-inner .sto-option-panel-sidebar-wrap {
+		position: relative !important;
+		top: auto !important;
+		flex: 0 0 auto !important;
+		width: 100% !important;
+		max-width: 100% !important;
+		min-width: 0;
+		border-right: 0;
+		border-bottom: 1px solid #dcdcde;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 4px;
+		padding: 6px;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar > .sto-option-panel-sidebar-item {
+		flex: 1 1 auto;
+		min-width: min(100%, 140px);
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-sidebar-item + .sto-option-panel-sidebar-item {
+		margin-top: 0;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group-cell[class*="sto-field-group-cell--span"] {
+		grid-column: 1 / -1;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-button-group .sto-button-group-wrap {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-button-group .sto-button-group {
+		display: flex;
+		flex-wrap: wrap;
+		width: 100%;
+		max-width: 100%;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-row-button-group .sto-button-group__segment {
+		flex: 1 1 auto;
+		min-width: min(100%, 8rem);
+	}
+}
+
+@media (max-width: 782px) {
+	#woocommerce-product-data .panel.sto-wc-product-data-panel {
+		float: left;
+		width: 90%;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-head--wc-product-data {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-head--wc-product-data .sto-quick-search {
+		flex: 1 1 auto;
+		width: 100%;
+		min-width: 0;
+		margin-left: 0;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group[data-sto-group-depth="0"] .sto-field-group-inner {
+		padding-inline: 0;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-main {
+		padding-inline: 10px;
+	}
+}
+
+@media (max-width: 480px) {
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-main {
+		padding-inline: 8px;
+	}
+
+	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-body {
+		padding-bottom: 20px;
+	}
+}

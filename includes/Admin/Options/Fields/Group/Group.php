@@ -24,6 +24,7 @@ use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
 use SimpleThemeOptions\Admin\Options\Fields\DateTimeField\DateTimeField;
 use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
 use SimpleThemeOptions\Admin\Options\Fields\MultiTextControl\MultiTextControl;
@@ -78,13 +79,14 @@ final class Group {
 	 * - **Date:** `type` => **`date`**, **`id`**, **`title`**, optional **`description`**, **`default`** (Y-m-d or empty), **`placeholder`**, optional **`min_date`** / **`max_date`** (inclusive Y-m-d), optional **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as **`Y-m-d`** string or per-breakpoint map. Theme: read **`sto_options['id']`** (string or array).
 	 * - **Date + time:** `type` => **`datetime`**, same keys as **date** plus optional **`time_step`** (seconds for native time input **`step`**, default **60**). Stored as **`Y-m-d H:i`** (24-hour) or per-breakpoint map. Boot **`DateTimeField::instance()`** when used inside groups.
 	 * - **Dimension:** `type` => **`dimension`**, **`id`**, **`title`**, optional **`sides`** (1–6 of **`array( 'key' => 'top', 'label' => 'TOP' )`**), **`units`** subset of **`px`**, **`%`**, **`rem`**, **`em`**, **`custom`**, **`min`**, **`max`**, **`step`**, **`default`** (partial **`u` / `c` / `linked` / `values`**), optional **`unit_label`**, **`show_link`** (default **true**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored JSON per slice. Boot **`Dimension::instance()`** when used inside groups.
+	 * - **Layout spacing (not a field type):** optional **`space`** => **`'3px'`**, **`'1.5rem'`**, or **`16`** (px) on any inner item or on **`Group::register()`** config — adds **`margin-top`** above that row or nested group panel in the admin UI only (not stored in **`sto_options`**). Parsed by **`FieldSpacing`**.
 	 * - **Icon select:** `type` => **`icon_select`**, **`id`**, **`title`**, optional **`default`** (full Font Awesome class from **`assets/admin/data/sto-icon-select-manifest.json`**), optional **`allow_clear`**, **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as one class string per slice (e.g. **`fa-light fa-house`**). Boot **`IconSelect::instance()`** when used inside groups / tabs / accordion.
 	 * - **Gallery:** `type` => **`gallery`**, **`id`**, **`title`**, optional **`default`** => **`array( 101, 102, 103 )`** (image attachment IDs only), optional **`max`** (int **`0`** = unlimited, capped at **100**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as JSON **`["id","id"]`** or per-breakpoint map. Boot **`GalleryControl::instance()`** when used inside groups.
 	 * - **Advanced repeater:** `type` => **`advanced_repeater`**, **`id`**, **`title`**, **`fields`** (schema: **`fieldset`** with nested **`fields`**, **`advanced_repeater`** for nesting, **`text`**, **`number`**, **`textarea`**, **`select`**, **`switcher`**). Optional **`max`**, **`default`** as array of row objects, **`html_required`** on leaves, conditional **`required`** on the repeater row, **`description`**, **`tooltip`**. Stored as JSON array of objects in **`sto_options[id]`** (no responsive map on inner leaves in v1). Boot **`AdvancedRepeaterControl::instance()`** when used inside groups / tabs / accordion.
 	 * - **Multi text:** `type` => **`multi_text`**, **`id`**, **`title`**, optional **`default`** => **`array( 'Line 1', 'Line 2' )`**, optional **`max`** (int **`0`** = unlimited, hard cap **100**), **`placeholder`**, **`html_required`**, conditional **`required`**, **`tooltip`**. Stored as JSON **`["a","b"]`**. Boot **`MultiTextControl::instance()`** when used inside groups.
 	 * - **Radio lists:** `type` => **`radio_lists`**, **`id`**, **`title`**, **`options`** (same map as **ButtonGroup**), optional **`default`** => **`array( array( 'title' => '…', 'value' => 'key' ), … )`**, optional **`max`** (0 = unlimited, hard cap **50**), **`show_row_titles`**, **`repeatable`** (bool, default **true** — **false** = single row, no add / drag / remove), **`radio_layout`** (**`stack`** = column of tiles | **`inline`** = row), **`html_required`**, conditional **`required`**, **`tooltip`**. Stored as JSON rows in **`sto_options[id]`** (no responsive map). Boot **`RadioListsControl::instance()`** when used inside groups.
 	 * - **Google map:** `type` => **`google_map`**, **`id`**, **`title`**, optional **`default`** (partial **`formatted_address`**, **`address`**, **`street`**, **`city`**, **`state`**, **`zip`**, **`country`**, **`lat`**, **`lng`**), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Map uses **OpenStreetMap** tiles + **Nominatim** (no Google API key). Stored as one JSON object per slice (or per-breakpoint map). Boot **`GoogleMapControl::instance()`** when used inside groups.
-	 * - **Alignment:** `type` => **`alignment`**, **`id`**, **`title`**, **`options`** (same shape as **ButtonGroup**: value => label string or array with **`label`**, optional **`tooltip`**, **`preview_image`**, **`icon`**), optional **`default`** (sanitize_key), optional **`orientation`** => **`horizontal`** | **`vertical`**, **`density`** => **`default`** | **`compact`**, **`show_labels`** (bool), **`allow_clear`** (bool), optional **`css_map`** (option key => CSS fragment for themes), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as a scalar string or per-breakpoint map. Boot **`AlignmentControl::instance()`** when used inside groups.
+	 * - **Alignment:** `type` => **`alignment`**, **`id`**, **`title`**, **`options`** (same shape as **ButtonGroup**: value => label string or array with **`label`**, optional **`tooltip`**, **`preview_image`**, **`icon`**), optional **`default`** (sanitize_key), optional **`orientation`** => **`horizontal`** | **`vertical`**, **`density`** => **`default`** | **`compact`**, **`show_labels`** (bool), **`allow_clear`** (bool), **`html_required`**, conditional **`required`**, **`tooltip`**, optional **`responsive`**, **`device`**. Stored as a scalar string or per-breakpoint map. Boot **`AlignmentControl::instance()`** when used inside groups.
 	 * - **Tabs:** `type` => **`tabs`**, **`id`**, **`title`**, **`tabs`**, **`fields`** — **`fields`** may mix **leaf** controls, **`type` => `accordion`**, **nested groups** (`id`, `title`, `fields`), and **nested `tabs`** (ids auto-prefixed per nesting level). Optional **`responsive`**, **`device`**. Stored keys: **`{tabs_id}_{tab_id}_{inner_id}`** (and scoped ids for nested blocks). **`sto-tabs.css`** stacks grid cells full-width at **960px**.
 	 * - **Accordion:** `type` => **`accordion`**, **`id`**, **`title`**, **`panels`**, **`fields`** — each **`panels[]`** row: **`id`**, **`label`**, optional **`expanded`** / **`show`** / **`open`** (first truthy row starts open; otherwise all collapsed on load). **`fields`** may mix **leaf** fields, **`tabs`**, **`accordion`**, and **nested groups** (same composition rules as **Tabs** / tree builders). Optional **`responsive`**, **`device`**, **`description`**, **`required`**, **`tooltip`**. Stored keys: **`{accordion_id}_{panel_id}_{inner_id}`**. **`sto-accordion.css`** / **`sto-accordion.js`**.
 	 * - Nested groups: array with `id`, `title`, `fields` (no top-level `options`), optional `description`, `required`, optional **`tooltip`** / **`tooltip_image`** (same shapes as **`FieldTitle::get_tooltip_config`**).
@@ -120,7 +122,13 @@ final class Group {
 			return;
 		}
 
+		FieldSpacing::normalize_config( $config );
+
 		$nodes = $this->build_nodes_for_parent( $section_slug, $group_id, $fields );
+		if ( empty( $nodes ) && FieldRegistrationDeferral::has_pending() ) {
+			FieldRegistrationDeferral::flush();
+			$nodes = $this->build_nodes_for_parent( $section_slug, $group_id, $fields );
+		}
 		if ( empty( $nodes ) ) {
 			return;
 		}
@@ -138,6 +146,9 @@ final class Group {
 			'required'    => $required,
 			'nodes'       => $nodes,
 		);
+		if ( ! empty( $config['space_css'] ) ) {
+			$row['space_css'] = (string) $config['space_css'];
+		}
 		if ( ! empty( $config['tooltip'] ) && is_array( $config['tooltip'] ) ) {
 			$row['tooltip'] = $config['tooltip'];
 		}
@@ -170,6 +181,8 @@ final class Group {
 			if ( ! is_array( $item ) ) {
 				continue;
 			}
+
+			FieldSpacing::normalize_config( $item );
 
 			// Parsed once per item; identical 12-column grammar used by Tabs inner items
 			// (1-2, 1/3, 2-3, 1-1, full, integer 1–12). Default = 12 = full row.
@@ -605,6 +618,9 @@ final class Group {
 					'nodes'       => $child_nodes,
 					'span'        => $span,
 				);
+				if ( ! empty( $item['space_css'] ) ) {
+					$nested['space_css'] = (string) $item['space_css'];
+				}
 				if ( ! empty( $item['tooltip'] ) && is_array( $item['tooltip'] ) ) {
 					$nested['tooltip'] = $item['tooltip'];
 				}
@@ -992,6 +1008,10 @@ final class Group {
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
 			<?php endif; ?>
+			<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::block_margin_style_attr().
+			echo FieldSpacing::block_margin_style_attr( $group );
+			?>
 		>
 			<?php
 			$g_tooltip = FieldTitle::get_tooltip_config( $group );
@@ -1018,7 +1038,19 @@ final class Group {
 							$span = 12;
 						}
 						?>
-						<div class="sto-field-group-cell sto-field-group-cell--span-<?php echo esc_attr( (string) $span ); ?>" data-sto-group-cell-span="<?php echo esc_attr( (string) $span ); ?>">
+						<?php
+						$cell_spacing_attr = ! empty( $node['space_css'] )
+							? FieldSpacing::block_margin_style_attr(
+								array(
+									'space_css' => (string) $node['space_css'],
+								)
+							)
+							: '';
+						?>
+						<div class="sto-field-group-cell sto-field-group-cell--span-<?php echo esc_attr( (string) $span ); ?>" data-sto-group-cell-span="<?php echo esc_attr( (string) $span ); ?>"<?php
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::block_margin_style_attr().
+						echo $cell_spacing_attr;
+						?>>
 						<?php
 						if ( $node['kind'] === 'field' && ! empty( $node['id'] ) ) {
 							$field = Select::get_field( $section_slug, (string) $node['id'] );
@@ -1176,6 +1208,9 @@ final class Group {
 							}
 							if ( ! empty( $node['tooltip_preloader'] ) ) {
 								$child_group['tooltip_preloader'] = (string) $node['tooltip_preloader'];
+							}
+							if ( ! empty( $node['space_css'] ) ) {
+								$child_group['space_css'] = (string) $node['space_css'];
 							}
 							$this->render_group_branch( $section_slug, $child_group, $depth + 1 );
 						}
