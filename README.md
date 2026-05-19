@@ -489,7 +489,7 @@ Markup comes from **`SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle`*
 - **Storage:** serialized block HTML comments in **`sto_options[id]`** (or per-breakpoint map). **`sanitize_posted_value()`** normalises via **`parse_blocks()`** / **`serialize_blocks()`** when available, else **`wp_kses_post()`**; max **512 KB**.
 - **UI:** hidden `<textarea class="sto-rich-modern-editor__input">` mirrors block markup for form POST; React mount in **`.sto-rich-modern-editor__mount`** via **`sto-rich-modern-editor.js`** (`BlockEditorProvider` + **`BlockList`**). **`window.stoInitRichModernEditors( $scope )`** is called from **`main.js`** on section / responsive tab switches (same as code editor).
 - **Hook priority:** **`RenderSectionContentPriority::RICH_MODERN_EDITOR`** (**210**) — before **CodeEditor** (**211**). Premium-gated via **`PremiumFieldGate`**.
-- Samples: **Field samples → Code & borders** (`layout_rich_modern_content`) and **Groups & panels** accordion (`cf_rich_modern`) in **`General.php`** / **`GroupsPanels.php`**.
+- Samples: **Field samples → Code & borders** (`layout_rich_modern_content`) and **Groups & panels** accordion (`cf_rich_modern`) in **`General.php`** / **`GroupsPanels.php`**. **Integrator guide:** **`wp-content/plugins/instructions/instructions.html`** § **6.14a** + PHP column **`#php-rich_modern_editor`**.
 
 ### Select field layout (admin UI)
 
