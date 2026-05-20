@@ -39,7 +39,7 @@ final class ResponsiveControl {
 		$labels = self::aria_labels();
 		$icons  = self::icon_classes();
 		?>
-		<div class="sto-responsive__toolbar sto-responsive__toolbar--icons" role="tablist" aria-label="<?php esc_attr_e( 'Responsive breakpoints', 'simple-theme-options' ); ?>">
+		<div class="sto-responsive__toolbar sto-responsive__toolbar--icons" role="tablist" aria-label="<?php esc_attr_e( 'Responsive breakpoints', 'topten-simple-theme-options' ); ?>">
 			<?php foreach ( $breakpoints as $i => $bp ) : ?>
 				<?php
 				$bp        = sanitize_key( (string) $bp );
@@ -127,13 +127,13 @@ final class ResponsiveControl {
 	 */
 	private static function aria_labels() {
 		return array(
-			'xxl'    => __( 'Desktop (PC)', 'simple-theme-options' ),
-			'xl'     => __( 'Extra large screens', 'simple-theme-options' ),
-			'lg'     => __( 'Large screens', 'simple-theme-options' ),
-			'md'     => __( 'Tablet', 'simple-theme-options' ),
-			'sm'     => __( 'Small screens', 'simple-theme-options' ),
-			'xs'     => __( 'Extra small screens', 'simple-theme-options' ),
-			'mobile' => __( 'Mobile', 'simple-theme-options' ),
+			'xxl'    => __( 'Desktop (PC)', 'topten-simple-theme-options' ),
+			'xl'     => __( 'Extra large screens', 'topten-simple-theme-options' ),
+			'lg'     => __( 'Large screens', 'topten-simple-theme-options' ),
+			'md'     => __( 'Tablet', 'topten-simple-theme-options' ),
+			'sm'     => __( 'Small screens', 'topten-simple-theme-options' ),
+			'xs'     => __( 'Extra small screens', 'topten-simple-theme-options' ),
+			'mobile' => __( 'Mobile', 'topten-simple-theme-options' ),
 		);
 	}
 
@@ -145,13 +145,13 @@ final class ResponsiveControl {
 	private static function tab_short_title( $bp ) {
 		$bp = sanitize_key( (string) $bp );
 		$map = array(
-			'xxl'    => __( 'XXL', 'simple-theme-options' ),
-			'xl'     => __( 'XL', 'simple-theme-options' ),
-			'lg'     => __( 'LG', 'simple-theme-options' ),
-			'md'     => __( 'Tablet', 'simple-theme-options' ),
-			'sm'     => __( 'SM', 'simple-theme-options' ),
-			'xs'     => __( 'XS', 'simple-theme-options' ),
-			'mobile' => __( 'Mobile', 'simple-theme-options' ),
+			'xxl'    => __( 'XXL', 'topten-simple-theme-options' ),
+			'xl'     => __( 'XL', 'topten-simple-theme-options' ),
+			'lg'     => __( 'LG', 'topten-simple-theme-options' ),
+			'md'     => __( 'Tablet', 'topten-simple-theme-options' ),
+			'sm'     => __( 'SM', 'topten-simple-theme-options' ),
+			'xs'     => __( 'XS', 'topten-simple-theme-options' ),
+			'mobile' => __( 'Mobile', 'topten-simple-theme-options' ),
 		);
 
 		return isset( $map[ $bp ] ) ? (string) $map[ $bp ] : strtoupper( $bp );

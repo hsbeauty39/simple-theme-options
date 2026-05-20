@@ -10,7 +10,6 @@ use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\Admin\Options\Fields\ButtonGroup\ButtonGroup;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
-use SimpleThemeOptions\Admin\Options\Fields\RichModernEditor\RichModernEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -645,11 +644,6 @@ final class Accordion {
 
 			return CodeEditor::get_field( $section, $fid ) ? 'code_editor' : '';
 		}
-		if ( $this->is_rich_modern_editor_type( $clone_reg ) ) {
-			RichModernEditor::register( $clone_reg );
-
-			return RichModernEditor::get_field( $section, $fid ) ? 'rich_modern_editor' : '';
-		}
 		if ( isset( $clone_reg['type'] ) && $clone_reg['type'] === 'link_color' ) {
 			LinkColor::register( $clone_reg );
 
@@ -689,15 +683,6 @@ final class Accordion {
 	 * @param array<string, mixed> $inner
 	 * @return bool
 	 */
-	private function is_rich_modern_editor_type( array $inner ) {
-		if ( empty( $inner['id'] ) ) {
-			return false;
-		}
-		$type = isset( $inner['type'] ) ? sanitize_key( (string) $inner['type'] ) : '';
-
-		return in_array( $type, array( 'rich_modern_editor', 'richmoderneditor', 'block_editor', 'gutenberg' ), true );
-	}
-
 	/**
 	 * @param string $section_slug
 	 * @param string $accordion_id
@@ -1224,13 +1209,6 @@ final class Accordion {
 				if ( $f ) {
 					$f = $this->with_accordion_responsive_pane_bp( $f, $parent_device_bp );
 					CodeEditor::instance()->render_field_markup( $f, $inner_ctx );
-				}
-				break;
-			case 'rich_modern_editor':
-				$f = RichModernEditor::get_field( $section_slug, $composite_id );
-				if ( $f ) {
-					$f = $this->with_accordion_responsive_pane_bp( $f, $parent_device_bp );
-					RichModernEditor::instance()->render_field_markup( $f, $inner_ctx );
 				}
 				break;
 			case 'link_color':

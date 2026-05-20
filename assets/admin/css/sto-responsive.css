@@ -76,3 +76,43 @@
 .sto-responsive__pane.sto-is-active {
     display: block;
 }
+
+/* Packaged demo — Responsive leaf intro */
+.sto-responsive-demo-intro {
+    margin: 0 0 1.1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #f8fafc 0%, #f5f3ff 55%, #fff 100%);
+}
+
+.sto-responsive-demo-intro__lead {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #475569;
+}
+
+/* Accordion intro card linking to Responsive section */
+.sto-option-panel-wrapper a.sto-acc-demo-type--link {
+    display: flex;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.sto-option-panel-wrapper a.sto-acc-demo-type--link:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+    background: #fafbff;
+}
+
+.sto-option-panel-wrapper a.sto-acc-demo-type--link:focus {
+    outline: none;
+}
+
+.sto-option-panel-wrapper a.sto-acc-demo-type--link:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}

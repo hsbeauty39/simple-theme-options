@@ -1,6 +1,6 @@
 <?php
 /**
- * Tools → Simple Backup layout (sidebar: Backup | Custom fonts).
+ * Tools → Simple Settings layout (sidebar: Settings | Custom fonts).
  *
  * @package SimpleThemeOptions
  */
@@ -20,12 +20,12 @@ final class SimpleBackupPage {
 		return array(
 			array(
 				'slug' => ThemeSettingsImportExport::TOOLS_SECTION_BACKUP,
-				'name' => __( 'Backup', 'simple-theme-options' ),
-				'icon' => 'fa-light fa-file-arrow-up',
+				'name' => __( 'Settings', 'topten-simple-theme-options' ),
+				'icon' => 'fa-light fa-sliders',
 			),
 			array(
 				'slug' => ThemeSettingsImportExport::TOOLS_SECTION_CUSTOM_FONTS,
-				'name' => __( 'Custom fonts', 'simple-theme-options' ),
+				'name' => __( 'Custom fonts', 'topten-simple-theme-options' ),
 				'icon' => 'fa-light fa-font',
 			),
 		);
@@ -70,8 +70,9 @@ final class SimpleBackupPage {
 	public static function render(): void {
 		$current_section = self::get_current_section_slug();
 		$current_meta    = self::get_section( $current_section );
-		$content_title   = $current_meta['name'] ?? __( 'Simple Backup', 'simple-theme-options' );
-		$content_icon    = $current_meta['icon'] ?? 'fa-light fa-file-arrow-up';
+		$page_label      = ThemeSettingsImportExport::get_tools_page_label();
+		$content_title   = $current_meta['name'] ?? $page_label;
+		$content_icon    = $current_meta['icon'] ?? 'fa-light fa-sliders';
 		$idsuf           = '-settings';
 		$import_export   = ThemeSettingsImportExport::instance();
 		?>
@@ -82,12 +83,16 @@ final class SimpleBackupPage {
 				data-sto-default-leaf="<?php echo esc_attr( ThemeSettingsImportExport::TOOLS_SECTION_BACKUP ); ?>"
 			>
 				<div class="sto-option-panel-head">
-					<h1 class="sto-option-panel-title"><?php esc_html_e( 'Simple Backup', 'simple-theme-options' ); ?></h1>
+					<h1 class="sto-option-panel-title"><?php echo esc_html( $page_label ); ?></h1>
 				</div>
 				<div class="sto-option-panel-body">
 					<div class="sto-option-panel-nav-layout">
 						<div class="sto-option-panel-sidebar-wrap">
-							<ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php esc_attr_e( 'Simple Backup sections', 'simple-theme-options' ); ?>">
+							<ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php echo esc_attr( sprintf(
+								/* translators: %s: Tools screen title, e.g. Simple Settings */
+								__( '%s sections', 'topten-simple-theme-options' ),
+								$page_label
+							) ); ?>">
 								<?php foreach ( self::get_sections() as $section ) : ?>
 									<?php self::render_sidebar_item( $section, $current_section ); ?>
 								<?php endforeach; ?>

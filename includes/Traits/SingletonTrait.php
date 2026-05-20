@@ -33,10 +33,10 @@ trait SingletonTrait {
 	protected function __construct() {}
 
 	final public function __clone() {
-		_doing_it_wrong( __FUNCTION__, esc_html__( 'Cloning is not allowed.', 'simple-theme-options' ), STO_VERSION );
+		_doing_it_wrong( __FUNCTION__, esc_html__( 'Cloning is not allowed.', 'topten-simple-theme-options' ), esc_html( STO_VERSION ) );
 	}
 
 	final public function __wakeup() {
-		_doing_it_wrong( __FUNCTION__, esc_html__( 'Unserializing is not allowed.', 'simple-theme-options' ), STO_VERSION );
+		_doing_it_wrong( __FUNCTION__, esc_html__( 'Unserializing is not allowed.', 'topten-simple-theme-options' ), esc_html( STO_VERSION ) );
 	}
 }

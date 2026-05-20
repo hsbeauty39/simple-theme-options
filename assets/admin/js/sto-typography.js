@@ -7,7 +7,7 @@
     var customCssByFamily = {};
 
     function getCfg() {
-        return (window.simple_theme_options && window.simple_theme_options.sto_typography) || {};
+        return (window.battery_simple_theme_options && window.battery_simple_theme_options.sto_typography) || {};
     }
 
     function getCatalog() {

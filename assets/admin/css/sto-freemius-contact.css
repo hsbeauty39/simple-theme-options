@@ -1,0 +1,215 @@
+/**
+ * STO-branded Freemius Contact Us (replaces broken wp-admin iframe layout).
+ */
+
+.sto-fs-contact-wrap {
+	max-width: min(960px, 100%);
+	margin-top: 12px;
+}
+
+.sto-option-panel-wrapper--freemius-contact {
+	max-width: 100%;
+	margin-top: 0;
+}
+
+.sto-fs-contact-body {
+	padding: 20px 22px 24px;
+}
+
+.sto-fs-contact-hero {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 16px 20px;
+	margin-bottom: 22px;
+	padding: 1.25rem 1.35rem;
+	border-radius: 12px;
+	border: 1px solid #e2e8f0;
+	background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 48%, #faf5ff 100%);
+}
+
+.sto-fs-contact-hero__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	color: #5b21b6;
+	background: rgba(255, 255, 255, 0.85);
+	border: 1px solid rgba(139, 92, 246, 0.2);
+	font-size: 22px;
+}
+
+.sto-fs-contact-hero__copy {
+	flex: 1 1 220px;
+	min-width: 0;
+}
+
+.sto-fs-contact-hero__eyebrow {
+	margin: 0 0 0.25rem;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #6d28d9;
+}
+
+.sto-fs-contact-hero__title {
+	margin: 0 0 0.4rem;
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.3;
+	color: #0f172a;
+}
+
+.sto-fs-contact-hero__lead {
+	margin: 0;
+	max-width: 36rem;
+	font-size: 13px;
+	line-height: 1.55;
+	color: #475569;
+}
+
+.sto-fs-contact-hero__cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.45rem;
+	flex: 0 0 auto;
+	align-self: center;
+	padding: 0.65rem 1.2rem;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1.2;
+	text-decoration: none;
+	color: #fff;
+	white-space: nowrap;
+	border-radius: 10px;
+	background: linear-gradient(135deg, #6d28d9 0%, #be185d 48%, #ea580c 100%);
+	box-shadow: 0 6px 18px rgba(109, 40, 217, 0.35);
+	transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.sto-fs-contact-hero__cta:hover,
+.sto-fs-contact-hero__cta:focus {
+	color: #fff;
+	text-decoration: none;
+	transform: translateY(-1px);
+	box-shadow: 0 8px 22px rgba(109, 40, 217, 0.42);
+	filter: brightness(1.04);
+}
+
+.sto-fs-contact-topics {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 12px;
+	margin: 0 0 20px;
+	padding: 0;
+	list-style: none;
+}
+
+.sto-fs-contact-topic-card {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	height: 100%;
+	padding: 14px 16px;
+	text-decoration: none;
+	color: inherit;
+	border-radius: 10px;
+	border: 1px solid #e6e8eb;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease,
+		transform 0.15s ease;
+}
+
+.sto-fs-contact-topic-card:hover,
+.sto-fs-contact-topic-card:focus {
+	text-decoration: none;
+	color: inherit;
+	border-color: #c4b5fd;
+	box-shadow: 0 4px 14px rgba(109, 40, 217, 0.12);
+	transform: translateY(-1px);
+	outline: none;
+}
+
+.sto-fs-contact-topic-card__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	font-size: 16px;
+	color: #5b21b6;
+	background: #f5f3ff;
+}
+
+.sto-fs-contact-topic-card__text {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.sto-fs-contact-topic-card__label {
+	font-size: 14px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.sto-fs-contact-topic-card__desc {
+	font-size: 12px;
+	line-height: 1.45;
+	color: #64748b;
+}
+
+.sto-fs-contact-topic-card__arrow {
+	flex: 0 0 auto;
+	margin-top: 4px;
+	font-size: 12px;
+	color: #94a3b8;
+}
+
+.sto-fs-contact-meta {
+	margin: 0;
+	padding: 14px 16px;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #64748b;
+	border-radius: 8px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+}
+
+.sto-fs-contact-meta code {
+	font-size: 12px;
+	word-break: break-all;
+}
+
+.sto-fs-contact-meta__note {
+	margin: 0.5rem 0 0;
+}
+
+/* Hide legacy Freemius iframe chrome if any markup leaks through. */
+.sto-fs-contact-wrap #fs_contact #fs_frame,
+.sto-fs-contact-wrap #fs_frame {
+	display: none !important;
+}
+
+@media (max-width: 782px) {
+	.sto-fs-contact-hero__cta {
+		width: 100%;
+	}
+
+	.sto-fs-contact-topics {
+		grid-template-columns: 1fr;
+	}
+}

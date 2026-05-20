@@ -5,7 +5,8 @@
  * shares one handler path (avoids per-wrap bind gaps and duplicate toggle handling).
  * After a row body is expanded or a new item is appended, calls `window.stoInitSelect2ForScope`
  * (from main.js) so selects inside formerly hidden bodies get Select2 — `initStoSelect2` skips
- * `:hidden` controls on first paint when `default_collapsed` is true. Also calls **`window.stoInitIconSelectFields`** for **`icon_select`** leaves.
+ * `:hidden` controls on first paint when `default_collapsed` is true. Also calls **`window.stoInitIconSelectFields`** for **`icon_select`** leaves
+ * and **`window.stoRefreshClassicEditorsForScope`** for classic **`editor`** leaves (re-init after clone).
  */
 (function ($) {
     'use strict';
@@ -106,8 +107,11 @@
         if (k === 'icon_select') {
             return String($leaf.find('[data-sto-adv-rep-icon]').val() || '');
         }
-        if (k === 'rich_modern_editor') {
-            return String($leaf.find('.sto-rich-modern-editor__input').first().val() || '');
+        if (k === 'editor') {
+            if (typeof window.stoReadClassicEditorHtmlFromLeaf === 'function') {
+                return window.stoReadClassicEditorHtmlFromLeaf($leaf);
+            }
+            return String($leaf.find('textarea.wp-editor-area').first().val() || '');
         }
         if (k === 'textarea') {
             return String($leaf.find('[data-sto-adv-rep-input]').val() || '');
@@ -178,6 +182,49 @@
         return o;
     }
 
+    function stringHasMeaningfulEditorHtml(html) {
+        html = String(html || '').trim();
+        if (!html) {
+            return false;
+        }
+        if (/<(img|picture|video|audio|iframe|embed|object|figure|svg)\b/i.test(html)) {
+            return true;
+        }
+        return html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() !== '';
+    }
+
+    function valueHasMeaningfulContent(value) {
+        if (typeof value === 'string') {
+            if (value.indexOf('<') !== -1) {
+                return stringHasMeaningfulEditorHtml(value);
+            }
+            return value.trim() !== '';
+        }
+        if (typeof value === 'number' && !isNaN(value)) {
+            return true;
+        }
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            return Object.keys(value).some(function (nestedKey) {
+                return valueHasMeaningfulContent(value[nestedKey]);
+            });
+        }
+        if (Array.isArray(value) && value.length) {
+            return value.some(function (item) {
+                return rowObjectHasMeaningfulContent(item);
+            });
+        }
+        return false;
+    }
+
+    function rowObjectHasMeaningfulContent(row) {
+        if (!row || typeof row !== 'object') {
+            return false;
+        }
+        return Object.keys(row).some(function (leafKey) {
+            return valueHasMeaningfulContent(row[leafKey]);
+        });
+    }
+
     function collectRoot($wrap) {
         var $list = $wrap.find('> ul[data-sto-adv-rep-list]').first();
         var rows = [];
@@ -185,6 +232,151 @@
             var $b = rowBody($(this));
             rows.push(collectItemBody($b));
         });
+        return rows;
+    }
+
+    /**
+     * WooCommerce product data: read each row from named leaf inputs (survives disabled hidden JSON + stale React).
+     *
+     * @param {JQuery} $top `.sto-adv-rep`
+     * @return {Array<Object>|null}
+     */
+    function ensureLeafSubmitNames($top) {
+        var fieldId = String(fieldRow($top).attr('data-sto-field-id') || '');
+        if (!fieldId || String($top.attr('data-sto-adv-rep-submit-leaves') || '') !== '1') {
+            return;
+        }
+        $top
+            .children('ul[data-sto-adv-rep-list]')
+            .first()
+            .children('li[data-sto-adv-rep-item]')
+            .each(function (rowIndex) {
+                reindexRootItemSubmitLeafNames($(this), fieldId, rowIndex);
+            });
+    }
+
+    function collectRootFromLeafPostNames($top) {
+        if (String($top.attr('data-sto-adv-rep-submit-leaves') || '') !== '1') {
+            return null;
+        }
+        var fieldId = String(fieldRow($top).attr('data-sto-field-id') || '');
+        if (!fieldId) {
+            return null;
+        }
+        ensureLeafSubmitNames($top);
+        var rowsByIndex = {};
+        var $list = $top.find('> ul[data-sto-adv-rep-list]').first();
+        $list.children('li[data-sto-adv-rep-item]').each(function (rowIndex) {
+            var $row = $(this);
+            $row.find('[data-sto-adv-rep-leaf]').each(function () {
+                var $leaf = $(this);
+                var leafKey = String($leaf.attr('data-sto-adv-rep-key') || '').trim();
+                if (!leafKey) {
+                    return;
+                }
+                var $input = $leaf
+                    .find('[data-sto-adv-rep-input], textarea.wp-editor-area')
+                    .first();
+                var expectedName = leafSubmitName(fieldId, rowIndex, leafKey);
+                if ($input.length && expectedName && $input.attr('name') !== expectedName) {
+                    $input.attr('name', expectedName);
+                }
+                if ($input.length && ($leaf.attr('data-sto-adv-rep-kind') || '') === 'editor') {
+                    var editorHtml = readLeaf($leaf);
+                    $input.val(editorHtml);
+                }
+            });
+            rowsByIndex[rowIndex] = collectItemBody(rowBody($row));
+        });
+        var ordered = [];
+        Object.keys(rowsByIndex)
+            .sort(function (left, right) {
+                return Number(left) - Number(right);
+            })
+            .forEach(function (indexKey) {
+                ordered.push(rowsByIndex[indexKey]);
+            });
+        return ordered;
+    }
+
+    /**
+     * Merge two row objects leaf-by-leaf (prefer non-empty / longer HTML).
+     *
+     * @param {Object} primary
+     * @param {Object} fallback
+     * @return {Object}
+     */
+    function mergeRepeaterRowObjects(primary, fallback) {
+        var merged = Object.assign({}, primary || {});
+        if (!fallback || typeof fallback !== 'object') {
+            return merged;
+        }
+        Object.keys(fallback).forEach(function (leafKey) {
+            var primaryValue = merged[leafKey];
+            var fallbackValue = fallback[leafKey];
+            if (!valueHasMeaningfulContent(primaryValue) && valueHasMeaningfulContent(fallbackValue)) {
+                merged[leafKey] = fallbackValue;
+                return;
+            }
+            if (
+                typeof primaryValue === 'string' &&
+                typeof fallbackValue === 'string' &&
+                valueHasMeaningfulContent(fallbackValue) &&
+                fallbackValue.length > primaryValue.length
+            ) {
+                merged[leafKey] = fallbackValue;
+            }
+        });
+        return merged;
+    }
+
+    /**
+     * Merge DOM-collected rows with named leaf POST rows per index (WooCommerce product save).
+     *
+     * @param {Array<Object>} primaryRows
+     * @param {Array<Object>|null} fallbackRows
+     * @return {Array<Object>}
+     */
+    function mergeRepeaterRowsByIndex(primaryRows, fallbackRows) {
+        var primary = primaryRows || [];
+        var fallback = fallbackRows || [];
+        var rowCount = Math.max(primary.length, fallback.length);
+        var merged = [];
+        var rowIndex;
+
+        for (rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+            var primaryRow = primary[rowIndex] || {};
+            var fallbackRow = fallback[rowIndex] || {};
+            if (rowObjectHasMeaningfulContent(fallbackRow) && !rowObjectHasMeaningfulContent(primaryRow)) {
+                merged.push(fallbackRow);
+            } else if (rowObjectHasMeaningfulContent(primaryRow) && !rowObjectHasMeaningfulContent(fallbackRow)) {
+                merged.push(primaryRow);
+            } else {
+                merged.push(mergeRepeaterRowObjects(primaryRow, fallbackRow));
+            }
+        }
+
+        return merged;
+    }
+
+    /**
+     * Build repeater rows for hidden JSON — flush all block editors first, retry once if still empty.
+     *
+     * @param {JQuery} $top `.sto-adv-rep`
+     * @return {Array<Object>}
+     */
+    function collectRootForSubmit($top) {
+        if (typeof window.stoSaveRepeaterTinyMceEditors === 'function') {
+            window.stoSaveRepeaterTinyMceEditors($top);
+        } else if (typeof window.stoSaveVisibleTinyMceEditors === 'function') {
+            window.stoSaveVisibleTinyMceEditors($top);
+        }
+        ensureLeafSubmitNames($top);
+        var rows = mergeRepeaterRowsByIndex(collectRoot($top), collectRootFromLeafPostNames($top));
+        if (rows.length && rows.some(rowObjectHasMeaningfulContent)) {
+            return rows;
+        }
+        rows = mergeRepeaterRowsByIndex(collectRoot($top), collectRootFromLeafPostNames($top));
         return rows;
     }
 
@@ -198,7 +390,7 @@
         if (!$hid.length) {
             return;
         }
-        var rows = collectRoot($top);
+        var rows = collectRootForSubmit($top);
         $hid.val(JSON.stringify(rows)).trigger('change');
     }
 
@@ -221,17 +413,20 @@
             } else {
                 $h.trigger('change');
             }
-        } else if (k === 'rich_modern_editor') {
-            $leaf.find('.sto-rich-modern-editor__input').first().val('').trigger('change');
-            if (typeof window.stoDestroyRichModernEditors === 'function') {
-                window.stoDestroyRichModernEditors($leaf);
+        } else if (k === 'editor') {
+            var $editorArea = $leaf.find('textarea.wp-editor-area').first();
+            $editorArea.val('').trigger('change');
+            if (window.tinymce) {
+                var editorId = String($editorArea.attr('id') || '');
+                var tinyEditor = editorId ? window.tinymce.get(editorId) : null;
+                if (tinyEditor && typeof tinyEditor.setContent === 'function') {
+                    var editorContainer =
+                        typeof tinyEditor.getContainer === 'function' ? tinyEditor.getContainer() : null;
+                    if (editorContainer && $leaf[0].contains(editorContainer)) {
+                        tinyEditor.setContent('');
+                    }
+                }
             }
-            $leaf.find('.sto-rich-modern-editor').each(function () {
-                var $wrap = $(this);
-                $wrap.removeData('stoRichModernMounted stoRichModernRoot');
-                $wrap.removeClass('sto-rich-modern-editor--initialized');
-                $wrap.find('.sto-rich-modern-editor__mount').empty();
-            });
         } else {
             $leaf.find('[data-sto-adv-rep-input]').val('');
         }
@@ -288,28 +483,6 @@
      *
      * @param {JQuery} $root
      */
-    function prepareRepeaterRichModernLeaves($root) {
-        if (!$root || !$root.length) {
-            return;
-        }
-        $root.find('.sto-rich-modern-editor[data-sto-rich-modern-editor]').each(function () {
-            var $wrap = $(this);
-            if (typeof window.stoDestroyRichModernEditors === 'function') {
-                window.stoDestroyRichModernEditors($wrap);
-            }
-            $wrap.removeData('stoRichModernMounted stoRichModernRoot');
-            $wrap.removeClass('sto-rich-modern-editor--initialized');
-            $wrap.find('.sto-rich-modern-editor__mount').empty();
-        });
-    }
-
-    function refreshRichModernEditorsForScope($scope) {
-        if (!$scope || !$scope.length || typeof window.stoInitRichModernEditors !== 'function') {
-            return;
-        }
-        window.stoInitRichModernEditors($scope);
-    }
-
     function prepareRepeaterSelectLeaves($root) {
         if (!$root || !$root.length) {
             return;
@@ -348,6 +521,50 @@
      * @param {string} fieldId
      * @param {number} newIndex 0-based index in the root list
      */
+    function leafSubmitName(fieldId, rowIndex, leafKey) {
+        if (!fieldId || rowIndex < 0 || !leafKey) {
+            return '';
+        }
+        return 'sto_options_adv_rep_leaves[' + fieldId + '][' + rowIndex + '][' + leafKey + ']';
+    }
+
+    function reindexRootItemSubmitLeafNames($li, fieldId, rowIndex) {
+        var $rep = $li.closest('.sto-adv-rep');
+        if (!$rep.length || String($rep.attr('data-sto-adv-rep-submit-leaves') || '') !== '1') {
+            return;
+        }
+        $li.find('[data-sto-adv-rep-leaf]').each(function () {
+            var leafKey = String($(this).attr('data-sto-adv-rep-key') || '').trim();
+            if (!leafKey) {
+                return;
+            }
+            var $input = $(this).find('[data-sto-adv-rep-input], textarea.wp-editor-area').first();
+            if ($input.length) {
+                $input.attr('name', leafSubmitName(fieldId, rowIndex, leafKey));
+            }
+        });
+    }
+
+    /**
+     * Replace `{fieldId}_{rowIndex}_…` with `{fieldId}_{newIndex}_…` in a token (textarea, wrap, qt toolbar, …).
+     *
+     * @param {string} token
+     * @param {string} fieldId
+     * @param {number} newIndex
+     * @return {string}
+     */
+    function applyRowIndexToStoFieldId(token, fieldId, newIndex) {
+        var rowPrefix = fieldId + '_';
+        token = String(token || '');
+        if (token.indexOf(rowPrefix) !== 0) {
+            return token;
+        }
+        var after = token.slice(rowPrefix.length);
+        var sep = after.indexOf('_');
+        var rest = sep === -1 ? '' : after.slice(sep + 1);
+        return rest === '' ? fieldId + '_' + newIndex : fieldId + '_' + newIndex + '_' + rest;
+    }
+
     function reindexRootItemDomIds($li, fieldId, newIndex) {
         if (!fieldId) {
             return;
@@ -356,28 +573,40 @@
         $li.find('[id]').addBack().filter('[id]').each(function () {
             var $el = $(this);
             var id = String($el.attr('id') || '');
-            if (id.indexOf(rowPrefix) !== 0) {
-                return;
+            var newId = '';
+            if (id.indexOf(rowPrefix) === 0) {
+                newId = applyRowIndexToStoFieldId(id, fieldId, newIndex);
+            } else if (id.indexOf('wp-' + rowPrefix) === 0) {
+                newId = 'wp-' + applyRowIndexToStoFieldId(id.slice(3), fieldId, newIndex);
+            } else if (id.indexOf('qt_' + rowPrefix) === 0) {
+                newId = 'qt_' + applyRowIndexToStoFieldId(id.slice(3), fieldId, newIndex);
             }
-            var after = id.slice(rowPrefix.length);
-            var sep = after.indexOf('_');
-            var rest = sep === -1 ? '' : after.slice(sep + 1);
-            var newId = rest === '' ? fieldId + '_' + newIndex : fieldId + '_' + newIndex + '_' + rest;
-            if (newId !== id) {
+            if (newId && newId !== id) {
                 $el.attr('id', newId);
             }
         });
+        $li.find('[data-wp-editor-id]').each(function () {
+            var $el = $(this);
+            var editorId = String($el.attr('data-wp-editor-id') || '');
+            var nextId = applyRowIndexToStoFieldId(editorId, fieldId, newIndex);
+            if (nextId && nextId !== editorId) {
+                $el.attr('data-wp-editor-id', nextId);
+            }
+        });
+        $li.find('button.insert-media.add_media').each(function () {
+            var $btn = $(this);
+            var editorId = String($btn.data('editor') || '');
+            var nextId = applyRowIndexToStoFieldId(editorId, fieldId, newIndex);
+            if (nextId && nextId !== editorId) {
+                $btn.data('editor', nextId);
+            }
+        });
+        reindexRootItemSubmitLeafNames($li, fieldId, newIndex);
         $li.find('label[for]').each(function () {
             var $label = $(this);
             var forAttr = String($label.attr('for') || '');
-            if (forAttr.indexOf(rowPrefix) !== 0) {
-                return;
-            }
-            var after = forAttr.slice(rowPrefix.length);
-            var sep = after.indexOf('_');
-            var rest = sep === -1 ? '' : after.slice(sep + 1);
-            var newFor = rest === '' ? fieldId + '_' + newIndex : fieldId + '_' + newIndex + '_' + rest;
-            if (newFor !== forAttr) {
+            var newFor = applyRowIndexToStoFieldId(forAttr, fieldId, newIndex);
+            if (newFor && newFor !== forAttr) {
                 $label.attr('for', newFor);
             }
         });
@@ -457,7 +686,9 @@
         });
         $toggle.attr('aria-expanded', 'true');
         $toggle.find('.sto-adv-rep__chev').removeClass('fa-chevron-down').addClass('fa-chevron-up');
-        refreshRichModernEditorsForScope($body);
+        if (typeof window.stoRefreshClassicEditorsForScope === 'function') {
+            window.stoRefreshClassicEditorsForScope($body);
+        }
     }
 
     function refreshSelect2ForFieldRow($fromEl) {
@@ -510,6 +741,7 @@
             placeholder: 'sto-adv-rep__item sto-adv-rep__item--placeholder',
             forcePlaceholderSize: true,
             update: function () {
+                renumberItems($list);
                 syncFromAny($list);
             }
         });
@@ -607,8 +839,13 @@
             ? String(i18n.nestedItemLabel != null ? i18n.nestedItemLabel : 'Nested item')
             : String(i18n.itemLabel != null ? i18n.itemLabel : 'Item');
         var titleKey = titleViewKey($wrap);
+        var fieldId = String(fieldRow($list).attr('data-sto-field-id') || '');
         $list.children('li[data-sto-adv-rep-item]').each(function (idx) {
-            rowToggleTextEl($(this), sub).text(resolveRowToggleLabel($(this), idx, base, titleKey));
+            var $row = $(this);
+            rowToggleTextEl($row, sub).text(resolveRowToggleLabel($row, idx, base, titleKey));
+            if (!sub && fieldId) {
+                reindexRootItemSubmitLeafNames($row, fieldId, idx);
+            }
         });
     }
 
@@ -667,7 +904,9 @@
                     });
                     refreshSelect2ForFieldRow($btn);
                     refreshIconSelectForScope($body);
-                    refreshRichModernEditorsForScope($body);
+                    if (typeof window.stoRefreshClassicEditorsForScope === 'function') {
+                        window.stoRefreshClassicEditorsForScope($body);
+                    }
                 });
                 $btn.attr('aria-expanded', 'true');
                 $btn.find('.sto-adv-rep__chev').removeClass('fa-chevron-down').addClass('fa-chevron-up');
@@ -688,17 +927,24 @@
             var $proto = $list.children('li[data-sto-adv-rep-item]').first().clone(true, false);
             stripRepData($proto);
             prepareRepeaterSelectLeaves($proto);
-            prepareRepeaterRichModernLeaves($proto);
-            clearItem($proto);
             var newIndex = $list.children('li[data-sto-adv-rep-item]').length;
             var isSublist = $list.attr('data-sto-adv-rep-sublist') === '1';
             var $fieldRow = fieldRow($w);
             var fieldId = String($fieldRow.attr('data-sto-field-id') || '');
+            if (!isSublist && fieldId) {
+                reindexRootItemDomIds($proto, fieldId, newIndex);
+                if (typeof window.stoStripRepeaterClassicEditorLeaves === 'function') {
+                    window.stoStripRepeaterClassicEditorLeaves($proto);
+                }
+                clearItem($proto);
+            }
             $list.append($proto);
             if (isSublist) {
                 reindexNestedItemDomIds($proto, fieldId, $w);
-            } else {
-                reindexRootItemDomIds($proto, fieldId, newIndex);
+                if (typeof window.stoStripRepeaterClassicEditorLeaves === 'function') {
+                    window.stoStripRepeaterClassicEditorLeaves($proto);
+                }
+                clearItem($proto);
             }
             renumberItems($list);
             expandRepeaterRow($proto);
@@ -707,12 +953,22 @@
                 bindSortable($(this));
             });
             syncFromAny($w);
+            if (typeof window.stoEnsureWcRepeaterPostLevelHiddens === 'function') {
+                window.stoEnsureWcRepeaterPostLevelHiddens();
+            }
             window.setTimeout(function () {
                 refreshSelect2ForScope($proto);
                 refreshIconSelectForScope($proto);
-                refreshRichModernEditorsForScope($proto);
+                if (typeof window.stoRefreshClassicEditorsForScope === 'function') {
+                    window.stoRefreshClassicEditorsForScope($proto);
+                }
                 applyAdvRepLeafRequiredVisibility($fieldRow);
-            }, 0);
+            }, 50);
+            window.setTimeout(function () {
+                if (typeof window.stoRefreshClassicEditorsForScope === 'function') {
+                    window.stoRefreshClassicEditorsForScope($proto);
+                }
+            }, 350);
         });
 
         /**
@@ -757,7 +1013,7 @@
 
         $fieldRow.on(
             'input.stoAdvRep change.stoAdvRep',
-            '[data-sto-adv-rep-input], [data-sto-adv-rep-select], [data-sto-adv-rep-switcher], [data-sto-adv-rep-icon], .sto-rich-modern-editor__input',
+            '[data-sto-adv-rep-input], [data-sto-adv-rep-select], [data-sto-adv-rep-switcher], [data-sto-adv-rep-icon]',
             function () {
                 var $t = $(this);
                 if ($t.is('[data-sto-adv-rep-switcher]')) {
@@ -796,9 +1052,33 @@
     window.stoSyncAdvancedRepeaterFields = function ($scope) {
         var $ctx = $scope && $scope.length ? $scope : $(document);
         $ctx.find('.sto-field-row-advanced-repeater').each(function () {
-            syncFromAny($(this));
+            var $fieldRow = $(this);
+            var $top = rootRepeaterWrap($fieldRow);
+            var $hid = rootHidden($fieldRow);
+            if ($top.length && $hid.length) {
+                var rows = collectRootForSubmit($top);
+                $hid.prop('disabled', false).removeAttr('disabled');
+                $hid.val(JSON.stringify(rows)).trigger('change');
+            } else {
+                syncFromAny($fieldRow);
+            }
         });
+        if (typeof window.stoSyncWcRepeaterPostLevelHiddens === 'function') {
+            window.stoSyncWcRepeaterPostLevelHiddens();
+        }
     };
+
+    if (!window.stoAdvRepSubmitSyncBound) {
+        window.stoAdvRepSubmitSyncBound = true;
+        $(document).on('submit.stoAdvRepPersist', '#post', function () {
+            if (typeof window.stoSaveRepeaterTinyMceEditors === 'function') {
+                window.stoSaveRepeaterTinyMceEditors($(this));
+            }
+            if (typeof window.stoSyncAdvancedRepeaterFields === 'function') {
+                window.stoSyncAdvancedRepeaterFields($(this));
+            }
+        });
+    }
 
     window.stoInitAdvancedRepeaterFields = function ($scope) {
         var $ctx = $scope && $scope.length ? $scope : $(document);
@@ -810,9 +1090,22 @@
             }
             bindSortablesUnderFieldRow($fieldRow);
             applyAdvRepLeafRequiredVisibility($fieldRow);
+            var fieldId = String($fieldRow.attr('data-sto-field-id') || '');
+            var $top = rootRepeaterWrap($fieldRow);
+            if ($top.length && fieldId && String($top.attr('data-sto-adv-rep-submit-leaves') || '') === '1') {
+                $top
+                    .children('ul[data-sto-adv-rep-list]')
+                    .first()
+                    .children('li[data-sto-adv-rep-item]')
+                    .each(function (rowIndex) {
+                        reindexRootItemSubmitLeafNames($(this), fieldId, rowIndex);
+                    });
+            }
             $fieldRow.find('[data-sto-adv-rep-body]:visible').each(function () {
-                refreshRichModernEditorsForScope($(this));
             });
+            if (typeof window.stoInitAdvancedRepeaterEditors === 'function') {
+                window.stoInitAdvancedRepeaterEditors($fieldRow);
+            }
         });
     };
 })(jQuery);

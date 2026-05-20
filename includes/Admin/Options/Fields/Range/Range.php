@@ -2,8 +2,9 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\Range;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
-
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\UnitFieldStoredJson;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
@@ -17,11 +18,11 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Range + numeric value with configurable units. Stored as JSON per field or per breakpoint.
  *
- * **Default** may be a bare number string (e.g. **`'5'`**): **`u`** is taken from the first **`units`** entry (so **`units` => array( 'custom' )** + **`'default' => '5'`** is enough; no need for a full **`v` / `u` / `c`** array).
+ * **Default** may be a bare number string (e.g. **`'5'`**): **`unit`** is taken from the first **`units`** entry (so **`units` => array( 'custom' )** + **`'default' => '5'`** is enough; no need for a full **`value` / `unit` / `custom_suffix`** array).
  *
- * Built-in unit keys: **px**, **%**, **rem**, **em**, **custom** (suffix in `c`, e.g. `vw`, `ch`).
+ * Built-in unit keys: **px**, **%**, **rem**, **em**, **custom** (suffix in **`custom_suffix`**, e.g. `vw`, `ch`). Legacy stored keys **`v`**, **`u`**, **`c`** are read on load only.
  * Register **`units`** as any non-empty ordered subset (e.g. only `rem`, or `px` + `em`, or `custom` alone).
- * Optional **`unit_label`**: plain-text suffix after the number in the admin UI (e.g. `PAGE` for “pages visited”); not stored in JSON. With **`units` => `custom` only** and a label, the CUSTOM chip and suffix field are hidden (`c` stays empty).
+ * Optional **`unit_label`**: plain-text suffix after the number in the admin UI (e.g. `PAGE` for “pages visited”); not stored in JSON. With **`units` => `custom` only** and a label, the CUSTOM chip and suffix field are hidden (**`custom_suffix`** stays empty).
  */
 final class Range {
 	use SingletonTrait;
@@ -54,7 +55,7 @@ final class Range {
 	/**
 	 * Register a range field.
 	 *
-	 * Keys: section_slug, id, title?, description?, **default** — scalar **`760`**, **`760px`**, **`5`** (number alone uses the first **`units`** entry as `u`), or array **`v` / `u` / `c`**,
+	 * Keys: section_slug, id, title?, description?, **default** — scalar **`760`**, **`760px`**, **`5`** (number alone uses the first **`units`** entry as **`unit`**), or array **`value` / `unit` / `custom_suffix`**,
 	 * min (default 0), max (default 1000), step (default 1), **units?** => ordered non-empty subset of **px**, **%**, **rem**, **em**, **custom** (default: all five). One entry = locked unit (no toggles). **`custom`** alone = suffix field only.
 	 * **unit_label?** => optional short string shown after the number (not saved; use with dimensionless counts). With **`units` => array( 'custom' )** and **unit_label**, the suffix input and CUSTOM badge are omitted.
 	 * wrapper_class?, required?, group?, tooltip?, optional responsive + device (see ResponsiveConfig).
@@ -95,6 +96,8 @@ final class Range {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -219,70 +222,80 @@ final class Range {
 	/**
 	 * @param string               $raw
 	 * @param array<string, mixed>|null $field Field definition (required for clamp / units).
-	 * @return string JSON {v,u,c}
+	 * @return string JSON {value,unit,custom_suffix}
 	 */
 	public function sanitize_stored_value( $raw, $field = null ) {
 		if ( ! is_array( $field ) ) {
-			return wp_json_encode( array( 'v' => '', 'u' => 'px', 'c' => '' ) );
+			return wp_json_encode( UnitFieldStoredJson::encode_range_tuple( array( 'value' => '', 'unit' => 'px', 'custom_suffix' => '' ) ) );
 		}
 
 		$allowed = isset( $field['units_allowed'] ) && is_array( $field['units_allowed'] ) ? $field['units_allowed'] : self::UNITS;
 		$min     = isset( $field['min'] ) ? (float) $field['min'] : 0.0;
 		$max     = isset( $field['max'] ) ? (float) $field['max'] : 1000.0;
 		$step    = isset( $field['step'] ) ? (float) $field['step'] : 1.0;
-		$def     = isset( $field['default_tuple'] ) && is_array( $field['default_tuple'] ) ? $field['default_tuple'] : array( 'v' => '', 'u' => (string) ( $allowed[0] ?? 'px' ), 'c' => '' );
+		$def     = isset( $field['default_tuple'] ) && is_array( $field['default_tuple'] ) ? $field['default_tuple'] : array( 'value' => '', 'unit' => (string) ( $allowed[0] ?? 'px' ), 'custom_suffix' => '' );
 
 		$tuple = $this->parse_json_cell( is_string( $raw ) ? $raw : '', $allowed );
 		if ( $tuple === null ) {
 			$tuple = $def;
 		}
 
-		$tuple['u'] = in_array( $tuple['u'], $allowed, true ) ? $tuple['u'] : (string) ( $allowed[0] ?? 'px' );
-		$tuple['c'] = $this->sanitize_custom_suffix( (string) $tuple['c'] );
+		$tuple['unit'] = in_array( $tuple['unit'], $allowed, true ) ? $tuple['unit'] : (string) ( $allowed[0] ?? 'px' );
+		$tuple['custom_suffix'] = $this->sanitize_custom_suffix( (string) $tuple['custom_suffix'] );
 
-		$v_str = trim( (string) $tuple['v'] );
-		if ( $v_str === '' ) {
-			$out = array( 'v' => '', 'u' => $tuple['u'], 'c' => $tuple['u'] === 'custom' ? $tuple['c'] : '' );
-			$ul  = isset( $field['unit_label'] ) ? (string) $field['unit_label'] : '';
+		$value_str = trim( (string) $tuple['value'] );
+		if ( $value_str === '' ) {
+			$out = UnitFieldStoredJson::encode_range_tuple(
+				array(
+					'value'         => '',
+					'unit'          => $tuple['unit'],
+					'custom_suffix' => $tuple['unit'] === 'custom' ? $tuple['custom_suffix'] : '',
+				)
+			);
+			$ul = isset( $field['unit_label'] ) ? (string) $field['unit_label'] : '';
 			if ( $this->range_label_replaces_custom_suffix_ui( $allowed, $ul ) ) {
-				$out['c'] = '';
+				$out['custom_suffix'] = '';
 			}
 
 			return wp_json_encode( $out );
 		}
 
-		if ( ! is_numeric( $v_str ) ) {
+		if ( ! is_numeric( $value_str ) ) {
 			$fallback = $def;
-			if ( ! is_numeric( (string) $fallback['v'] ) ) {
-				$fallback['v'] = '';
+			if ( ! is_numeric( (string) $fallback['value'] ) ) {
+				$fallback['value'] = '';
 			}
 
-			$fb = array(
-				'v' => (string) $fallback['v'],
-				'u' => in_array( $fallback['u'], $allowed, true ) ? $fallback['u'] : (string) ( $allowed[0] ?? 'px' ),
-				'c' => $fallback['u'] === 'custom' ? $this->sanitize_custom_suffix( (string) $fallback['c'] ) : '',
+			$fb = UnitFieldStoredJson::encode_range_tuple(
+				array(
+					'value'         => (string) $fallback['value'],
+					'unit'          => in_array( $fallback['unit'], $allowed, true ) ? $fallback['unit'] : (string) ( $allowed[0] ?? 'px' ),
+					'custom_suffix' => $fallback['unit'] === 'custom' ? $this->sanitize_custom_suffix( (string) $fallback['custom_suffix'] ) : '',
+				)
 			);
 			$ul = isset( $field['unit_label'] ) ? (string) $field['unit_label'] : '';
 			if ( $this->range_label_replaces_custom_suffix_ui( $allowed, $ul ) ) {
-				$fb['c'] = '';
+				$fb['custom_suffix'] = '';
 			}
 
 			return wp_json_encode( $fb );
 		}
 
-		$num = (float) $v_str;
+		$num = (float) $value_str;
 		$num = max( $min, min( $max, $num ) );
 		$num = $this->round_to_step( $num, $step > 0 ? $step : 1.0 );
 
-		$out = array(
-			'v' => $this->format_number_string( $num, $step ),
-			'u' => $tuple['u'],
-			'c' => $tuple['u'] === 'custom' ? $tuple['c'] : '',
+		$out = UnitFieldStoredJson::encode_range_tuple(
+			array(
+				'value'         => $this->format_number_string( $num, $step ),
+				'unit'          => $tuple['unit'],
+				'custom_suffix' => $tuple['unit'] === 'custom' ? $tuple['custom_suffix'] : '',
+			)
 		);
 
 		$ul = isset( $field['unit_label'] ) ? (string) $field['unit_label'] : '';
 		if ( $this->range_label_replaces_custom_suffix_ui( $allowed, $ul ) ) {
-			$out['c'] = '';
+			$out['custom_suffix'] = '';
 		}
 
 		return wp_json_encode( $out );
@@ -290,7 +303,7 @@ final class Range {
 
 	/**
 	 * Turn stored JSON into a CSS length (e.g. `760px`, `12rem`, `50%`, `10vw` when unit is custom and suffix is `vw`).
-	 * Custom unit with empty suffix returns the numeric string only (not a CSS length); use decoded **`v`** for counts (e.g. with **`unit_label`** in admin).
+	 * Custom unit with empty suffix returns the numeric string only (not a CSS length); use decoded **`value`** for counts (e.g. with **`unit_label`** in admin).
 	 *
 	 * @param string $json_or_empty
 	 * @return string
@@ -304,17 +317,18 @@ final class Range {
 		if ( ! is_array( $dec ) ) {
 			return '';
 		}
-		$v = isset( $dec['v'] ) ? trim( (string) $dec['v'] ) : '';
-		$u = isset( $dec['u'] ) ? sanitize_key( (string) $dec['u'] ) : 'px';
-		$c = isset( $dec['c'] ) ? (string) $dec['c'] : '';
-		if ( $v === '' ) {
+		$tuple = UnitFieldStoredJson::parse_range_decoded( $dec, self::UNITS );
+		$value = $tuple['value'];
+		$unit  = $tuple['unit'];
+		$custom_suffix = $tuple['custom_suffix'];
+		if ( $value === '' ) {
 			return '';
 		}
-		if ( $u === 'custom' ) {
-			return $v . $c;
+		if ( $unit === 'custom' ) {
+			return $value . $custom_suffix;
 		}
-		if ( in_array( $u, array( 'px', '%', 'rem', 'em' ), true ) ) {
-			return $v . $u;
+		if ( in_array( $unit, array( 'px', '%', 'rem', 'em' ), true ) ) {
+			return $value . $unit;
 		}
 
 		return '';
@@ -412,14 +426,8 @@ final class Range {
 		$step         = (float) $field['step'];
 		$allowed      = isset( $field['units_allowed'] ) && is_array( $field['units_allowed'] ) ? $field['units_allowed'] : self::UNITS;
 		$units_json   = wp_json_encode( array_values( $allowed ) );
-		$def_tuple    = isset( $field['default_tuple'] ) && is_array( $field['default_tuple'] ) ? $field['default_tuple'] : array( 'v' => '', 'u' => (string) ( $allowed[0] ?? 'px' ), 'c' => '' );
-		$default_json = wp_json_encode(
-			array(
-				'v' => (string) $def_tuple['v'],
-				'u' => (string) $def_tuple['u'],
-				'c' => (string) $def_tuple['c'],
-			)
-		);
+		$def_tuple    = isset( $field['default_tuple'] ) && is_array( $field['default_tuple'] ) ? $field['default_tuple'] : array( 'value' => '', 'unit' => (string) ( $allowed[0] ?? 'px' ), 'custom_suffix' => '' );
+		$default_json = wp_json_encode( UnitFieldStoredJson::encode_range_tuple( $def_tuple ) );
 
 		$is_inner = ( 'group_inner' === $context );
 
@@ -445,7 +453,10 @@ final class Range {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -464,13 +475,7 @@ final class Range {
 				<?php
 				$value_map = $this->get_value_map( $field_id, $def_tuple, $bps_storage, $field );
 				$cur       = isset( $value_map[ $tabs_pane_bp ] ) ? $value_map[ $tabs_pane_bp ] : $def_tuple;
-				$json      = wp_json_encode(
-					array(
-						'v' => (string) $cur['v'],
-						'u' => (string) $cur['u'],
-						'c' => (string) $cur['c'],
-					)
-				);
+				$json      = wp_json_encode( UnitFieldStoredJson::encode_range_tuple( $cur ) );
 				$input_name = 'sto_options[' . $field_id . '][' . $tabs_pane_bp . ']';
 				$suffix     = $field_id . '_' . $tabs_pane_bp;
 				$this->render_range_control( $suffix, $input_name, $json, $default_json, $min, $max, $step, $allowed, $units_json, (string) ( $field['unit_label'] ?? '' ) );
@@ -484,13 +489,7 @@ final class Range {
 						$bp      = sanitize_key( (string) $bp );
 						$visible = ( 0 === (int) $i );
 						$cur     = isset( $value_map[ $bp ] ) ? $value_map[ $bp ] : $def_tuple;
-						$json    = wp_json_encode(
-							array(
-								'v' => (string) $cur['v'],
-								'u' => (string) $cur['u'],
-								'c' => (string) $cur['c'],
-							)
-						);
+						$json    = wp_json_encode( UnitFieldStoredJson::encode_range_tuple( $cur ) );
 						$input_name = 'sto_options[' . $field_id . '][' . $bp . ']';
 						$suffix     = $field_id . '_' . $bp;
 						ResponsiveControl::render_pane_start( $bp, $visible );
@@ -503,13 +502,7 @@ final class Range {
 			<?php else : ?>
 				<?php
 				$cur = $this->get_option_tuple( $field_id, $def_tuple, $field );
-				$json = wp_json_encode(
-					array(
-						'v' => (string) $cur['v'],
-						'u' => (string) $cur['u'],
-						'c' => (string) $cur['c'],
-					)
-				);
+				$json = wp_json_encode( UnitFieldStoredJson::encode_range_tuple( $cur ) );
 				$this->render_range_control( $field_id, 'sto_options[' . $field_id . ']', $json, $default_json, $min, $max, $step, $allowed, $units_json, (string) ( $field['unit_label'] ?? '' ) );
 				?>
 			<?php endif; ?>
@@ -536,17 +529,17 @@ final class Range {
 	private function render_range_control( $suffix, $input_name, $current_json, $default_json, $min, $max, $step, array $allowed, $units_json, $unit_label = '' ) {
 		$tuple = $this->parse_json_cell( $current_json, $allowed );
 		if ( $tuple === null ) {
-			$tuple = array( 'v' => '', 'u' => (string) ( $allowed[0] ?? 'px' ), 'c' => '' );
+			$tuple = array( 'value' => '', 'unit' => (string) ( $allowed[0] ?? 'px' ), 'custom_suffix' => '' );
 		}
-		$v_num    = is_numeric( $tuple['v'] ) ? (float) $tuple['v'] : $min;
-		$v_num    = max( $min, min( $max, $v_num ) );
-		$v_disp   = $tuple['v'] !== '' && is_numeric( $tuple['v'] ) ? $this->format_number_string( $v_num, $step ) : '';
-		$active_u = in_array( $tuple['u'], $allowed, true ) ? $tuple['u'] : $allowed[0];
+		$value_num    = is_numeric( $tuple['value'] ) ? (float) $tuple['value'] : $min;
+		$value_num    = max( $min, min( $max, $value_num ) );
+		$value_display = $tuple['value'] !== '' && is_numeric( $tuple['value'] ) ? $this->format_number_string( $value_num, $step ) : '';
+		$active_unit = in_array( $tuple['unit'], $allowed, true ) ? $tuple['unit'] : $allowed[0];
 		$step_attr = $this->step_html_attr( $step );
 		$range_id = 'sto-range-r-' . $suffix;
 		$num_id   = 'sto-range-n-' . $suffix;
 		$suf_id   = 'sto-range-c-' . $suffix;
-		$forced_u = 1 === count( $allowed ) ? (string) $allowed[0] : '';
+		$forced_unit = 1 === count( $allowed ) ? (string) $allowed[0] : '';
 		$unit_label = is_string( $unit_label ) ? $unit_label : '';
 		$suppress_suffix = $this->range_label_replaces_custom_suffix_ui( $allowed, $unit_label );
 		?>
@@ -561,8 +554,8 @@ final class Range {
 			<?php if ( $suppress_suffix ) : ?>
 				data-sto-range-custom-suffix="0"
 			<?php endif; ?>
-			<?php if ( $forced_u !== '' ) : ?>
-				data-sto-range-forced-unit="<?php echo esc_attr( $forced_u ); ?>"
+			<?php if ( $forced_unit !== '' ) : ?>
+				data-sto-range-forced-unit="<?php echo esc_attr( $forced_unit ); ?>"
 			<?php endif; ?>
 		>
 			<div class="sto-range__row">
@@ -574,8 +567,8 @@ final class Range {
 					min="<?php echo esc_attr( (string) $min ); ?>"
 					max="<?php echo esc_attr( (string) $max ); ?>"
 					step="<?php echo esc_attr( $step_attr ); ?>"
-					value="<?php echo esc_attr( $v_disp !== '' ? $v_disp : (string) $min ); ?>"
-					<?php echo $v_disp === '' ? ' data-sto-range-empty="1"' : ''; ?>
+					value="<?php echo esc_attr( $value_display !== '' ? $value_display : (string) $min ); ?>"
+					<?php echo $value_display === '' ? ' data-sto-range-empty="1"' : ''; ?>
 					aria-valuemin="<?php echo esc_attr( (string) $min ); ?>"
 					aria-valuemax="<?php echo esc_attr( (string) $max ); ?>"
 				/>
@@ -587,22 +580,22 @@ final class Range {
 					min="<?php echo esc_attr( (string) $min ); ?>"
 					max="<?php echo esc_attr( (string) $max ); ?>"
 					step="<?php echo esc_attr( $step_attr ); ?>"
-					value="<?php echo esc_attr( $v_disp ); ?>"
+					value="<?php echo esc_attr( $value_display ); ?>"
 					inputmode="decimal"
-					aria-label="<?php esc_attr_e( 'Value', 'simple-theme-options' ); ?>"
+					aria-label="<?php esc_attr_e( 'Value', 'topten-simple-theme-options' ); ?>"
 				/>
 				<?php if ( $unit_label !== '' ) : ?>
 					<span class="sto-range__unit-label"><?php echo esc_html( $unit_label ); ?></span>
 				<?php endif; ?>
 				<?php if ( ! $suppress_suffix ) : ?>
-				<div class="sto-range__units" role="group" aria-label="<?php esc_attr_e( 'Unit', 'simple-theme-options' ); ?>">
+				<div class="sto-range__units" role="group" aria-label="<?php esc_attr_e( 'Unit', 'topten-simple-theme-options' ); ?>">
 					<?php if ( count( $allowed ) > 1 ) : ?>
-						<?php foreach ( $allowed as $u ) : ?>
+						<?php foreach ( $allowed as $unit_option ) : ?>
 						<button
 							type="button"
-							class="sto-range__unit<?php echo $u === $active_u ? ' sto-is-active' : ''; ?>"
-							data-sto-range-unit="<?php echo esc_attr( $u ); ?>"
-						><?php echo esc_html( $this->format_unit_label( $u ) ); ?></button>
+							class="sto-range__unit<?php echo $unit_option === $active_unit ? ' sto-is-active' : ''; ?>"
+							data-sto-range-unit="<?php echo esc_attr( $unit_option ); ?>"
+						><?php echo esc_html( $this->format_unit_label( $unit_option ) ); ?></button>
 						<?php endforeach; ?>
 					<?php elseif ( 1 === count( $allowed ) ) : ?>
 						<span class="sto-range__unit-badge"><?php echo esc_html( $this->format_unit_label( $allowed[0] ) ); ?></span>
@@ -613,10 +606,10 @@ final class Range {
 					type="text"
 					class="sto-range__custom-suffix"
 					id="<?php echo esc_attr( $suf_id ); ?>"
-					value="<?php echo esc_attr( $tuple['c'] ); ?>"
-					placeholder="<?php esc_attr_e( 'e.g. vw', 'simple-theme-options' ); ?>"
+					value="<?php echo esc_attr( $tuple['custom_suffix'] ); ?>"
+					placeholder="<?php esc_attr_e( 'e.g. vw', 'topten-simple-theme-options' ); ?>"
 					autocomplete="off"
-					<?php echo ( $active_u === 'custom' && ! $suppress_suffix ) ? '' : ' hidden disabled'; ?>
+					<?php echo ( $active_unit === 'custom' && ! $suppress_suffix ) ? '' : ' hidden disabled'; ?>
 				/>
 			</div>
 			<input type="hidden" class="sto-range-value" name="<?php echo esc_attr( $input_name ); ?>" value="<?php echo esc_attr( $current_json ); ?>" />
@@ -626,7 +619,7 @@ final class Range {
 
 	/**
 	 * @param array<int, string> $breakpoints
-	 * @return array<string, array{v:string,u:string,c:string}>
+	 * @return array<string, array{value:string,unit:string,custom_suffix:string}>
 	 */
 	private function get_value_map( $field_id, array $default_tuple, array $breakpoints, array $field ) {
 		$allowed = isset( $field['units_allowed'] ) && is_array( $field['units_allowed'] ) ? $field['units_allowed'] : self::UNITS;
@@ -658,8 +651,8 @@ final class Range {
 
 	/**
 	 * @param array<int, string>                 $breakpoints
-	 * @param array{v:string,u:string,c:string} $tuple
-	 * @return array<string, array{v:string,u:string,c:string}>
+	 * @param array{value:string,unit:string,custom_suffix:string} $tuple
+	 * @return array<string, array{value:string,unit:string,custom_suffix:string}>
 	 */
 	private function fill_breakpoint_tuples( array $breakpoints, array $tuple ) {
 		$out = array();
@@ -672,8 +665,8 @@ final class Range {
 	}
 
 	/**
-	 * @param array{v:string,u:string,c:string} $default_tuple
-	 * @return array{v:string,u:string,c:string}
+	 * @param array{value:string,unit:string,custom_suffix:string} $default_tuple
+	 * @return array{value:string,unit:string,custom_suffix:string}
 	 */
 	private function get_option_tuple( $field_id, array $default_tuple, array $field ) {
 		$saved_options = get_option( 'sto_options', array() );
@@ -747,26 +740,24 @@ final class Range {
 	/**
 	 * @param mixed                $raw
 	 * @param array<int, string>   $allowed
-	 * @return array{v:string,u:string,c:string}|null
+	 * @return array{value:string,unit:string,custom_suffix:string}|null
 	 */
 	private function normalize_default_tuple( $raw, array $allowed ) {
-		$base = array( 'v' => '', 'u' => (string) ( $allowed[0] ?? 'px' ), 'c' => '' );
+		$base = array( 'value' => '', 'unit' => (string) ( $allowed[0] ?? 'px' ), 'custom_suffix' => '' );
 
 		if ( is_array( $raw ) ) {
-			$base['v'] = isset( $raw['v'] ) ? trim( (string) $raw['v'] ) : '';
-			$uu        = isset( $raw['u'] ) ? sanitize_key( (string) $raw['u'] ) : $base['u'];
-			$base['u'] = in_array( $uu, $allowed, true ) ? $uu : $base['u'];
-			$base['c'] = isset( $raw['c'] ) ? $this->sanitize_custom_suffix( (string) $raw['c'] ) : '';
+			$base = UnitFieldStoredJson::merge_range_default_partial( $raw, $base, $allowed );
+			$base['custom_suffix'] = $this->sanitize_custom_suffix( (string) $base['custom_suffix'] );
 		} elseif ( is_scalar( $raw ) ) {
 			$s = trim( (string) $raw );
 			if ( preg_match( '/^(-?[0-9]*\.?[0-9]+)\s*(px|%|rem|em)?$/i', $s, $m ) ) {
-				$base_u    = (string) ( $allowed[0] ?? 'px' );
-				$base['v'] = $m[1];
-				$uu        = isset( $m[2] ) && $m[2] !== '' ? strtolower( $m[2] ) : $base_u;
-				if ( $uu === 'percent' ) {
-					$uu = '%';
+				$default_unit = (string) ( $allowed[0] ?? 'px' );
+				$base['value'] = $m[1];
+				$parsed_unit   = isset( $m[2] ) && $m[2] !== '' ? strtolower( $m[2] ) : $default_unit;
+				if ( $parsed_unit === 'percent' ) {
+					$parsed_unit = '%';
 				}
-				$base['u'] = in_array( $uu, $allowed, true ) ? $uu : $base_u;
+				$base['unit'] = in_array( $parsed_unit, $allowed, true ) ? $parsed_unit : $default_unit;
 			} elseif ( $s !== '' ) {
 				$try = json_decode( $s, true );
 				if ( is_array( $try ) ) {
@@ -781,12 +772,12 @@ final class Range {
 	/**
 	 * @param string             $json
 	 * @param array<int, string> $allowed
-	 * @return array{v:string,u:string,c:string}|null
+	 * @return array{value:string,unit:string,custom_suffix:string}|null
 	 */
 	private function parse_json_cell( $json, $allowed ) {
 		$json = is_string( $json ) ? trim( $json ) : '';
 		if ( $json === '' ) {
-			return array( 'v' => '', 'u' => (string) ( $allowed[0] ?? 'px' ), 'c' => '' );
+			return array( 'value' => '', 'unit' => (string) ( $allowed[0] ?? 'px' ), 'custom_suffix' => '' );
 		}
 
 		$dec = json_decode( $json, true );
@@ -794,19 +785,10 @@ final class Range {
 			return null;
 		}
 
-		$v = isset( $dec['v'] ) ? trim( (string) $dec['v'] ) : '';
-		$u = isset( $dec['u'] ) ? sanitize_key( (string) $dec['u'] ) : (string) ( $allowed[0] ?? 'px' );
-		$c = isset( $dec['c'] ) ? $this->sanitize_custom_suffix( (string) $dec['c'] ) : '';
+		$tuple = UnitFieldStoredJson::parse_range_decoded( $dec, $allowed );
+		$tuple['custom_suffix'] = $this->sanitize_custom_suffix( (string) $tuple['custom_suffix'] );
 
-		if ( ! in_array( $u, $allowed, true ) ) {
-			$u = (string) ( $allowed[0] ?? 'px' );
-		}
-
-		return array(
-			'v' => $v,
-			'u' => $u,
-			'c' => $u === 'custom' ? $c : '',
-		);
+		return $tuple;
 	}
 
 	/**

@@ -24,6 +24,7 @@ final class Ajax {
             'sto_display_section_on_menu',
             'sto_save_theme_options_metabox',
             'sto_save_theme_options_term',
+            'sto_save_theme_options_customizer',
         );
     }
 
@@ -69,28 +70,28 @@ final class Ajax {
         check_ajax_referer( 'sto_save_theme_options_metabox', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( array( 'message' => __( 'You do not have permission to save Theme Settings.', 'simple-theme-options' ) ), 403 );
+            wp_send_json_error( array( 'message' => __( 'You do not have permission to save Theme Settings.', 'topten-simple-theme-options' ) ), 403 );
         }
 
         if ( ! OptionsMenu::instance()->should_show_theme_settings_metaboxes() ) {
-            wp_send_json_error( array( 'message' => __( 'Theme Settings meta box is disabled.', 'simple-theme-options' ) ), 400 );
+            wp_send_json_error( array( 'message' => __( 'Theme Settings meta box is disabled.', 'topten-simple-theme-options' ) ), 400 );
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $post_id = isset( $_POST['post_id'] ) ? absint( wp_unslash( $_POST['post_id'] ) ) : 0;
         if ( $post_id <= 0 || ! current_user_can( 'edit_post', $post_id ) ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid post.', 'simple-theme-options' ) ), 400 );
+            wp_send_json_error( array( 'message' => __( 'Invalid post.', 'topten-simple-theme-options' ) ), 400 );
         }
 
         $post = get_post( $post_id );
         if ( ! $post instanceof \WP_Post ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid post.', 'simple-theme-options' ) ), 400 );
+            wp_send_json_error( array( 'message' => __( 'Invalid post.', 'topten-simple-theme-options' ) ), 400 );
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $page = isset( $_POST['sto_ts_page'] ) ? sanitize_key( wp_unslash( $_POST['sto_ts_page'] ) ) : '';
         if ( $page === '' || ! ThemeSettingsMetabox::instance()->menu_root_allows_post_type( $page, (string) $post->post_type ) ) {
-            wp_send_json_error( array( 'message' => __( 'Theme Settings are not available for this screen.', 'simple-theme-options' ) ), 400 );
+            wp_send_json_error( array( 'message' => __( 'Theme Settings are not available for this screen.', 'topten-simple-theme-options' ) ), 400 );
         }
 
         check_admin_referer( 'sto_save_options_action', 'sto_save_options_nonce' );
@@ -98,7 +99,7 @@ final class Ajax {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $section_slug = isset( $_POST['sto_ts_section'] ) ? sanitize_key( wp_unslash( $_POST['sto_ts_section'] ) ) : '';
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized per field in persist_theme_settings_leaf().
         $posted_raw = isset( $_POST['sto_options'] ) && is_array( $_POST['sto_options'] ) ? wp_unslash( $_POST['sto_options'] ) : array();
 
         $result = OptionsMenu::instance()->persist_theme_settings_leaf( $page, $section_slug, $posted_raw, false, $post_id );
@@ -116,7 +117,7 @@ final class Ajax {
 
         wp_send_json_success(
             array(
-                'message' => __( 'Settings saved.', 'simple-theme-options' ),
+                'message' => __( 'Settings saved.', 'topten-simple-theme-options' ),
             )
         );
     }
@@ -128,11 +129,11 @@ final class Ajax {
         check_ajax_referer( 'sto_save_theme_options_term', 'nonce' );
 
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( array( 'message' => __( 'You do not have permission to save Theme Settings.', 'simple-theme-options' ) ), 403 );
+            wp_send_json_error( array( 'message' => __( 'You do not have permission to save Theme Settings.', 'topten-simple-theme-options' ) ), 403 );
         }
 
         if ( ! OptionsMenu::instance()->should_show_theme_settings_term_metaboxes() ) {
-            wp_send_json_error( array( 'message' => __( 'Theme Settings for terms is disabled.', 'simple-theme-options' ) ), 400 );
+            wp_send_json_error( array( 'message' => __( 'Theme Settings for terms is disabled.', 'topten-simple-theme-options' ) ), 400 );
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -142,13 +143,13 @@ final class Ajax {
 
         $term = get_term( $term_id, $taxonomy );
         if ( ! $term instanceof \WP_Term ) {
-            wp_send_json_error( array( 'message' => __( 'Invalid term.', 'simple-theme-options' ) ), 400 );
+            wp_send_json_error( array( 'message' => __( 'Invalid term.', 'topten-simple-theme-options' ) ), 400 );
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $page = isset( $_POST['sto_ts_page'] ) ? sanitize_key( wp_unslash( $_POST['sto_ts_page'] ) ) : '';
         if ( $page === '' || ! ThemeSettingsTermBox::instance()->menu_root_allows_taxonomy( $page, (string) $term->taxonomy ) ) {
-            wp_send_json_error( array( 'message' => __( 'Theme Settings are not available for this taxonomy.', 'simple-theme-options' ) ), 400 );
+            wp_send_json_error( array( 'message' => __( 'Theme Settings are not available for this taxonomy.', 'topten-simple-theme-options' ) ), 400 );
         }
 
         check_admin_referer( 'sto_save_options_action', 'sto_save_options_nonce' );
@@ -156,7 +157,7 @@ final class Ajax {
         // phpcs:ignore WordPress.Security.NonceVerification.Missing
         $section_slug = isset( $_POST['sto_ts_section'] ) ? sanitize_key( wp_unslash( $_POST['sto_ts_section'] ) ) : '';
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized per field in persist_theme_settings_leaf().
         $posted_raw = isset( $_POST['sto_options'] ) && is_array( $_POST['sto_options'] ) ? wp_unslash( $_POST['sto_options'] ) : array();
 
         $result = OptionsMenu::instance()->persist_theme_settings_leaf( $page, $section_slug, $posted_raw, false, 0, $term_id );
@@ -174,7 +175,55 @@ final class Ajax {
 
         wp_send_json_success(
             array(
-                'message' => __( 'Settings saved.', 'simple-theme-options' ),
+                'message' => __( 'Settings saved.', 'topten-simple-theme-options' ),
+            )
+        );
+    }
+
+    /**
+     * Save Theme Settings from the Customizer (active leaf form → global sto_options).
+     */
+    public function handle_sto_save_theme_options_customizer() {
+        check_ajax_referer( 'sto_save_theme_options_customizer', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'You do not have permission to save Theme Settings.', 'topten-simple-theme-options' ) ), 403 );
+        }
+
+        if ( ! \SimpleThemeOptions\Admin\ThemeSettingsDisplayLocations::instance()->is_customizer_enabled() ) {
+            wp_send_json_error( array( 'message' => __( 'Theme Settings are not enabled in the Customizer.', 'topten-simple-theme-options' ) ), 400 );
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $page = isset( $_POST['sto_ts_page'] ) ? sanitize_key( wp_unslash( $_POST['sto_ts_page'] ) ) : '';
+        if ( $page === '' || ! in_array( $page, OptionsMenu::instance()->get_registered_menu_slugs(), true ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid Theme Settings menu.', 'topten-simple-theme-options' ) ), 400 );
+        }
+
+        check_admin_referer( 'sto_save_options_action', 'sto_save_options_nonce' );
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $section_slug = isset( $_POST['sto_ts_section'] ) ? sanitize_key( wp_unslash( $_POST['sto_ts_section'] ) ) : '';
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized per field in persist_theme_settings_leaf().
+        $posted_raw = isset( $_POST['sto_options'] ) && is_array( $_POST['sto_options'] ) ? wp_unslash( $_POST['sto_options'] ) : array();
+
+        $result = OptionsMenu::instance()->persist_theme_settings_leaf( $page, $section_slug, $posted_raw, false );
+        if ( is_wp_error( $result ) ) {
+            $data = $result->get_error_data();
+            $msgs = ( is_array( $data ) && isset( $data['messages'] ) && is_array( $data['messages'] ) ) ? $data['messages'] : array( $result->get_error_message() );
+            wp_send_json_error(
+                array(
+                    'message'  => implode( ' ', array_map( 'strval', $msgs ) ),
+                    'messages' => $msgs,
+                ),
+                400
+            );
+        }
+
+        wp_send_json_success(
+            array(
+                'message' => __( 'Settings saved.', 'topten-simple-theme-options' ),
             )
         );
     }

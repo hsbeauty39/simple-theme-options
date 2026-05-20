@@ -152,6 +152,13 @@ final class ThemeSettingsDisplayLocations {
 		}
 	}
 
+	/**
+	 * Whether Theme Settings markup is rendering for the Customizer embed (not wp-admin SPA).
+	 */
+	public function is_customizer_surface(): bool {
+		return $this->current_surface === self::SURFACE_CUSTOMIZER;
+	}
+
 	public function is_customizer_enabled(): bool {
 		return $this->surface_has_keys( self::SURFACE_CUSTOMIZER );
 	}
@@ -383,28 +390,28 @@ final class ThemeSettingsDisplayLocations {
 			data-sto-import-display-locations="<?php echo esc_attr( $import_id ); ?>"
 		>
 			<p class="sto-display-location__intro">
-				<?php esc_html_e( 'Choose where the option keys from this import file appear. Turn a switch on to configure that location.', 'simple-theme-options' ); ?>
+				<?php esc_html_e( 'Choose where the option keys from this import file appear. Turn a switch on to configure that location.', 'topten-simple-theme-options' ); ?>
 			</p>
 			<?php
-			$this->render_location_row( 'admin', __( 'Theme Settings screen', 'simple-theme-options' ), $settings['admin']['enabled'], $import_id, $idsuf );
+			$this->render_location_row( 'admin', __( 'Theme Settings screen', 'topten-simple-theme-options' ), $settings['admin']['enabled'], $import_id, $idsuf );
 			$this->render_location_body(
 				'admin',
 				$settings['admin']['enabled'],
-				'<p class="sto-display-location__hint">' . esc_html__( 'Shows fields on the main Theme Settings admin menu (admin.php).', 'simple-theme-options' ) . '</p>'
+				'<p class="sto-display-location__hint">' . esc_html__( 'Shows fields on the main Theme Settings admin menu (admin.php).', 'topten-simple-theme-options' ) . '</p>'
 			);
 
-			$this->render_location_row( 'customizer', __( 'Customizer', 'simple-theme-options' ), $settings['customizer']['enabled'], $import_id, $idsuf );
+			$this->render_location_row( 'customizer', __( 'Customizer', 'topten-simple-theme-options' ), $settings['customizer']['enabled'], $import_id, $idsuf );
 			$this->render_location_body(
 				'customizer',
 				$settings['customizer']['enabled'],
-				'<p class="sto-display-location__hint">' . esc_html__( 'Adds options under Appearance → Customize for keys in this file.', 'simple-theme-options' ) . '</p>'
+				'<p class="sto-display-location__hint">' . esc_html__( 'Adds options under Appearance → Customize for keys in this file.', 'topten-simple-theme-options' ) . '</p>'
 			);
 
 			if ( $has_term ) {
-				$this->render_location_row( 'taxonomy', __( 'Taxonomy terms', 'simple-theme-options' ), $settings['taxonomy']['enabled'], $import_id, $idsuf );
+				$this->render_location_row( 'taxonomy', __( 'Taxonomy terms', 'topten-simple-theme-options' ), $settings['taxonomy']['enabled'], $import_id, $idsuf );
 				ob_start();
 				?>
-				<p class="sto-display-location__hint"><?php esc_html_e( 'Select taxonomies for keys in this file.', 'simple-theme-options' ); ?></p>
+				<p class="sto-display-location__hint"><?php esc_html_e( 'Select taxonomies for keys in this file.', 'topten-simple-theme-options' ); ?></p>
 				<ul class="sto-display-location__checks">
 					<?php foreach ( $this->get_selectable_taxonomies() as $row ) : ?>
 						<?php
@@ -432,10 +439,10 @@ final class ThemeSettingsDisplayLocations {
 			}
 
 			if ( $has_meta ) {
-				$this->render_location_row( 'metabox', __( 'Post editor metabox', 'simple-theme-options' ), $settings['metabox']['enabled'], $import_id, $idsuf );
+				$this->render_location_row( 'metabox', __( 'Post editor metabox', 'topten-simple-theme-options' ), $settings['metabox']['enabled'], $import_id, $idsuf );
 				ob_start();
 				?>
-				<p class="sto-display-location__hint"><?php esc_html_e( 'Select post types for keys in this file.', 'simple-theme-options' ); ?></p>
+				<p class="sto-display-location__hint"><?php esc_html_e( 'Select post types for keys in this file.', 'topten-simple-theme-options' ); ?></p>
 				<ul class="sto-display-location__checks">
 					<?php foreach ( $this->get_selectable_post_types() as $row ) : ?>
 						<?php
@@ -483,8 +490,8 @@ final class ThemeSettingsDisplayLocations {
 				>
 					<span class="sto-switcher__track" aria-hidden="true">
 						<span class="sto-switcher__knob"></span>
-						<span class="sto-switcher__label sto-switcher__label--on"><?php esc_html_e( 'ON', 'simple-theme-options' ); ?></span>
-						<span class="sto-switcher__label sto-switcher__label--off"><?php esc_html_e( 'OFF', 'simple-theme-options' ); ?></span>
+						<span class="sto-switcher__label sto-switcher__label--on"><?php esc_html_e( 'ON', 'topten-simple-theme-options' ); ?></span>
+						<span class="sto-switcher__label sto-switcher__label--off"><?php esc_html_e( 'OFF', 'topten-simple-theme-options' ); ?></span>
 					</span>
 				</button>
 			</div>

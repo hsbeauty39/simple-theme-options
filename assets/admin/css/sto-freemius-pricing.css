@@ -1,0 +1,361 @@
+/**
+ * STO theme for Freemius Pricing 2.0 (#fs_pricing_app).
+ */
+
+.sto-fs-pricing-shell {
+	max-width: min(1080px, 100%);
+	margin: 12px 0 28px;
+}
+
+.sto-option-panel-wrapper--freemius-pricing {
+	max-width: 100%;
+	margin-top: 0;
+	overflow: hidden;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	background: #fff;
+	box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+}
+
+.sto-fs-pricing-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 12px 20px;
+	padding: 18px 22px 16px;
+	border-bottom: 1px solid #e2e8f0;
+	background: linear-gradient(135deg, #fafafa 0%, #f5f3ff 45%, #fff7ed 100%);
+}
+
+.sto-fs-pricing-head__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 44px;
+	height: 44px;
+	border-radius: 11px;
+	color: #5b21b6;
+	background: rgba(255, 255, 255, 0.9);
+	border: 1px solid rgba(139, 92, 246, 0.22);
+	font-size: 20px;
+}
+
+.sto-fs-pricing-head__copy {
+	flex: 1 1 220px;
+	min-width: 0;
+}
+
+.sto-fs-pricing-head__eyebrow {
+	margin: 0 0 0.25rem;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #6d28d9;
+}
+
+.sto-fs-pricing-head .sto-option-panel-title {
+	margin: 0 0 0.35rem;
+	font-size: 1.35rem;
+	line-height: 1.25;
+}
+
+.sto-fs-pricing-head__lead {
+	margin: 0;
+	max-width: 40rem;
+	font-size: 13px;
+	line-height: 1.55;
+	color: #475569;
+}
+
+.sto-fs-pricing-head__link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	align-self: center;
+	margin-left: auto;
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	color: #6d28d9;
+}
+
+.sto-fs-pricing-head__link:hover,
+.sto-fs-pricing-head__link:focus {
+	color: #5b21b6;
+	text-decoration: underline;
+}
+
+.sto-fs-pricing-body {
+	padding: 12px 16px 22px;
+	background: #fff;
+}
+
+/* Freemius root inside STO shell */
+.sto-fs-pricing-shell #fs_pricing.wrap.fs-section {
+	margin: 0;
+	padding: 0;
+	max-width: 100%;
+}
+
+.sto-fs-pricing-shell #fs_pricing_wrapper {
+	max-width: 100%;
+	margin: 0 auto;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	color: #1e293b;
+}
+
+/* Hide duplicate plugin branding — STO header already introduces the product */
+.sto-fs-pricing-shell #fs_pricing_app .fs-app-header {
+	display: none !important;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--plans-and-pricing {
+	padding: 4px 2px 0;
+}
+
+/* Plan cards */
+.sto-fs-pricing-shell #fs_pricing_app .fs-packages {
+	gap: 18px;
+	justify-content: center;
+	align-items: stretch;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-package {
+	flex: 1 1 280px;
+	max-width: 360px;
+	min-height: 0 !important;
+	border: 1px solid #e2e8f0 !important;
+	border-radius: 12px !important;
+	box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06) !important;
+	overflow: hidden;
+	background: #fff;
+	transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-has-featured-plan .fs-package.fs-featured-plan,
+.sto-fs-pricing-shell #fs_pricing_app .fs-package.fs-featured-plan {
+	border-color: #c4b5fd !important;
+	box-shadow: 0 10px 32px rgba(109, 40, 217, 0.16) !important;
+	transform: translateY(-2px);
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-package-tab {
+	padding: 8px 12px !important;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-package.fs-featured-plan .fs-package-tab {
+	background: linear-gradient(135deg, #6d28d9 0%, #be185d 55%, #ea580c 100%) !important;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-plan-title {
+	font-size: 1.85rem !important;
+	font-weight: 700 !important;
+	line-height: 1.1 !important;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-selected-pricing-amount-integer {
+	font-weight: 700;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-package-content {
+	padding: 14px 18px 18px;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-plan-features,
+.sto-fs-pricing-shell #fs_pricing_app .fs-plan-support {
+	font-size: 13px;
+	line-height: 1.45;
+	color: #475569;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-plan-features li,
+.sto-fs-pricing-shell #fs_pricing_app .fs-plan-support li {
+	margin-bottom: 0.35rem;
+}
+
+/* License / site selector bar above CTA */
+.sto-fs-pricing-shell #fs_pricing_app .fs-selected-pricing-summary,
+.sto-fs-pricing-shell #fs_pricing_app .fs-package-pricing-summary {
+	margin-top: 10px !important;
+	border-radius: 8px !important;
+	overflow: hidden;
+}
+
+/* Primary CTA — compact gradient with breathing room above */
+.sto-fs-pricing-shell #fs_pricing_app .fs-button--type-primary,
+.sto-fs-pricing-shell #fs_pricing_app .fs-button.fs-button--type-primary {
+	display: inline-flex !important;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	max-width: 100%;
+	min-height: 0 !important;
+	height: auto !important;
+	margin-top: 18px !important;
+	padding: 11px 18px !important;
+	font-size: 13px !important;
+	font-weight: 700 !important;
+	line-height: 1.25 !important;
+	text-transform: none !important;
+	letter-spacing: 0.01em;
+	color: #fff !important;
+	border: none !important;
+	border-radius: 8px !important;
+	background: linear-gradient(135deg, #6d28d9 0%, #be185d 48%, #ea580c 100%) !important;
+	box-shadow: 0 4px 14px rgba(109, 40, 217, 0.32) !important;
+	transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-button--type-primary:hover,
+.sto-fs-pricing-shell #fs_pricing_app .fs-button.fs-button--type-primary:hover {
+	filter: brightness(1.05);
+	transform: translateY(-1px);
+	box-shadow: 0 6px 18px rgba(109, 40, 217, 0.4) !important;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-button--outline,
+.sto-fs-pricing-shell #fs_pricing_app .fs-button.fs-button--type-secondary {
+	margin-top: 12px !important;
+	padding: 9px 16px !important;
+	border-radius: 8px !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+}
+
+/* Billing toggle */
+.sto-fs-pricing-shell #fs_pricing_app .fs-billing-cycles {
+	margin: 4px 0 18px;
+}
+
+/* Custom / enterprise contact box */
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--custom-support,
+.sto-fs-pricing-shell #fs_pricing_app [class*="custom-support"] {
+	margin: 20px 4px 12px;
+	padding: 14px 16px !important;
+	border: 1px solid #e2e8f0 !important;
+	border-radius: 10px !important;
+	background: linear-gradient(135deg, #f8fafc 0%, #f5f3ff 100%) !important;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #334155;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--custom-support a,
+.sto-fs-pricing-shell #fs_pricing_app [class*="custom-support"] a {
+	font-weight: 600;
+	color: #6d28d9;
+}
+
+/* Money-back guarantee */
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--money-back-guarantee,
+.sto-fs-pricing-shell #fs_pricing_app [class*="money-back"] {
+	margin: 16px 4px;
+	padding: 16px 18px !important;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	background: #f8fafc;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--money-back-guarantee .fs-section-header,
+.sto-fs-pricing-shell #fs_pricing_app [class*="money-back"] .fs-section-header {
+	font-size: 14px !important;
+	font-weight: 700 !important;
+	color: #0f172a !important;
+	background: transparent !important;
+	padding: 0 0 8px !important;
+}
+
+/* Trust / payments row */
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--secure-payments,
+.sto-fs-pricing-shell #fs_pricing_app [class*="secure-payments"] {
+	margin: 12px 4px 8px;
+	padding: 12px 8px !important;
+	text-align: center;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-section-header {
+	font-weight: 600;
+	color: #334155;
+}
+
+/* FAQ — lighter cards instead of heavy dark bars */
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--faq {
+	margin-top: 28px;
+	padding: 0 4px 8px;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--faq > .fs-section-header {
+	margin-bottom: 14px;
+	font-size: 1.1rem;
+	text-align: center;
+	color: #0f172a;
+	background: transparent !important;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--faq-items {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 12px;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--faq-item {
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	overflow: hidden;
+	background: #fff;
+	box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--faq-item .fs-section-header {
+	padding: 10px 14px !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	color: #0f172a !important;
+	background: #f8fafc !important;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.sto-fs-pricing-shell #fs_pricing_app .fs-section--faq-item > div:not(.fs-section-header) {
+	padding: 10px 14px 12px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #475569;
+}
+
+/* Hide redundant WP admin h1 when Freemius tabs render duplicate title */
+body.sto-fs-pricing-screen #wpbody-content > .wrap > h1:first-child,
+body.sto-fs-pricing-screen .wrap > h1:first-child {
+	display: none;
+}
+
+@media (max-width: 782px) {
+	.sto-fs-pricing-head {
+		padding: 14px 14px 12px;
+	}
+
+	.sto-fs-pricing-head__link {
+		margin-left: 0;
+		width: 100%;
+	}
+
+	.sto-fs-pricing-body {
+		padding: 8px 8px 16px;
+	}
+
+	.sto-fs-pricing-shell #fs_pricing_app .fs-package {
+		max-width: 100%;
+	}
+
+	.sto-fs-pricing-shell #fs_pricing_app .fs-section--faq-items {
+		grid-template-columns: 1fr;
+	}
+}

@@ -1,0 +1,309 @@
+/**
+ * Full Theme Settings panel embedded in the WordPress Customizer (narrow pane).
+ */
+
+/* Let STO content use the full controls width; avoid clipping popovers/fields. */
+#customize-theme-controls .customize-pane-child,
+#customize-theme-controls .customize-pane-child .customize-section-content,
+#customize-theme-controls #sub-accordion-section-sto_theme_settings_embed {
+	overflow: visible;
+}
+
+#customize-theme-controls li.customize-control-sto_embed,
+#customize-theme-controls .customize-control-sto_embed {
+	width: 100%;
+	max-width: none;
+	margin: 0 0 12px;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .customize-control-sto_embed .customize-control-title,
+#customize-theme-controls .customize-control-sto_embed .customize-control-description {
+	display: none;
+}
+
+#customize-theme-controls .sto-customizer-embed-root {
+	display: block;
+	width: 100%;
+	max-width: none;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-section-content--customizer-embed,
+#customize-theme-controls .sto-section-content--customizer-embed.wrap {
+	margin: 0;
+	padding: 0;
+	max-width: none;
+	width: 100%;
+	overflow: visible;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-wrapper,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed {
+	display: flex;
+	flex-direction: column;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	gap: 12px;
+	width: 100% !important;
+	max-width: none !important;
+	margin: 0;
+	border-radius: 0;
+	box-sizing: border-box;
+	overflow: visible;
+}
+
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-wrapper > .sto-option-panel-head,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed > .sto-option-panel-head {
+	order: 1;
+	flex: 0 0 auto;
+}
+
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-wrapper > .sto-option-panel-sidebar-wrap,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed > .sto-option-panel-sidebar-wrap {
+	order: 2;
+	flex: 0 0 auto;
+}
+
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-wrapper > .sto-option-panel-main,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed > .sto-option-panel-main {
+	order: 3;
+	flex: 0 0 auto;
+}
+
+#customize-theme-controls .wrap.sto-section-content--customizer-embed {
+	margin: 0;
+	padding: 0;
+}
+
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-wrapper .sto-option-panel-head,
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-head,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-head {
+	flex: 0 0 auto;
+	order: 1 !important;
+	padding: 0;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-panel-head-with-search {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 8px;
+	width: 100%;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-quick-search {
+	width: 100%;
+	max-width: none;
+	margin: 0;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-quick-search-input {
+	width: 100%;
+	max-width: none;
+	box-sizing: border-box;
+}
+
+/*
+ * Force column stack in the narrow Customizer pane (wp-admin uses flex row + sticky rail
+ * at full viewport width, which leaves a tall empty band above the section nav).
+ */
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-body,
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-body--customizer-embed,
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-nav-layout,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-body,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-body--customizer-embed,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-nav-layout {
+	display: flex !important;
+	flex-direction: column !important;
+	flex-wrap: nowrap !important;
+	align-items: stretch !important;
+	gap: 12px !important;
+	width: 100% !important;
+	min-width: 0;
+	min-height: 0 !important;
+	height: auto !important;
+	padding: 0 !important;
+	overflow: visible !important;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-sidebar-wrap,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-sidebar-wrap {
+	order: 2 !important;
+	flex: 0 0 auto !important;
+	display: block;
+	position: static !important;
+	top: auto !important;
+	align-self: stretch !important;
+	width: 100% !important;
+	max-width: none !important;
+	max-height: none;
+	margin: 0;
+	overflow: visible;
+	border-bottom: 1px solid #dcdcde;
+	box-sizing: border-box;
+}
+
+@media (min-width: 783px) {
+	#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-sidebar-wrap,
+	#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-sidebar-wrap {
+		position: static !important;
+		top: auto !important;
+		max-height: none;
+	}
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-sidebar {
+	width: 100%;
+	max-width: none;
+	max-height: 240px;
+	overflow-x: hidden;
+	overflow-y: auto;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-sidebar-item-link {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-sidebar-item-title {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+	line-height: 1.35;
+}
+
+#customize-theme-controls .sto-customizer-embed-root .sto-option-panel-main,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-main {
+	order: 3 !important;
+	flex: 0 0 auto !important;
+	display: block;
+	width: 100% !important;
+	max-width: none !important;
+	min-width: 0;
+	min-height: 0 !important;
+	height: auto !important;
+	padding: 0;
+	margin: 0;
+	overflow: visible;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-content-head {
+	flex-wrap: wrap;
+	align-items: flex-start;
+	width: 100%;
+	min-width: 0;
+	padding: 0 0 8px;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-content-title {
+	flex: 1 1 auto;
+	min-width: 0;
+	max-width: 100%;
+	font-size: clamp(16px, 4.5vw, 20px);
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-content-body {
+	width: 100%;
+	max-width: none;
+	min-width: 0;
+	padding-bottom: 24px;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-options-form,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-panel-section-fields,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-panel-section-fields[disabled] {
+	width: 100%;
+	max-width: none;
+	min-width: 0;
+	border: 0;
+	margin: 0;
+	padding: 0;
+	pointer-events: auto;
+	opacity: 1;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-section.sto-is-hidden {
+	display: none !important;
+	height: 0 !important;
+	min-height: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	overflow: hidden !important;
+	border: 0 !important;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-section.sto-is-active {
+	display: block !important;
+	width: 100%;
+}
+
+/* Fields, groups, and controls: stay inside the pane */
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-field-row,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-field-group,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-group,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-adv-rep,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-gradient-control,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-color-field,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-border-control,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-shadow-control,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-field-group-inner,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-row,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-row > *,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed label,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-field-label,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-field-desc,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed input,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed select,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed textarea,
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .select2-container {
+	max-width: 100% !important;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-row {
+	flex-wrap: wrap;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-row > * {
+	flex: 1 1 100%;
+	width: 100%;
+	max-width: 100%;
+}
+
+#customize-theme-controls .sto-customizer-empty-leaf {
+	margin: 12px 0;
+	color: #646970;
+}
+
+/* Section description is redundant inside the full embed. */
+#sub-accordion-section-sto_theme_settings_embed .customize-section-description-container {
+	display: none;
+}
+
+#customize-theme-controls #sub-accordion-section-sto_theme_settings_embed > .customize-section-title {
+	margin-bottom: 8px;
+}
+
+/* Gradient stop color dock (portaled to body) — avoid clipping in the narrow pane */
+#customize-theme-controls .sto-field-row-gradient--dock-open,
+#customize-theme-controls .sto-field-row-gradient:has([data-sto-gradient-dock-open="1"]) {
+	position: relative;
+	z-index: 2;
+	overflow: visible;
+}

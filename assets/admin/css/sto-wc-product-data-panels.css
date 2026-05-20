@@ -254,13 +254,26 @@
 	max-width: 100%;
 }
 
+/*
+ * WC product-data panels: keep fieldsets interactive (main.js clears disabled on save).
+ * Do not use pointer-events:none on disabled fieldsets here — it breaks the block editor canvas.
+ */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-panel-section-fields,
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-panel-section-fields:disabled {
-	opacity: 1;
-	pointer-events: none;
+	pointer-events: auto;
 }
 
-#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-section.sto-is-active > .sto-panel-section-fields {
+/* Block editor inside repeater rows — always interactive while the WC STO panel is visible. */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__mount,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__surface,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .block-editor-writing-flow,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .block-editor-rich-text__editable,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .block-list-appender,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .block-editor-default-block-appender,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .block-editor-button-block-appender {
 	pointer-events: auto;
+	cursor: text;
 }
 
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-field-group {
@@ -401,11 +414,89 @@
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor,
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor,
 #woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__mount,
-#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__surface {
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--rich-modern-editor .sto-rich-modern-editor__surface,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-classic-editor-field,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor .sto-adv-rep__editor-wrap,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-classic-editor-field .sto-adv-rep__editor-wrap,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor .wp-editor-wrap,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-classic-editor-field .wp-editor-wrap {
 	width: 100% !important;
 	max-width: 100% !important;
 	min-width: 0 !important;
 	box-sizing: border-box;
+}
+
+/* Classic editor in repeaters: block layout only (no absolute toolbar overlay from `sto-input.css`). */
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .sto-adv-rep__editor-wrap,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-container,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .mce-tinymce {
+	display: block !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	float: none !important;
+	clear: both !important;
+	box-sizing: border-box;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-tools {
+	position: static !important;
+	float: none !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	margin: 0 0 6px !important;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active div.mce-toolbar-grp > div > .mce-toolbar:first-child,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active div.mce-toolbar-grp > .mce-toolbar:first-child {
+	padding-right: 0 !important;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active .mce-tinymce,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--code-ready .mce-tinymce,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active div.mce-toolbar-grp,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--code-ready div.mce-toolbar-grp {
+	display: none !important;
+	visibility: hidden !important;
+	height: 0 !important;
+	pointer-events: none !important;
+	position: absolute !important;
+	left: -9999px !important;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active textarea.wp-editor-area,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--code-ready textarea.wp-editor-area {
+	display: block !important;
+	min-height: 280px !important;
+	pointer-events: auto !important;
+	position: relative !important;
+	z-index: 2 !important;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active .mce-tinymce,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--visual-ready .mce-tinymce,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active div.mce-toolbar-grp,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--visual-ready div.mce-toolbar-grp {
+	display: block !important;
+	visibility: visible !important;
+	position: relative !important;
+	left: auto !important;
+	height: auto !important;
+	pointer-events: auto !important;
+	opacity: 1 !important;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active textarea.wp-editor-area,
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--visual-ready textarea.wp-editor-area {
+	display: block !important;
+	min-height: 7rem !important;
+	pointer-events: auto !important;
+}
+
+#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-classic-editor-field .wp-editor-wrap {
+	overflow: visible;
 }
 
 /* Nested groups + advanced repeater (e.g. service sub-tabs) — prevent inputs wider than the WC column. */
@@ -601,4 +692,23 @@
 	#woocommerce-product-data .panel.sto-wc-product-data-panel .sto-option-panel-content-body {
 		padding-bottom: 20px;
 	}
+}
+
+/* WooCommerce Product data — editor leaves inside advanced repeaters are not supported */
+#woocommerce-product-data .sto-adv-rep__editor-policy-notice {
+	margin: 0 0 12px;
+	padding: 10px 12px;
+	border-left: 4px solid #dba617;
+	background: #fcf9e8;
+}
+
+#woocommerce-product-data .sto-adv-rep__editor-policy-notice p {
+	margin: 0;
+	color: #1d2327;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+#woocommerce-product-data .sto-adv-rep__field--editor-disallowed .sto-adv-rep__editor-policy-notice {
+	margin-top: 8px;
 }

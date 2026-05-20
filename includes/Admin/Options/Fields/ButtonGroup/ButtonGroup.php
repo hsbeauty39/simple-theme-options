@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\ButtonGroup;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -85,6 +86,8 @@ final class ButtonGroup {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -368,7 +371,10 @@ final class ButtonGroup {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -475,21 +481,21 @@ final class ButtonGroup {
 				if ( $preview !== '' && $opt_tip !== '' ) {
 					$aria_help = sprintf(
 						/* translators: 1: option label, 2: help text */
-						__( 'Preview for %1$s. %2$s', 'simple-theme-options' ),
+						__( 'Preview for %1$s. %2$s', 'topten-simple-theme-options' ),
 						$opt_label,
 						$opt_tip
 					);
 				} elseif ( $opt_tip !== '' ) {
 					$aria_help = sprintf(
 						/* translators: 1: option label, 2: help text */
-						__( 'Help for %1$s: %2$s', 'simple-theme-options' ),
+						__( 'Help for %1$s: %2$s', 'topten-simple-theme-options' ),
 						$opt_label,
 						$opt_tip
 					);
 				} else {
 					$aria_help = sprintf(
 						/* translators: %s: option label */
-						__( 'Show layout preview for %s', 'simple-theme-options' ),
+						__( 'Show layout preview for %s', 'topten-simple-theme-options' ),
 						$opt_label
 					);
 				}

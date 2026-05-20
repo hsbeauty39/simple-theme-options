@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\Switcher;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -81,6 +82,8 @@ final class Switcher {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -95,8 +98,8 @@ final class Switcher {
 		}
 
 		$labels = isset( $field['labels'] ) && is_array( $field['labels'] ) ? $field['labels'] : array();
-		$on_l   = isset( $labels['on'] ) ? (string) $labels['on'] : __( 'ON', 'simple-theme-options' );
-		$off_l  = isset( $labels['off'] ) ? (string) $labels['off'] : __( 'OFF', 'simple-theme-options' );
+		$on_l   = isset( $labels['on'] ) ? (string) $labels['on'] : __( 'ON', 'topten-simple-theme-options' );
+		$off_l  = isset( $labels['off'] ) ? (string) $labels['off'] : __( 'OFF', 'topten-simple-theme-options' );
 
 		$field['section_slug']  = $section_slug;
 		$field['id']            = $field_id;
@@ -300,7 +303,10 @@ final class Switcher {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"

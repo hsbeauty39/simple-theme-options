@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\Typography;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -65,6 +66,8 @@ final class Typography {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -162,12 +165,12 @@ final class Typography {
 	 */
 	private function get_subset_choices() {
 		return array(
-			'latin'      => __( 'Latin', 'simple-theme-options' ),
-			'latin-ext'  => __( 'Latin Extended', 'simple-theme-options' ),
-			'cyrillic'   => __( 'Cyrillic', 'simple-theme-options' ),
-			'greek'      => __( 'Greek', 'simple-theme-options' ),
-			'vietnamese' => __( 'Vietnamese', 'simple-theme-options' ),
-			'arabic'     => __( 'Arabic', 'simple-theme-options' ),
+			'latin'      => __( 'Latin', 'topten-simple-theme-options' ),
+			'latin-ext'  => __( 'Latin Extended', 'topten-simple-theme-options' ),
+			'cyrillic'   => __( 'Cyrillic', 'topten-simple-theme-options' ),
+			'greek'      => __( 'Greek', 'topten-simple-theme-options' ),
+			'vietnamese' => __( 'Vietnamese', 'topten-simple-theme-options' ),
+			'arabic'     => __( 'Arabic', 'topten-simple-theme-options' ),
 		);
 	}
 
@@ -346,15 +349,15 @@ final class Typography {
 				data-default="<?php echo esc_attr( wp_json_encode( $parsed_defaults ) ); ?>"
 			>
 				<div class="sto-typography-loading" aria-busy="true">
-					<div class="sto-typography-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="<?php esc_attr_e( 'Loading font catalog', 'simple-theme-options' ); ?>">
+					<div class="sto-typography-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="<?php esc_attr_e( 'Loading font catalog', 'topten-simple-theme-options' ); ?>">
 						<div class="sto-typography-progress-bar"></div>
 					</div>
 				</div>
 				<div class="sto-typography-body" hidden>
 					<div class="sto-typography-panel">
-						<div class="sto-typography-grid" role="group" aria-label="<?php esc_attr_e( 'Typography options', 'simple-theme-options' ); ?>">
+						<div class="sto-typography-grid" role="group" aria-label="<?php esc_attr_e( 'Typography options', 'topten-simple-theme-options' ); ?>">
 							<div class="sto-typography-cell">
-								<label class="screen-reader-text" for="<?php echo esc_attr( 'sto-typo-family-' . $id_suffix ); ?>"><?php esc_html_e( 'Font family', 'simple-theme-options' ); ?></label>
+								<label class="screen-reader-text" for="<?php echo esc_attr( 'sto-typo-family-' . $id_suffix ); ?>"><?php esc_html_e( 'Font family', 'topten-simple-theme-options' ); ?></label>
 								<select
 									id="<?php echo esc_attr( 'sto-typo-family-' . $id_suffix ); ?>"
 									class="sto-typography-select sto-typography-family sto-input-select"
@@ -362,7 +365,7 @@ final class Typography {
 								></select>
 							</div>
 							<div class="sto-typography-cell">
-								<label class="screen-reader-text" for="<?php echo esc_attr( 'sto-typo-variant-' . $id_suffix ); ?>"><?php esc_html_e( 'Font style', 'simple-theme-options' ); ?></label>
+								<label class="screen-reader-text" for="<?php echo esc_attr( 'sto-typo-variant-' . $id_suffix ); ?>"><?php esc_html_e( 'Font style', 'topten-simple-theme-options' ); ?></label>
 								<select
 									id="<?php echo esc_attr( 'sto-typo-variant-' . $id_suffix ); ?>"
 									class="sto-typography-select sto-typography-variant sto-input-select"
@@ -370,31 +373,31 @@ final class Typography {
 								></select>
 							</div>
 							<div class="sto-typography-cell">
-								<label class="screen-reader-text" for="<?php echo esc_attr( 'sto-typo-subset-' . $id_suffix ); ?>"><?php esc_html_e( 'Character subset', 'simple-theme-options' ); ?></label>
+								<label class="screen-reader-text" for="<?php echo esc_attr( 'sto-typo-subset-' . $id_suffix ); ?>"><?php esc_html_e( 'Character subset', 'topten-simple-theme-options' ); ?></label>
 								<select
 									id="<?php echo esc_attr( 'sto-typo-subset-' . $id_suffix ); ?>"
 									class="sto-typography-select sto-typography-subset sto-input-select"
 									data-sto-typography-subset
 								>
-									<option value=""><?php esc_html_e( 'Subset', 'simple-theme-options' ); ?></option>
+									<option value=""><?php esc_html_e( 'Subset', 'topten-simple-theme-options' ); ?></option>
 									<?php foreach ( $this->get_subset_choices() as $val => $slabel ) : ?>
 										<option value="<?php echo esc_attr( $val ); ?>"><?php echo esc_html( $slabel ); ?></option>
 									<?php endforeach; ?>
 								</select>
 							</div>
 							<div class="sto-typography-cell">
-								<label class="screen-reader-text" for="<?php echo esc_attr( 'sto-typo-transform-' . $id_suffix ); ?>"><?php esc_html_e( 'Text transform', 'simple-theme-options' ); ?></label>
+								<label class="screen-reader-text" for="<?php echo esc_attr( 'sto-typo-transform-' . $id_suffix ); ?>"><?php esc_html_e( 'Text transform', 'topten-simple-theme-options' ); ?></label>
 								<select
 									id="<?php echo esc_attr( 'sto-typo-transform-' . $id_suffix ); ?>"
 									class="sto-typography-select sto-typography-transform sto-input-select"
 									data-sto-typography-transform
 								>
-									<option value=""><?php esc_html_e( 'Text transform', 'simple-theme-options' ); ?></option>
-									<option value="none"><?php esc_html_e( 'None', 'simple-theme-options' ); ?></option>
-									<option value="uppercase"><?php esc_html_e( 'Uppercase', 'simple-theme-options' ); ?></option>
-									<option value="lowercase"><?php esc_html_e( 'Lowercase', 'simple-theme-options' ); ?></option>
-									<option value="capitalize"><?php esc_html_e( 'Capitalize', 'simple-theme-options' ); ?></option>
-									<option value="inherit"><?php esc_html_e( 'Inherit', 'simple-theme-options' ); ?></option>
+									<option value=""><?php esc_html_e( 'Text transform', 'topten-simple-theme-options' ); ?></option>
+									<option value="none"><?php esc_html_e( 'None', 'topten-simple-theme-options' ); ?></option>
+									<option value="uppercase"><?php esc_html_e( 'Uppercase', 'topten-simple-theme-options' ); ?></option>
+									<option value="lowercase"><?php esc_html_e( 'Lowercase', 'topten-simple-theme-options' ); ?></option>
+									<option value="capitalize"><?php esc_html_e( 'Capitalize', 'topten-simple-theme-options' ); ?></option>
+									<option value="inherit"><?php esc_html_e( 'Inherit', 'topten-simple-theme-options' ); ?></option>
 								</select>
 							</div>
 						</div>
@@ -457,7 +460,10 @@ final class Typography {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"

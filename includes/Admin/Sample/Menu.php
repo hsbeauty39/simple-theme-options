@@ -15,16 +15,13 @@ final class Menu {
 
 	private function register_menu() {
 		$options_menu = OptionsMenu::instance();
-		// Set 'demo' => false to forbid sample sections. Use 'packaged_demo' => true only for this plugin sample menu
-		// (no Advance; top-level menu hidden when demo is off — use Tools → Simple Backup to toggle demo.)
-		// Theme code should call Options\Menu::register() without packaged_demo to get Advance + client export keys.
+		// Packaged sample root slug: {@see OptionsMenu::PACKAGED_DEMO_MENU_SLUG}. Demo on/off: Tools → Simple Settings.
+		// Theme/client menus use a different slug; Advance + export attach to those roots automatically.
 		$options_menu->register(
-			__( 'Theme Settings', 'simple-theme-options' ),
+			__( 'Theme Settings', 'topten-simple-theme-options' ),
 			'theme-settings',
 			'dashicons-admin-customizer',
 			array(
-				'demo'           => true,
-				'packaged_demo'  => true,
 				'metabox'        => array(
 					'post_types' => array( 'post', 'page' ),
 					'context'    => 'normal',

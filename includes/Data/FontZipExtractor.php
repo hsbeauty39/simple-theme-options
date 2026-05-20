@@ -108,26 +108,26 @@ final class FontZipExtractor {
 		);
 
 		if ( ! class_exists( 'ZipArchive' ) ) {
-			$empty['error'] = __( 'ZIP support is not available on this server (ZipArchive missing).', 'simple-theme-options' );
+			$empty['error'] = __( 'ZIP support is not available on this server (ZipArchive missing).', 'topten-simple-theme-options' );
 
 			return $empty;
 		}
 		if ( ! is_readable( $zip_path ) ) {
-			$empty['error'] = __( 'Could not read the ZIP file.', 'simple-theme-options' );
+			$empty['error'] = __( 'Could not read the ZIP file.', 'topten-simple-theme-options' );
 
 			return $empty;
 		}
 
 		$entries = self::list_font_entries( $zip_path );
 		if ( $entries === array() ) {
-			$empty['error'] = __( 'No font files (WOFF2, WOFF, TTF, OTF, EOT) were found inside that ZIP.', 'simple-theme-options' );
+			$empty['error'] = __( 'No font files (WOFF2, WOFF, TTF, OTF, EOT) were found inside that ZIP.', 'topten-simple-theme-options' );
 
 			return $empty;
 		}
 
 		$temp_dir = self::create_temp_dir();
 		if ( $temp_dir === '' ) {
-			$empty['error'] = __( 'Could not create a temporary folder for extraction.', 'simple-theme-options' );
+			$empty['error'] = __( 'Could not create a temporary folder for extraction.', 'topten-simple-theme-options' );
 
 			return $empty;
 		}
@@ -135,7 +135,7 @@ final class FontZipExtractor {
 		$zip = new \ZipArchive();
 		if ( true !== $zip->open( $zip_path ) ) {
 			self::remove_dir( $temp_dir );
-			$empty['error'] = __( 'Could not open the ZIP file.', 'simple-theme-options' );
+			$empty['error'] = __( 'Could not open the ZIP file.', 'topten-simple-theme-options' );
 
 			return $empty;
 		}
@@ -177,7 +177,7 @@ final class FontZipExtractor {
 
 		if ( $fonts === array() ) {
 			self::remove_dir( $temp_dir );
-			$empty['error'] = __( 'Font files were listed in the ZIP but could not be extracted.', 'simple-theme-options' );
+			$empty['error'] = __( 'Font files were listed in the ZIP but could not be extracted.', 'topten-simple-theme-options' );
 
 			return $empty;
 		}
@@ -247,7 +247,8 @@ final class FontZipExtractor {
 				wp_delete_file( $path );
 			}
 		}
-		@rmdir( $real ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+		@rmdir( $real );
 	}
 
 	/**

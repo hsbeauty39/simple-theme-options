@@ -160,12 +160,151 @@
         }
         var $square = $picker.find('.iris-square').first();
         var squareHeight = $square.outerHeight();
-        if (!squareHeight || squareHeight < 8) {
+        if (!squareHeight || squareHeight < 8 || squareHeight > 280) {
             return;
         }
-        $picker.find('.iris-strip').each(function() {
+        /* Vertical hue/alpha rails only — do not stretch horizontal strips. */
+        $picker.find('.iris-strip').not('.iris-strip-horiz').each(function() {
             $(this).css('height', squareHeight);
         });
+    }
+
+    /**
+     * Floating gradient dock: clear Iris inline sizing from off-screen init and re-sync rails.
+     *
+     * @param {jQuery} $input
+     */
+    function reflowGradientDockIrisLayout($input) {
+        var $dock = $input.closest('.sto-gradient-color-dock');
+        if (!$dock.length || $dock.hasClass('sto-gradient-color-dock--idle')) {
+            return;
+        }
+        var $container = $input.closest('.wp-picker-container');
+        var $picker = $container.find('.iris-picker').first();
+        if (!$picker.length) {
+            return;
+        }
+
+        $picker.css({ height: '', paddingBottom: '0' });
+
+        $picker.find('.iris-picker-inner, .iris-border .iris-picker-inner').css({
+            position: 'relative',
+            top: 'auto',
+            right: 'auto',
+            left: 'auto',
+            bottom: 'auto'
+        });
+
+        if (typeof $input.iris === 'function') {
+            try {
+                $input.iris('resize');
+            } catch (ignore) {}
+        }
+
+        syncIrisStripHeights($input);
+
+        var $square = $picker.find('.iris-square').first();
+        if (!$square.length || $square.outerHeight() < 16) {
+            window.setTimeout(function() {
+                if (typeof $input.iris === 'function') {
+                    try {
+                        $input.iris('resize');
+                    } catch (ignoreResize) {}
+                }
+                syncIrisStripHeights($input);
+            }, 60);
+        }
+    }
+
+    function openGradientDockPicker($input) {
+        if (!$input || !$input.length) {
+            return;
+        }
+        var $dock = $input.closest('.sto-gradient-color-dock');
+        if (!$dock.length || $dock.hasClass('sto-gradient-color-dock--idle')) {
+            return;
+        }
+        var $container = $input.closest('.wp-picker-container');
+        if (!$container.length) {
+            return;
+        }
+        var $holder = $container.find('.wp-picker-holder');
+        var $toggle = $container.find('.wp-color-result').first();
+
+        /* Build Iris once via WP toggle if missing; then keep open without toggle (toggle would close). */
+        if (!$container.find('.iris-picker').length && $toggle.length) {
+            $toggle.trigger('click');
+        }
+
+        $container.addClass('wp-picker-active');
+        $holder.css('display', 'block');
+
+        if (typeof $input.iris === 'function') {
+            try {
+                $input.iris('resize');
+            } catch (ignoreShow) {}
+        }
+        reflowGradientDockIrisLayout($input);
+        scheduleIrisReflow($input);
+    }
+
+    function closeGradientDockPicker($input) {
+        if (!$input || !$input.length) {
+            return;
+        }
+        var $container = $input.closest('.wp-picker-container');
+        if (!$container.length) {
+            return;
+        }
+        $container.removeClass('wp-picker-active');
+        $container.find('.wp-picker-holder').hide();
+    }
+
+    function isGradientDockColorInput($input) {
+        return $input.closest('[data-sto-gradient-color-dock]').length > 0;
+    }
+
+    /**
+     * Init wpColorPicker for the gradient stop dock only (visible dock; no Iris preset row).
+     *
+     * @param {jQuery} $input `.sto-gradient-active-color`
+     * @return {boolean} True when a new picker was created.
+     */
+    function initGradientDockColorPicker($input) {
+        if (!$input || !$input.length) {
+            return false;
+        }
+        if ($input.closest('.wp-picker-container').length) {
+            return false;
+        }
+        var $dock = $input.closest('.sto-gradient-color-dock');
+        if (!$dock.length || $dock.hasClass('sto-gradient-color-dock--idle')) {
+            return false;
+        }
+
+        var $wrap = $input.closest('.sto-color-wrap');
+        bindResetOnce($wrap, $input);
+
+        $input.wpColorPicker({
+            hide: true,
+            type: 'full',
+            width: 248,
+            /* Suggested colors live in `.sto-gradient-dock-palette` — Iris presets overlap the SV square. */
+            palettes: [],
+            change: function() {
+                window.setTimeout(function() {
+                    $input.trigger('change');
+                }, 0);
+            },
+            clear: function() {
+                window.setTimeout(function() {
+                    $input.trigger('change');
+                }, 0);
+            }
+        });
+        bindManualColorSync($input);
+        openGradientDockPicker($input);
+        return true;
     }
 
     function reflowPaletteUiIrisLayout($input) {
@@ -201,11 +340,12 @@
             } catch (ignore) {}
         }
         syncIrisStripHeights($input);
+        reflowGradientDockIrisLayout($input);
         reflowPaletteUiIrisLayout($input);
     }
 
     function scheduleIrisReflow($input) {
-        var delays = [0, 50, 200, 400];
+        var delays = isGradientDockColorInput($input) ? [0, 40, 120, 280, 480, 720] : [0, 50, 200, 400];
         for (var index = 0; index < delays.length; index++) {
             (function(delayMs) {
                 window.setTimeout(function() {
@@ -368,6 +508,9 @@
     });
 
     window.stoInitColorPickers = initStoColorPickers;
+    window.stoInitGradientDockColorPicker = initGradientDockColorPicker;
+    window.stoOpenGradientDockPicker = openGradientDockPicker;
+    window.stoCloseGradientDockPicker = closeGradientDockPicker;
     window.stoReflowIrisColorPicker = reflowIrisColorPicker;
     window.stoScheduleIrisReflow = scheduleIrisReflow;
     window.stoDestroyColorPicker = destroyStoColorPicker;

@@ -25,15 +25,14 @@ final class Plugin {
 		Assets::instance()->init();
 		Ajax::instance()->init();
 		add_action( 'init', array( $this, 'load_textdomain' ), 0 );
-		if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
-			add_action( 'init', array( $this, 'boot_admin_modules' ), 5 );
-			add_action( 'init', array( ShammiStoreFallback::class, 'maybe_register' ), 25 );
-		}
+		add_action( 'init', array( $this, 'boot_admin_modules' ), 5 );
+		add_action( 'init', array( ShammiStoreFallback::class, 'maybe_register' ), 25 );
 	}
 
 	public function load_textdomain(): void {
+		// phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- Fork uses custom folder slug; not distributed via wordpress.org translate.
 		load_plugin_textdomain(
-			'simple-theme-options',
+			STO_TEXT_DOMAIN,
 			false,
 			dirname( plugin_basename( STO_FILE ) ) . '/languages'
 		);
@@ -43,6 +42,10 @@ final class Plugin {
 	 * Admin-only sample menu, field modules, import/export, and admin bar (after textdomain on `init`).
 	 */
 	public function boot_admin_modules(): void {
+		if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
 		SampleMenu::instance();
 		SampleFieldModules::boot();
 		ThemeSettingsImportExport::instance();

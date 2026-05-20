@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\BackgroundControl;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
@@ -81,6 +82,8 @@ final class BackgroundControl {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -397,18 +400,18 @@ final class BackgroundControl {
 							<?php endif; ?>
 							autocomplete="off"
 						/>
-						<button type="button" class="sto-color-reset" aria-label="<?php esc_attr_e( 'Reset to default color', 'simple-theme-options' ); ?>" title="<?php esc_attr_e( 'Reset to default', 'simple-theme-options' ); ?>">
+						<button type="button" class="sto-color-reset" aria-label="<?php esc_attr_e( 'Reset to default color', 'topten-simple-theme-options' ); ?>" title="<?php esc_attr_e( 'Reset to default', 'topten-simple-theme-options' ); ?>">
 							<i class="fa-light fa-arrow-rotate-left" aria-hidden="true"></i>
 						</button>
 					</div>
 					<button
 						type="button"
 						class="sto-background-control-upload"
-						data-sto-frame-title="<?php echo esc_attr( __( 'Select background image', 'simple-theme-options' ) ); ?>"
-						data-sto-frame-button="<?php echo esc_attr( __( 'Use image', 'simple-theme-options' ) ); ?>"
+						data-sto-frame-title="<?php echo esc_attr( __( 'Select background image', 'topten-simple-theme-options' ) ); ?>"
+						data-sto-frame-button="<?php echo esc_attr( __( 'Use image', 'topten-simple-theme-options' ) ); ?>"
 					>
 						<i class="fa-light fa-cloud-arrow-up" aria-hidden="true"></i>
-						<span class="sto-background-control-upload__label"><?php esc_html_e( 'Upload', 'simple-theme-options' ); ?></span>
+						<span class="sto-background-control-upload__label"><?php esc_html_e( 'Upload', 'topten-simple-theme-options' ); ?></span>
 					</button>
 				</div>
 				<div class="sto-background-control__preview"<?php echo $thumb === '' ? ' hidden' : ''; ?>>
@@ -497,7 +500,10 @@ final class BackgroundControl {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"

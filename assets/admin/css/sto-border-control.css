@@ -301,6 +301,12 @@
 	min-width: 0;
 }
 
+/* Keep Iris hue/alpha rails inside the popover (same overflow fix as gradient dock / sto-color.css). */
+.sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .wp-picker-container.wp-picker-active .wp-picker-holder {
+	overflow: hidden;
+	position: relative;
+}
+
 /* Before wpColorPicker init the bare input is the chip — give it a sensible width so the
    reset button can still sit next to it. After init the input is hidden by core. */
 .sto-option-panel-wrapper .sto-field-row-border .sto-border-popover__row .sto-color-input {

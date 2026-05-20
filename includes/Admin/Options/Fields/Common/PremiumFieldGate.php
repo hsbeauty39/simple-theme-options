@@ -26,7 +26,6 @@ final class PremiumFieldGate {
 		'advanced_repeater',
 		'google_map',
 		'code_editor',
-		'rich_modern_editor',
 		'tabs',
 		'accordion',
 		'group',

@@ -205,12 +205,12 @@ final class CustomFontsRegistry {
 		$fail = array(
 			'ok'            => false,
 			'attachment_id' => 0,
-			'message'       => __( 'Could not upload that file.', 'simple-theme-options' ),
+			'message'       => __( 'Could not upload that file.', 'topten-simple-theme-options' ),
 		);
 
 		$name = isset( $file['name'] ) ? (string) $file['name'] : '';
 		if ( $name === '' || ! self::is_allowed_upload_filename( $name ) ) {
-			$fail['message'] = __( 'Upload a WOFF2, WOFF, TTF, OTF, EOT font file, or a ZIP that contains fonts.', 'simple-theme-options' );
+			$fail['message'] = __( 'Upload a WOFF2, WOFF, TTF, OTF, EOT font file, or a ZIP that contains fonts.', 'topten-simple-theme-options' );
 
 			return $fail;
 		}
@@ -286,7 +286,7 @@ final class CustomFontsRegistry {
 
 		if ( ! self::is_uploadable_attachment( $attachment_id ) ) {
 			wp_delete_attachment( $attachment_id, true );
-			$fail['message'] = __( 'That file type is not allowed for custom fonts.', 'simple-theme-options' );
+			$fail['message'] = __( 'That file type is not allowed for custom fonts.', 'topten-simple-theme-options' );
 
 			return $fail;
 		}
@@ -315,13 +315,13 @@ final class CustomFontsRegistry {
 		switch ( $code ) {
 			case UPLOAD_ERR_INI_SIZE:
 			case UPLOAD_ERR_FORM_SIZE:
-				return __( 'That file is too large for this server.', 'simple-theme-options' );
+				return __( 'That file is too large for this server.', 'topten-simple-theme-options' );
 			case UPLOAD_ERR_PARTIAL:
-				return __( 'The file was only partially uploaded. Try again.', 'simple-theme-options' );
+				return __( 'The file was only partially uploaded. Try again.', 'topten-simple-theme-options' );
 			case UPLOAD_ERR_NO_FILE:
-				return __( 'No file was uploaded.', 'simple-theme-options' );
+				return __( 'No file was uploaded.', 'topten-simple-theme-options' );
 			default:
-				return __( 'Could not upload that file.', 'simple-theme-options' );
+				return __( 'Could not upload that file.', 'topten-simple-theme-options' );
 		}
 	}
 
@@ -344,7 +344,7 @@ final class CustomFontsRegistry {
 			'file_name' => '',
 			'fonts'     => array(),
 			'note'      => '',
-			'message'   => __( 'That file is not a recognized font or ZIP archive.', 'simple-theme-options' ),
+			'message'   => __( 'That file is not a recognized font or ZIP archive.', 'topten-simple-theme-options' ),
 		);
 
 		if ( $attachment_id <= 0 || ! self::is_uploadable_attachment( $attachment_id ) ) {
@@ -591,7 +591,7 @@ final class CustomFontsRegistry {
 			'ok'          => false,
 			'faces'       => array(),
 			'added_count' => 0,
-			'message'     => __( 'Could not add the font. Upload a WOFF2, WOFF, TTF, OTF font, or a ZIP that contains font files.', 'simple-theme-options' ),
+			'message'     => __( 'Could not add the font. Upload a WOFF2, WOFF, TTF, OTF font, or a ZIP that contains font files.', 'topten-simple-theme-options' ),
 		);
 
 		if ( $attachment_id <= 0 || ! self::is_uploadable_attachment( $attachment_id ) ) {
@@ -630,8 +630,8 @@ final class CustomFontsRegistry {
 
 		$replaced = count( $dupes );
 		$message  = $replaced > 0
-			? __( 'Custom font replaced the existing face with the same family, weight, and style.', 'simple-theme-options' )
-			: __( 'Custom font added.', 'simple-theme-options' );
+			? __( 'Custom font replaced the existing face with the same family, weight, and style.', 'topten-simple-theme-options' )
+			: __( 'Custom font added.', 'topten-simple-theme-options' );
 
 		return array(
 			'ok'          => true,
@@ -752,10 +752,10 @@ final class CustomFontsRegistry {
 		return sprintf(
 			/* translators: %d: number of duplicate font faces */
 			_n(
-				'This upload includes 1 font that already exists (same family, weight, and style). Replace the existing font?',
+				'This upload includes %d font that already exists (same family, weight, and style). Replace the existing font?',
 				'This upload includes %d fonts that already exist (same family, weight, and style). Replace those existing fonts?',
 				$count,
-				'simple-theme-options'
+				'topten-simple-theme-options'
 			),
 			$count
 		);
@@ -1039,11 +1039,11 @@ final class CustomFontsRegistry {
 			'file_name' => $zip_label,
 			'fonts'     => array(),
 			'note'      => '',
-			'message'   => __( 'No font files (WOFF2, WOFF, TTF, OTF, EOT) were found inside that ZIP.', 'simple-theme-options' ),
+			'message'   => __( 'No font files (WOFF2, WOFF, TTF, OTF, EOT) were found inside that ZIP.', 'topten-simple-theme-options' ),
 		);
 
 		if ( $zip_path === '' || ! is_readable( $zip_path ) ) {
-			$fail['message'] = __( 'Could not read the ZIP file.', 'simple-theme-options' );
+			$fail['message'] = __( 'Could not read the ZIP file.', 'topten-simple-theme-options' );
 
 			return $fail;
 		}
@@ -1074,7 +1074,7 @@ final class CustomFontsRegistry {
 
 		$note = '';
 		if ( FontFileMetadata::zip_needs_woff2_filename_notice( $fonts, $extracted['fonts'] ) ) {
-			$note = __( 'Some WOFF2 files could not be read from the archive; weight and style were taken from file names. Add matching TTF or OTF files to the ZIP for full auto-detection.', 'simple-theme-options' );
+			$note = __( 'Some WOFF2 files could not be read from the archive; weight and style were taken from file names. Add matching TTF or OTF files to the ZIP for full auto-detection.', 'topten-simple-theme-options' );
 		}
 
 		$live_preview = array(
@@ -1111,7 +1111,7 @@ final class CustomFontsRegistry {
 			'ok'          => false,
 			'faces'       => array(),
 			'added_count' => 0,
-			'message'     => __( 'Could not import fonts from that ZIP.', 'simple-theme-options' ),
+			'message'     => __( 'Could not import fonts from that ZIP.', 'topten-simple-theme-options' ),
 		);
 
 		$zip_path = (string) get_attached_file( $zip_attachment_id );
@@ -1191,7 +1191,7 @@ final class CustomFontsRegistry {
 		}
 
 		if ( $added === array() ) {
-			$fail['message'] = __( 'Font files were found in the ZIP but none could be imported.', 'simple-theme-options' );
+			$fail['message'] = __( 'Font files were found in the ZIP but none could be imported.', 'topten-simple-theme-options' );
 
 			return $fail;
 		}
@@ -1200,7 +1200,7 @@ final class CustomFontsRegistry {
 		if ( $replaced > 0 && $skipped > 0 ) {
 			$message = sprintf(
 				/* translators: 1: imported count, 2: replaced count, 3: skipped count */
-				__( 'Imported %1$d font(s) from the ZIP (%2$d replaced existing). %3$d file(s) were skipped.', 'simple-theme-options' ),
+				__( 'Imported %1$d font(s) from the ZIP (%2$d replaced existing). %3$d file(s) were skipped.', 'topten-simple-theme-options' ),
 				$count,
 				$replaced,
 				$skipped
@@ -1208,21 +1208,21 @@ final class CustomFontsRegistry {
 		} elseif ( $replaced > 0 ) {
 			$message = sprintf(
 				/* translators: 1: imported count, 2: replaced count */
-				__( 'Imported %1$d font(s) from the ZIP. %2$d replaced existing fonts.', 'simple-theme-options' ),
+				__( 'Imported %1$d font(s) from the ZIP. %2$d replaced existing fonts.', 'topten-simple-theme-options' ),
 				$count,
 				$replaced
 			);
 		} elseif ( $skipped > 0 ) {
 			$message = sprintf(
 				/* translators: 1: number imported, 2: number skipped */
-				__( 'Imported %1$d font(s) from the ZIP. %2$d file(s) were skipped.', 'simple-theme-options' ),
+				__( 'Imported %1$d font(s) from the ZIP. %2$d file(s) were skipped.', 'topten-simple-theme-options' ),
 				$count,
 				$skipped
 			);
 		} else {
 			$message = sprintf(
 				/* translators: %d: number of fonts imported */
-				_n( 'Imported %d font from the ZIP.', 'Imported %d fonts from the ZIP.', $count, 'simple-theme-options' ),
+				_n( 'Imported %d font from the ZIP.', 'Imported %d fonts from the ZIP.', $count, 'topten-simple-theme-options' ),
 				$count
 			);
 		}
@@ -1245,6 +1245,6 @@ final class CustomFontsRegistry {
 			return '';
 		}
 
-		return __( 'Weight and style for this WOFF2 file were read from the file name. Upload a TTF or OTF version for full auto-detection.', 'simple-theme-options' );
+		return __( 'Weight and style for this WOFF2 file were read from the file name. Upload a TTF or OTF version for full auto-detection.', 'topten-simple-theme-options' );
 	}
 }

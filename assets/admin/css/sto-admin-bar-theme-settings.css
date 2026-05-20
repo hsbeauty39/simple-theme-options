@@ -22,12 +22,16 @@
 	max-width: min(520px, 96vw);
 }
 
-/* Primary dropdown: one section per row. */
+#wpadminbar li#wp-admin-bar-sto-theme-settings.menupop.hover > .ab-sub-wrapper,
+#wpadminbar li#wp-admin-bar-sto-theme-settings.menupop:hover > .ab-sub-wrapper {
+	display: block;
+}
+
+/* Primary dropdown: one leaf link per row. */
 #wpadminbar #wp-admin-bar-sto-theme-settings-default.ab-submenu {
-	display: block !important;
 	width: auto;
-	min-width: 200px;
-	max-width: 260px;
+	min-width: 220px;
+	max-width: 320px;
 	padding: 2px 0;
 	margin: 0;
 }
@@ -128,30 +132,30 @@
 	top: 0 !important;
 }
 
-/* Closed section flyout must not stay visible (ghost row under the primary list). */
-#wpadminbar #wp-admin-bar-sto-theme-settings-default > li.sto-ab-megapop:not(:hover):not(.hover) > .ab-sub-wrapper {
+/* Multi-menu mode: menu group row (Theme Settings vs UAEBattery). */
+#wpadminbar #wp-admin-bar-sto-theme-settings-default > li.sto-ab-menu-group:not(:hover):not(.hover) > .ab-sub-wrapper {
 	display: none !important;
 }
 
-#wpadminbar #wp-admin-bar-sto-theme-settings-default > li.sto-ab-megapop > .ab-sub-wrapper {
+#wpadminbar #wp-admin-bar-sto-theme-settings-default > li.sto-ab-menu-group > .ab-sub-wrapper {
 	z-index: 100000;
 }
 
-#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-megapop.menupop {
+#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-menu-group.menupop {
 	position: relative;
 }
 
-#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-megapop > .ab-item {
+#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-menu-group > .ab-item {
 	font-weight: 600;
 }
 
-#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-megapop .ab-submenu {
-	display: block !important;
-	min-width: 188px;
+#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-menu-group .ab-submenu {
+	min-width: 220px;
+	max-width: 320px;
 	padding: 2px 0;
 }
 
-#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-megapop .ab-submenu .ab-item {
+#wpadminbar #wp-admin-bar-sto-theme-settings .sto-ab-menu-group .ab-submenu .ab-item {
 	padding: 2px 10px !important;
 	font-weight: 400;
 }

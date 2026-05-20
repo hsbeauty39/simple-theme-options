@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\LinkColor;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
@@ -89,6 +90,8 @@ final class LinkColor {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -186,8 +189,8 @@ final class LinkColor {
 	 */
 	private function parse_labels( $labels ) {
 		$out = array(
-			self::STATE_REGULAR => __( 'Regular', 'simple-theme-options' ),
-			self::STATE_HOVER   => __( 'Hover', 'simple-theme-options' ),
+			self::STATE_REGULAR => __( 'Regular', 'topten-simple-theme-options' ),
+			self::STATE_HOVER   => __( 'Hover', 'topten-simple-theme-options' ),
 		);
 		if ( is_array( $labels ) ) {
 			if ( isset( $labels[ self::STATE_REGULAR ] ) && is_string( $labels[ self::STATE_REGULAR ] ) && trim( $labels[ self::STATE_REGULAR ] ) !== '' ) {
@@ -516,7 +519,7 @@ final class LinkColor {
 					<?php endif; ?>
 					autocomplete="off"
 				/>
-				<button type="button" class="sto-color-reset" aria-label="<?php esc_attr_e( 'Reset to default color', 'simple-theme-options' ); ?>" title="<?php esc_attr_e( 'Reset to default', 'simple-theme-options' ); ?>">
+				<button type="button" class="sto-color-reset" aria-label="<?php esc_attr_e( 'Reset to default color', 'topten-simple-theme-options' ); ?>" title="<?php esc_attr_e( 'Reset to default', 'topten-simple-theme-options' ); ?>">
 					<i class="fa-light fa-arrow-rotate-left" aria-hidden="true"></i>
 				</button>
 			</div>
@@ -590,7 +593,10 @@ final class LinkColor {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"

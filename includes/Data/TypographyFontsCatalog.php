@@ -98,7 +98,7 @@ final class TypographyFontsCatalog {
 		/**
 		 * @param array<string, array{variants: array<int, string>, category: string, source?: string}> $fonts
 		 */
-		return apply_filters( 'sto_typography_font_catalog', $fonts );
+		return apply_filters( 'sto_typography_font_catalog', $fonts ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 	}
 
 	/**

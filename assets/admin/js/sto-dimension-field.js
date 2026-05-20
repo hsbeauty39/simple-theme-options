@@ -219,12 +219,30 @@
         return false;
     }
 
+    function readStoredDimension(o, defaultUnit) {
+        var unit = defaultUnit || 'px';
+        if (o && o.unit) {
+            unit = String(o.unit).toLowerCase();
+        } else if (o && o.u) {
+            unit = String(o.u).toLowerCase();
+        }
+        var customSuffix = '';
+        if (o && o.custom_suffix != null) {
+            customSuffix = String(o.custom_suffix);
+        } else if (o && o.c != null) {
+            customSuffix = String(o.c);
+        }
+        var linked = !!(o && (o.linked || o.link));
+        var values = o && o.values && typeof o.values === 'object' ? o.values : {};
+        return { unit: unit, custom_suffix: customSuffix, linked: linked, values: values };
+    }
+
     function syncHidden($wrap, triggerChange) {
         var meta = readMeta($wrap);
         var $hidden = $wrap.find('.sto-dimension-value');
-        var u = activeUnit($wrap);
+        var unit = activeUnit($wrap);
         var $suffix = $wrap.find('.sto-dimension__custom-suffix');
-        var c = u === 'custom' && customSuffixUiEnabled($wrap) ? String($suffix.val() || '').trim() : '';
+        var customSuffix = unit === 'custom' && customSuffixUiEnabled($wrap) ? String($suffix.val() || '').trim() : '';
         var linked = isLinked($wrap);
         var values = {};
         var keys = sideKeys($wrap);
@@ -271,8 +289,8 @@
             }
         }
         var payload = {
-            u: u,
-            c: u === 'custom' ? c : '',
+            unit: unit,
+            custom_suffix: unit === 'custom' ? customSuffix : '',
             linked: linked,
             values: values
         };
@@ -292,12 +310,12 @@
         if (!o) {
             o = def;
         }
-        var u = (o.u || 'px').toLowerCase();
-        applyUnitUi($wrap, u);
+        var stored = readStoredDimension(o, 'px');
+        applyUnitUi($wrap, stored.unit);
         var $suffix = $wrap.find('.sto-dimension__custom-suffix');
-        $suffix.val(o.c || '');
-        setLinked($wrap, !!o.linked && $wrap.find('[data-sto-dimension-link]').length > 0);
-        var vals = o.values && typeof o.values === 'object' ? o.values : {};
+        $suffix.val(stored.custom_suffix || '');
+        setLinked($wrap, stored.linked && $wrap.find('[data-sto-dimension-link]').length > 0);
+        var vals = stored.values;
         var keys = sideKeys($wrap);
         for (var i = 0; i < keys.length; i++) {
             var kk = keys[i];

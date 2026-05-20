@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\CheckboxControl;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -87,6 +88,8 @@ final class CheckboxControl {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -119,8 +122,8 @@ final class CheckboxControl {
 		}
 
 		$labels = isset( $field['labels'] ) && is_array( $field['labels'] ) ? $field['labels'] : array();
-		$on_l   = isset( $labels['on'] ) ? (string) $labels['on'] : __( 'Enabled', 'simple-theme-options' );
-		$off_l  = isset( $labels['off'] ) ? (string) $labels['off'] : __( 'Disabled', 'simple-theme-options' );
+		$on_l   = isset( $labels['on'] ) ? (string) $labels['on'] : __( 'Enabled', 'topten-simple-theme-options' );
+		$off_l  = isset( $labels['off'] ) ? (string) $labels['off'] : __( 'Disabled', 'topten-simple-theme-options' );
 
 		$field['section_slug']  = $section_slug;
 		$field['id']            = $field_id;
@@ -500,8 +503,8 @@ final class CheckboxControl {
 		$max_sel       = isset( $field['max'] ) ? (int) $field['max'] : 0;
 		$columns       = isset( $field['columns'] ) ? (int) $field['columns'] : 0;
 		$labels        = isset( $field['labels'] ) && is_array( $field['labels'] ) ? $field['labels'] : array( 'on' => '', 'off' => '' );
-		$on_label      = isset( $labels['on'] ) ? (string) $labels['on'] : __( 'Enabled', 'simple-theme-options' );
-		$off_label     = isset( $labels['off'] ) ? (string) $labels['off'] : __( 'Disabled', 'simple-theme-options' );
+		$on_label      = isset( $labels['on'] ) ? (string) $labels['on'] : __( 'Enabled', 'topten-simple-theme-options' );
+		$off_label     = isset( $labels['off'] ) ? (string) $labels['off'] : __( 'Disabled', 'topten-simple-theme-options' );
 		$default_single = '0';
 		if ( ! $multiple && isset( $field['default'] ) ) {
 			if ( is_array( $field['default'] ) ) {
@@ -550,7 +553,10 @@ final class CheckboxControl {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			data-sto-checkbox-control="1"
 			data-sto-checkbox-mode="<?php echo esc_attr( $multiple ? 'multi' : 'single' ); ?>"

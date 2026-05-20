@@ -1,0 +1,157 @@
+/**
+ * WooCommerce product-data-style vertical tabs for STO post metaboxes (`metabox.nav_style` => `wc_tabs`).
+ */
+
+.postbox .sto-metabox-nav--wc-tabs .sto-metabox-alert,
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-head {
+	display: none !important;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-wrapper--metabox {
+	max-width: none;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-body {
+	margin: 0;
+	padding: 0;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-nav-layout {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	max-height: none;
+	margin: 0;
+	border: 1px solid #c3c4c7;
+	background: #fff;
+	box-sizing: border-box;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar-wrap {
+	flex: 0 0 158px;
+	width: 158px;
+	max-width: 158px;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	background: #fafafa;
+	border-right: 1px solid #eee;
+	box-sizing: border-box;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar {
+	display: block;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar > .sto-option-panel-sidebar-item {
+	margin: 0;
+	padding: 0;
+	border: none;
+	border-bottom: 1px solid #eee;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar > .sto-option-panel-sidebar-item:last-child {
+	border-bottom: 0;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar-item-link {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 10px 12px;
+	margin: 0;
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	text-decoration: none;
+	font-size: 13px;
+	line-height: 1.35;
+	color: #2271b1;
+	background: transparent;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar-item-link:hover,
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar-item-link:focus {
+	color: #135e96;
+	background: #f6f7f7;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar-item.sto-is-active > .sto-option-panel-sidebar-item-link,
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar-item-link.sto-is-active {
+	color: #1d2327;
+	background: #eee;
+	font-weight: 600;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar-item-link .sto-option-panel-icon {
+	width: 18px;
+	min-width: 18px;
+	font-size: 15px;
+	opacity: 0.85;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar-toggle {
+	display: none;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar-children {
+	display: none !important;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-main {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 12px 16px 16px;
+	background: #fff;
+	box-sizing: border-box;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-content-head {
+	display: none;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-content-body {
+	padding: 0;
+}
+
+.postbox .sto-metabox-nav--wc-tabs .sto-field-group {
+	margin-bottom: 12px;
+}
+
+#sto-theme-settings-battery-specifications .inside {
+	margin: 0;
+	padding: 0;
+}
+
+#sto-theme-settings-battery-specifications .postbox-header {
+	border-bottom: 1px solid #c3c4c7;
+}
+
+@media (max-width: 782px) {
+	.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-nav-layout {
+		flex-direction: column;
+	}
+
+	.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar-wrap {
+		flex: 0 0 auto;
+		width: 100%;
+		max-width: 100%;
+		border-right: 0;
+		border-bottom: 1px solid #eee;
+	}
+
+	.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar {
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	.postbox .sto-metabox-nav--wc-tabs .sto-option-panel-sidebar > .sto-option-panel-sidebar-item {
+		flex: 1 1 auto;
+		border-bottom: 0;
+		border-right: 1px solid #eee;
+	}
+}

@@ -351,9 +351,6 @@
                     if (typeof window.stoInitCodeEditors === 'function') {
                         window.stoInitCodeEditors($ap);
                     }
-                    if (typeof window.stoInitRichModernEditors === 'function') {
-                        window.stoInitRichModernEditors($ap);
-                    }
                     applyRequiredVisibility($ap);
                 }
             });
@@ -549,6 +546,9 @@
                 $activePanel = $p;
             }
         });
+        // Repeater JSON mirrors must stay submittable even when a sibling section fieldset is disabled.
+        $('.sto-adv-rep__value').prop('disabled', false);
+        $('#woocommerce-product-data .sto-wc-product-data-panel .sto-panel-section-fields').prop('disabled', false);
         if ($activePanel.length && typeof window.stoRefreshTypographySelect2 === 'function') {
             window.setTimeout(function() {
                 window.stoRefreshTypographySelect2($activePanel);
@@ -894,11 +894,18 @@
 
     function refreshStoSelect2() {
         window.setTimeout(function() {
+            if ($('#customize-theme-controls .sto-customizer-embed-root').length
+                && typeof window.stoFixCustomizerEmbedLayout === 'function') {
+                window.stoFixCustomizerEmbedLayout();
+            }
             var $activePanel = stoResolveOptionsAdminScope();
             initStoResponsiveTabs($activePanel);
             /* Advanced repeater: bind delegated UI + sortables before Select2 so expanded rows enhance on first paint. */
             if (typeof window.stoInitAdvancedRepeaterFields === 'function') {
                 window.stoInitAdvancedRepeaterFields($activePanel);
+            }
+            if (typeof window.stoInitAdvancedRepeaterEditors === 'function') {
+                window.stoInitAdvancedRepeaterEditors($activePanel);
             }
             initStoImageSelectRadios($activePanel);
             initStoButtonGroups($activePanel);
@@ -973,9 +980,6 @@
             }
             if (typeof window.stoInitCodeEditors === 'function') {
                 window.stoInitCodeEditors($activePanel);
-            }
-            if (typeof window.stoInitRichModernEditors === 'function') {
-                window.stoInitRichModernEditors($activePanel);
             }
         }, 0);
     }
@@ -1798,7 +1802,15 @@
             }
         }
 
+        function stoIsCustomizerEmbed() {
+            return $('#customize-theme-controls .sto-customizer-embed-root').length > 0
+                || $('.sto-option-panel-wrapper--customizer-embed').length > 0;
+        }
+
         function stoIsOnMainThemeSettingsScreen() {
+            if (stoIsCustomizerEmbed()) {
+                return true;
+            }
             var mainPage = stoGetMainPageSlug();
             try {
                 var currentUrl = new URL(window.location.href, window.location.origin);
@@ -1812,6 +1824,9 @@
         }
 
         function stoCanUseSpaNavForHref(href) {
+            if (stoIsCustomizerEmbed()) {
+                return stoGetUrlPageParam(stoAbsAdminHref(href)) === stoGetMainPageSlug();
+            }
             if (stoIsOnMainThemeSettingsScreen()) {
                 return stoGetUrlPageParam(stoAbsAdminHref(href)) === stoGetMainPageSlug();
             }
@@ -1898,7 +1913,7 @@
                 ? stoResolveSectionToLeafInWrap(rawSection, $wcScopeWrap)
                 : resolveSectionToLeafSlug(rawSection);
 
-            if (section && getSectionFromUrl(urlString) !== section) {
+            if (!stoIsCustomizerEmbed() && section && getSectionFromUrl(urlString) !== section) {
                 try {
                     var u = new URL(stoAbsAdminHref(urlString), window.location.origin);
                     u.searchParams.set('section', section);
@@ -1909,19 +1924,27 @@
                 }
             }
 
-            if (isWcProductData && $wcScopeWrap.length) {
+            var $navScope = stoIsCustomizerEmbed()
+                ? $('.sto-option-panel-wrapper--customizer-embed')
+                : (isWcProductData && $wcScopeWrap.length ? $wcScopeWrap : $(document));
+            if (isWcProductData && $wcScopeWrap.length && !stoIsCustomizerEmbed()) {
                 $wcScopeWrap
                     .find('.sto-option-panel-sidebar-item, .sto-option-panel-sidebar-item-link')
                     .removeClass('sto-is-active sto-is-parent-active');
             } else {
-                $('.sto-option-panel-sidebar-item, .sto-option-panel-sidebar-item-link')
+                $navScope.find('.sto-option-panel-sidebar-item, .sto-option-panel-sidebar-item-link')
                     .removeClass('sto-is-active sto-is-parent-active');
             }
 
             function switchSectionContent(targetSection, $scopeWrap) {
+                if (stoIsCustomizerEmbed() && (!$scopeWrap || !$scopeWrap.length)) {
+                    $scopeWrap = $('.sto-option-panel-wrapper--customizer-embed').first();
+                }
                 var $panels = $scopeWrap && $scopeWrap.length
                     ? $scopeWrap.find('.sto-option-panel-section')
-                    : $('.sto-option-panel-section');
+                    : (stoIsCustomizerEmbed()
+                        ? $('.sto-option-panel-wrapper--customizer-embed .sto-option-panel-section')
+                        : $('.sto-option-panel-section'));
                 if (!$panels.length) {
                     return;
                 }
@@ -2027,9 +2050,14 @@
                 stoActivateWcProductDataPanel($wcScopeWrap, { syncPanelWrap: true });
             }
 
-            var $customLinks = isWcProductData && $wcScopeWrap.length
-                ? $wcScopeWrap.find('.sto-option-panel-sidebar .sto-option-panel-sidebar-item-link')
-                : $('.sto-option-panel-sidebar .sto-option-panel-sidebar-item-link');
+            var $customLinks;
+            if (stoIsCustomizerEmbed()) {
+                $customLinks = $('.sto-option-panel-wrapper--customizer-embed .sto-option-panel-sidebar .sto-option-panel-sidebar-item-link');
+            } else if (isWcProductData && $wcScopeWrap.length) {
+                $customLinks = $wcScopeWrap.find('.sto-option-panel-sidebar .sto-option-panel-sidebar-item-link');
+            } else {
+                $customLinks = $('.sto-option-panel-sidebar .sto-option-panel-sidebar-item-link');
+            }
             // Parent rows may share the same href section=… as their first child; match owning item slug (data-sto-section).
             var $activeCustomLink = $customLinks.filter(function() {
                 var linkHref = $(this).attr('href') || '';
@@ -2079,9 +2107,11 @@
                 // Update right panel heading (icon + name) without page refresh.
                 var label = $activeCustomLink.find('.sto-option-panel-sidebar-item-title').text().trim();
                 if (label) {
-                    var $titleTarget = isWcProductData && $wcScopeWrap.length
+                    var $titleTarget = stoIsCustomizerEmbed()
+                        ? $('.sto-option-panel-wrapper--customizer-embed .sto-option-panel-content-title')
+                        : (isWcProductData && $wcScopeWrap.length
                         ? $wcScopeWrap.find('.sto-option-panel-content-title')
-                        : $('.sto-option-panel-content-title');
+                        : $('.sto-option-panel-content-title'));
                     $titleTarget.text(label);
                 }
 
@@ -2371,6 +2401,7 @@
                 } else if (e.key === 'Enter') {
                     if (activeIdx >= 0) {
                         e.preventDefault();
+                        e.stopPropagation();
                         activateItem($items.eq(activeIdx));
                     }
                 }
@@ -2412,6 +2443,14 @@
 
         $(document).on('submit', 'form.sto-options-form--metabox, form.sto-options-form--term', function(e) {
             e.preventDefault();
+        });
+
+        $('.sto-option-panel-sidebar').on('keydown', '.sto-option-panel-sidebar-item-link', function (keydownEvent) {
+            if (keydownEvent.key !== 'Enter' && keydownEvent.key !== ' ') {
+                return;
+            }
+            keydownEvent.preventDefault();
+            $(this).trigger('click');
         });
 
         $('.sto-option-panel-sidebar').on('click', '.sto-option-panel-sidebar-item-link', function(e) {
@@ -2464,7 +2503,9 @@
 
             e.preventDefault();
 
-            window.history.pushState({}, '', href);
+            if (!stoIsCustomizerEmbed()) {
+                window.history.pushState({}, '', href);
+            }
             syncActiveState(href);
         });
 
@@ -2529,10 +2570,32 @@
                 return;
             }
 
+            var panelFromUrl = '';
+            try {
+                panelFromUrl = new URL(window.location.href, window.location.origin).searchParams.get('sto_wc_panel') || '';
+            } catch (panelUrlErr) {
+                panelFromUrl = '';
+            }
+            if (panelFromUrl) {
+                var $panelTab = $productData.find('.product_data_tabs li a[href="#' + panelFromUrl + '"]');
+                if ($panelTab.length) {
+                    $panelTab.trigger('click');
+                }
+            }
+
             $productData.on('click', '.product_data_tabs li a', function () {
                 var panelSelector = ($(this).attr('href') || '').trim();
                 if (!panelSelector || panelSelector.charAt(0) !== '#') {
                     return;
+                }
+
+                var $wcPanel = $(panelSelector);
+                if ($wcPanel.length) {
+                    window.setTimeout(function () {
+                        if (typeof window.stoInitAdvancedRepeaterFields === 'function') {
+                            window.stoInitAdvancedRepeaterFields($wcPanel);
+                        }
+                    }, 120);
                 }
 
                 var $wrap = stoFindWrapForPanelSelector(panelSelector);
@@ -2549,6 +2612,17 @@
                 var nextUrl = stoBuildPostEditUrlWithSection($wrap, targetSection);
                 if (!nextUrl) {
                     return;
+                }
+
+                var panelHash = panelSelector.replace(/^#/, '');
+                if (panelHash) {
+                    try {
+                        var panelUrl = new URL(stoAbsAdminHref(nextUrl), window.location.origin);
+                        panelUrl.searchParams.set('sto_wc_panel', panelHash);
+                        nextUrl = panelUrl.toString();
+                    } catch (panelStateErr) {
+                        /* ignore */
+                    }
                 }
 
                 window.history.replaceState({}, '', nextUrl);
@@ -2709,22 +2783,243 @@
         /**
          * WooCommerce product save: sync STO fields inside Product data tabs into #post before submit.
          */
+        function stoEnsureWcProductDataPersistHiddenFields() {
+            var $postForm = $('#post');
+            if (!$postForm.length) {
+                return;
+            }
+            if (!$postForm.find('input[name="sto_wc_return_section"]').length) {
+                $postForm.append(
+                    '<input type="hidden" name="sto_wc_return_section" id="sto_wc_return_section" value="" />'
+                );
+            }
+            if (!$postForm.find('input[name="sto_wc_active_panel"]').length) {
+                $postForm.append(
+                    '<input type="hidden" name="sto_wc_active_panel" id="sto_wc_active_panel" value="" />'
+                );
+            }
+        }
+
+        function stoStampWcProductDataPersistContext() {
+            if (!$('#woocommerce-product-data').length || !stoIsWcProductDataScreen()) {
+                return;
+            }
+            stoEnsureWcProductDataPersistHiddenFields();
+            var $wrap = stoGetVisibleWcProductDataWrap();
+            if (!$wrap.length) {
+                $wrap = stoGetWcProductDataWraps().first();
+            }
+            var sectionSlug = getSectionFromUrl(window.location.href);
+            if (!sectionSlug && $wrap.length) {
+                sectionSlug = $wrap.attr('data-sto-default-leaf') || '';
+            }
+            if ($wrap.length) {
+                sectionSlug = stoResolveSectionToLeafInWrap(sectionSlug, $wrap);
+            }
+            $('#sto_wc_return_section').val(sectionSlug || '');
+            var panelSelector = $wrap.length ? ($wrap.attr('data-sto-wc-panel-selector') || '').trim() : '';
+            $('#sto_wc_active_panel').val(panelSelector);
+            if (sectionSlug) {
+                $('.sto-options-form--wc-product-data input[name="sto_ts_section"]').val(sectionSlug);
+            }
+        }
+
         function stoPrepareWcProductDataPanelsForSubmit() {
             var $wcPanels = $('#woocommerce-product-data .sto-wc-product-data-panel');
             if (!$wcPanels.length) {
                 return;
             }
-            $wcPanels.each(function () {
-                $(this)
-                    .find('.sto-panel-section-fields')
-                    .prop('disabled', false);
-            });
+            $wcPanels.find('fieldset').prop('disabled', false);
+            $wcPanels.find(':input').prop('disabled', false).removeAttr('disabled');
+            $wcPanels.find('.sto-adv-rep__value').prop('disabled', false).removeAttr('disabled');
+
+            if (typeof window.stoSaveRepeaterTinyMceEditors === 'function') {
+                window.stoSaveRepeaterTinyMceEditors($wcPanels);
+            } else if (typeof window.stoSaveVisibleTinyMceEditors === 'function') {
+                window.stoSaveVisibleTinyMceEditors($wcPanels);
+            }
             if (typeof window.stoSyncAdvancedRepeaterFields === 'function') {
                 window.stoSyncAdvancedRepeaterFields($wcPanels);
             }
-            $wcPanels.find('.sto-rich-modern-editor__input').each(function () {
-                $(this).trigger('change');
+            stoStampWcProductDataPersistContext();
+        }
+
+        /**
+         * One hidden JSON input per WC advanced repeater, appended to #post (never inside a disabled fieldset).
+         */
+        function stoEnsureWcRepeaterPostLevelHiddens() {
+            var $postForm = $('#post');
+            if (!$postForm.length || !$('#woocommerce-product-data').length) {
+                return;
+            }
+
+            $('#woocommerce-product-data .sto-field-row-advanced-repeater').each(function () {
+                var $fieldRow = $(this);
+                var fieldId = String($fieldRow.attr('data-sto-field-id') || '');
+                if (!fieldId) {
+                    return;
+                }
+                var $sourceHidden = $fieldRow.find('.sto-adv-rep__value[name^="sto_options["]').first();
+                if (!$sourceHidden.length) {
+                    return;
+                }
+                var inputName = String($sourceHidden.attr('name') || '');
+                if (!inputName) {
+                    return;
+                }
+
+                var $postHidden = $postForm.find(
+                    'input.sto-wc-repeater-post-json[data-sto-field-id="' + fieldId + '"]'
+                );
+                if (!$postHidden.length) {
+                    $postHidden = $('<input>', {
+                        type: 'hidden',
+                        'class': 'sto-wc-repeater-post-json',
+                        'data-sto-field-id': fieldId,
+                        name: inputName
+                    });
+                    $postHidden.appendTo($postForm);
+                } else {
+                    $postHidden.attr('name', inputName);
+                }
+
+                $postHidden.val(String($sourceHidden.val() || ''));
+                $sourceHidden.removeAttr('name');
             });
+        }
+
+        /**
+         * Copy synced repeater JSON from panel hiddens into #post-level mirrors.
+         */
+        function stoSyncWcRepeaterPostLevelHiddens() {
+            var $postForm = $('#post');
+            if (!$postForm.length) {
+                return;
+            }
+            $postForm.find('input.sto-wc-repeater-post-json').each(function () {
+                var $postHidden = $(this);
+                var fieldId = String($postHidden.attr('data-sto-field-id') || '');
+                if (!fieldId) {
+                    return;
+                }
+                var $fieldRow = $(
+                    '#woocommerce-product-data .sto-field-row-advanced-repeater[data-sto-field-id="' +
+                        fieldId +
+                        '"]'
+                ).first();
+                var $sourceHidden = $fieldRow.find('.sto-adv-rep__value').first();
+                if ($sourceHidden.length) {
+                    $postHidden.val(String($sourceHidden.val() || ''));
+                }
+            });
+        }
+
+        /**
+         * Mirror STO Product data repeater leaves + JSON onto #post (disabled fieldsets must not drop POST).
+         */
+        function stoBridgeWcProductDataFieldsToPostForm() {
+            var $postForm = $('#post');
+            if (!$postForm.length || !$('#woocommerce-product-data').length) {
+                return;
+            }
+
+            if (typeof window.stoSaveRepeaterTinyMceEditors === 'function') {
+                window.stoSaveRepeaterTinyMceEditors($('#woocommerce-product-data'));
+            }
+            if (typeof window.stoSyncAdvancedRepeaterFields === 'function') {
+                window.stoSyncAdvancedRepeaterFields($('#woocommerce-product-data'));
+            }
+            stoSyncWcRepeaterPostLevelHiddens();
+
+            $postForm.find('input.sto-wc-product-data-bridge').remove();
+
+            $('#woocommerce-product-data .sto-wc-product-data-panel').each(function () {
+                $(this)
+                    .find('.sto-field-row-advanced-repeater')
+                    .each(function () {
+                        var $fieldRow = $(this);
+                        var fieldId = String($fieldRow.attr('data-sto-field-id') || '');
+                        if (!fieldId) {
+                            return;
+                        }
+                        var $top = $fieldRow.find('.sto-adv-rep').first();
+                        if (String($top.attr('data-sto-adv-rep-submit-leaves') || '') !== '1') {
+                            return;
+                        }
+                        $top
+                            .children('ul[data-sto-adv-rep-list]')
+                            .first()
+                            .children('li[data-sto-adv-rep-item]')
+                            .each(function (rowIndex) {
+                                var $row = $(this);
+                                $row.find('[data-sto-adv-rep-leaf]').each(function () {
+                                    var $leaf = $(this);
+                                    var leafKey = String($leaf.attr('data-sto-adv-rep-key') || '').trim();
+                                    if (!leafKey) {
+                                        return;
+                                    }
+                                    var leafName =
+                                        'sto_options_adv_rep_leaves[' +
+                                        fieldId +
+                                        '][' +
+                                        rowIndex +
+                                        '][' +
+                                        leafKey +
+                                        ']';
+                                    var leafValue = '';
+                                    var leafKind = String($leaf.attr('data-sto-adv-rep-kind') || '');
+                                    var $editorTextarea = null;
+                                    if (leafKind === 'editor') {
+                                        $editorTextarea = $leaf.find('textarea.wp-editor-area').first();
+                                        if (typeof window.stoFlushRepeaterVisualEditorToTextarea === 'function') {
+                                            var $editorWrap = $editorTextarea.closest('.wp-editor-wrap');
+                                            if ($editorWrap.length) {
+                                                window.stoFlushRepeaterVisualEditorToTextarea($editorWrap);
+                                            }
+                                        }
+                                        if (typeof window.stoReadClassicEditorHtmlFromLeaf === 'function') {
+                                            leafValue = window.stoReadClassicEditorHtmlFromLeaf($leaf);
+                                        } else {
+                                            leafValue = $editorTextarea.length
+                                                ? String($editorTextarea.val() || '')
+                                                : '';
+                                        }
+                                        if ($editorTextarea.length) {
+                                            $editorTextarea.val(leafValue);
+                                        }
+                                    } else {
+                                        var $leafInput = $leaf
+                                            .find(
+                                                '[data-sto-adv-rep-input], textarea.wp-editor-area'
+                                            )
+                                            .first();
+                                        leafValue = $leafInput.length ? String($leafInput.val() || '') : '';
+                                    }
+                                    var $bridgeInput = $('<input>', {
+                                        type: 'hidden',
+                                        'class': 'sto-wc-product-data-bridge',
+                                        name: leafName
+                                    });
+                                    $bridgeInput.val(leafValue);
+                                    $bridgeInput.appendTo($postForm);
+                                    // Empty named textarea must not overwrite bridge POST (PHP keeps last duplicate name).
+                                    if ($editorTextarea && $editorTextarea.length) {
+                                        $editorTextarea.removeAttr('name');
+                                    }
+                                });
+                            });
+                    });
+            });
+        }
+
+        function stoRunWcProductDataPreSubmit() {
+            var $postScope = $('#post');
+            $postScope.find('.sto-panel-section-fields').prop('disabled', false);
+            $postScope.find('.sto-adv-rep__value').prop('disabled', false);
+            $postScope.find('fieldset').prop('disabled', false);
+            $postScope.find(':input').prop('disabled', false).removeAttr('disabled');
+            stoPrepareWcProductDataPanelsForSubmit();
+            stoBridgeWcProductDataFieldsToPostForm();
         }
 
         function initStoWcProductDataSaveOnPostSave() {
@@ -2735,11 +3030,60 @@
             if (!$postForm.length) {
                 return;
             }
+            stoEnsureWcProductDataPersistHiddenFields();
+            stoEnsureWcRepeaterPostLevelHiddens();
+            window.stoEnsureWcRepeaterPostLevelHiddens = stoEnsureWcRepeaterPostLevelHiddens;
+            window.stoSyncWcRepeaterPostLevelHiddens = stoSyncWcRepeaterPostLevelHiddens;
+
             $postForm.on('submit.stoWcProductDataPersist', function () {
-                stoPrepareWcProductDataPanelsForSubmit();
+                stoRunWcProductDataPreSubmit();
             });
+
+            var postFormEl = $postForm[0];
+            if (postFormEl && postFormEl.addEventListener) {
+                postFormEl.addEventListener(
+                    'submit',
+                    function stoWcProductDataCaptureSubmit() {
+                        stoRunWcProductDataPreSubmit();
+                    },
+                    true
+                );
+            }
+
             $(document).on('click.stoWcProductDataPersist', '#publish, #save-post', function () {
-                stoPrepareWcProductDataPanelsForSubmit();
+                stoRunWcProductDataPreSubmit();
+            });
+
+            // Enter in a single-line field submits #post without firing the publish button click handler.
+            $postForm.on(
+                'keydown.stoWcProductDataPersist',
+                'input:not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"])',
+                function (keydownEvent) {
+                    if (keydownEvent.key !== 'Enter') {
+                        return;
+                    }
+                    var $target = $(keydownEvent.target);
+                    if ($target.is('textarea') || $target.closest('textarea').length) {
+                        return;
+                    }
+                    if ($target.closest('.sto-quick-search').length) {
+                        return;
+                    }
+                    if ($target.closest('.block-editor-rich-text__editable, .rich-text').length) {
+                        return;
+                    }
+                    if ($target.closest('.select2-search__field').length) {
+                        return;
+                    }
+                    stoRunWcProductDataPreSubmit();
+                }
+            );
+
+            $(document).on('keydown.stoWcProductDataPersist', function (keydownEvent) {
+                if (!(keydownEvent.ctrlKey || keydownEvent.metaKey) || (keydownEvent.key !== 's' && keydownEvent.key !== 'S')) {
+                    return;
+                }
+                stoRunWcProductDataPreSubmit();
             });
         }
         initStoWcProductDataSaveOnPostSave();

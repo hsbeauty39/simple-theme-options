@@ -3,8 +3,10 @@ namespace SimpleThemeOptions\Admin\Options\ImportExport;
 
 use SimpleThemeOptions\Admin\CustomFonts\CustomFontsAdmin;
 use SimpleThemeOptions\Admin\ThemeSettingsDisplayLocations;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
+use SimpleThemeOptions\Admin\Sample\SampleFieldModules;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
@@ -31,6 +33,13 @@ final class ThemeSettingsImportExport {
 
 	/** Prior **`tools.php?page=`** slug; {@see Menu::redirect_legacy_tools_backup_page_slug()} redirects here. */
 	public const LEGACY_TOOLS_BACKUP_PAGE_SLUG = 'sto-theme-options-backup';
+
+	/**
+	 * Tools submenu and screen title (**Tools → Simple Settings**).
+	 */
+	public static function get_tools_page_label(): string {
+		return __( 'Simple Settings', 'topten-simple-theme-options' );
+	}
 
 	/**
 	 * Whether a section slug is the Advance import/export leaf (`advance` or `advance-{page}`).
@@ -98,7 +107,7 @@ final class ThemeSettingsImportExport {
 
 	public const EXPORT_FORMAT_VERSION = 1;
 
-	/** Stored boolean; with {@see OptionsMenu::is_demo_capability_allowed()}, gates sample sections. */
+	/** Stored boolean; gates packaged sample sections ({@see OptionsMenu::is_demo_mode_enabled()}). */
 	public const OPTION_UI_DEMO_ENABLED = 'sto_theme_settings_ui_demo_enabled';
 
 	/**
@@ -145,7 +154,7 @@ final class ThemeSettingsImportExport {
 		}
 
 		foreach ( $menu->get_registered_menu_slugs() as $page_slug ) {
-			if ( $menu->is_menu_root_packaged_demo( $page_slug ) ) {
+			if ( $menu->is_menu_root_packaged_demo( $page_slug ) || ! $menu->is_menu_root_visible_in_admin( $page_slug ) ) {
 				continue;
 			}
 			if ( self::advance_section_exists_for_menu_page( $menu, $page_slug ) ) {
@@ -157,14 +166,11 @@ final class ThemeSettingsImportExport {
 				? self::SECTION_SLUG
 				: ( 'advance-' . $page_slug );
 
-			$args = apply_filters(
-				'sto_theme_settings_advance_section_args',
-				array(
-					'nav_locked'   => true,
-					'show_in_menu' => false,
-				),
-				$page_slug
+			$advance_defaults = array(
+				'nav_locked'   => true,
+				'show_in_menu' => false,
 			);
+			$args             = apply_filters( 'sto_theme_settings_advance_section_args', $advance_defaults, $page_slug ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 			if ( ! is_array( $args ) ) {
 				$args = array();
 			}
@@ -177,7 +183,7 @@ final class ThemeSettingsImportExport {
 			);
 			$merged['sto_menu_page'] = $page_slug;
 			$menu->add_section(
-				__( 'Advance', 'simple-theme-options' ),
+				__( 'Advance', 'topten-simple-theme-options' ),
 				$adv_slug,
 				'fa-light fa-file-arrow-up',
 				$merged
@@ -200,8 +206,8 @@ final class ThemeSettingsImportExport {
 			return;
 		}
 		add_management_page(
-			__( 'Simple Backup', 'simple-theme-options' ),
-			__( 'Simple Backup', 'simple-theme-options' ),
+			self::get_tools_page_label(),
+			self::get_tools_page_label(),
 			'manage_options',
 			self::SETTINGS_ADVANCE_PAGE,
 			array( $this, 'render_wp_settings_backup_page' )
@@ -264,7 +270,6 @@ final class ThemeSettingsImportExport {
 
 		$intro_id     = 'sto-advance-intro' . $idsuf;
 		$options_menu = OptionsMenu::instance();
-		$demo_cap     = $options_menu->is_demo_capability_allowed();
 		$demo_on      = wp_validate_boolean( get_option( self::OPTION_UI_DEMO_ENABLED, false ) );
 		$history      = $this->get_import_history();
 		$history_ui   = array_slice( array_reverse( $history ), 0, self::MAX_IMPORT_HISTORY_UI );
@@ -287,7 +292,7 @@ final class ThemeSettingsImportExport {
 			 * @param array<int, string> $scope_slugs
 			 * @param OptionsMenu        $options_menu
 			 */
-			$scope_slugs = apply_filters( 'sto_theme_settings_backup_export_scope_menu_slugs', $scope_slugs, $options_menu );
+			$scope_slugs = apply_filters( 'sto_theme_settings_backup_export_scope_menu_slugs', $scope_slugs, $options_menu ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 			if ( ! is_array( $scope_slugs ) ) {
 				$scope_slugs = array();
 			}
@@ -296,7 +301,7 @@ final class ThemeSettingsImportExport {
 			<div class="sto-advance-card sto-advance-card--export-scope">
 				<?php
 				FieldTitle::render_heading(
-					__( 'Export scope', 'simple-theme-options' ),
+					__( 'Export scope', 'topten-simple-theme-options' ),
 					'default',
 					null,
 					'sto-advance-export-scope',
@@ -306,7 +311,7 @@ final class ThemeSettingsImportExport {
 				);
 				?>
 				<p class="sto-advance-card__desc">
-					<?php esc_html_e( 'Choose which Theme Settings screens to include in the backup (you can select several). Packaged demo menus are not listed. Unchecked screens are omitted from the JSON.', 'simple-theme-options' ); ?>
+					<?php esc_html_e( 'Choose which Theme Settings screens to include in the backup (you can select several). Packaged demo menus are not listed. Unchecked screens are omitted from the JSON.', 'topten-simple-theme-options' ); ?>
 				</p>
 				<fieldset class="sto-advance-export-menus">
 					<?php foreach ( $scope_slugs as $mslug ) : ?>
@@ -330,19 +335,18 @@ final class ThemeSettingsImportExport {
 			<p class="sto-advance-import-export__intro" id="<?php echo esc_attr( $intro_id ); ?>">
 				<?php
 				if ( 'settings' === $context ) {
-					esc_html_e( 'Back up or restore Theme Settings from here without opening each options screen. Import merges into your saved options by default; use “Replace entire option store” on import only when you want the file to be the whole map.', 'simple-theme-options' );
+					esc_html_e( 'Back up or restore Theme Settings from here without opening each options screen. Import merges into your saved options by default; use “Replace entire option store” on import only when you want the file to be the whole map.', 'topten-simple-theme-options' );
 				} else {
-					esc_html_e( 'Download or copy a backup of all Theme Settings, or restore a backup from a file or the clipboard. Import merges into your saved options by default; use “Replace entire option store” only when you want the file to be the whole map.', 'simple-theme-options' );
+					esc_html_e( 'Download or copy a backup of all Theme Settings, or restore a backup from a file or the clipboard. Import merges into your saved options by default; use “Replace entire option store” only when you want the file to be the whole map.', 'topten-simple-theme-options' );
 				}
 				?>
 			</p>
 
-			<?php if ( $demo_cap ) : ?>
-				<?php if ( 'settings' === $context && $options_menu->is_packaged_demo_menu() ) : ?>
+			<?php if ( 'settings' === $context && $options_menu->is_packaged_demo_menu() ) : ?>
 			<div class="sto-advance-card sto-advance-card--demo">
 				<?php
 				FieldTitle::render_heading(
-					__( 'Demo mode', 'simple-theme-options' ),
+					__( 'Demo mode', 'topten-simple-theme-options' ),
 					'default',
 					null,
 					'sto-advance-demo-settings',
@@ -351,7 +355,7 @@ final class ThemeSettingsImportExport {
 					''
 				);
 				?>
-				<p class="sto-advance-card__desc"><?php esc_html_e( 'For packaged sample sites, use this toggle to show or hide the built-in Theme Settings demo sections.', 'simple-theme-options' ); ?></p>
+				<p class="sto-advance-card__desc"><?php esc_html_e( 'Show or hide packaged demo field samples. The Theme Settings menu stays visible for licensing; only sample sections and fields are toggled.', 'topten-simple-theme-options' ); ?></p>
 				<div class="sto-advance-demo-toggle" data-sto-advance-demo-wrap>
 					<input type="hidden" id="sto-advance-demo-input<?php echo esc_attr( $idsuf ); ?>" data-sto-advance-demo-input value="<?php echo $demo_on ? '1' : '0'; ?>" />
 					<button
@@ -359,12 +363,12 @@ final class ThemeSettingsImportExport {
 						class="sto-switcher<?php echo $demo_on ? ' sto-switcher--on' : ''; ?>"
 						data-sto-advance-demo-switch
 						aria-pressed="<?php echo $demo_on ? 'true' : 'false'; ?>"
-						aria-label="<?php esc_attr_e( 'Toggle demo mode for sample Theme Settings sections', 'simple-theme-options' ); ?>"
+						aria-label="<?php esc_attr_e( 'Toggle demo mode for sample Theme Settings sections', 'topten-simple-theme-options' ); ?>"
 					>
 						<span class="sto-switcher__track" aria-hidden="true">
 							<span class="sto-switcher__knob"></span>
-							<span class="sto-switcher__label sto-switcher__label--on"><?php esc_html_e( 'ON', 'simple-theme-options' ); ?></span>
-							<span class="sto-switcher__label sto-switcher__label--off"><?php esc_html_e( 'OFF', 'simple-theme-options' ); ?></span>
+							<span class="sto-switcher__label sto-switcher__label--on"><?php esc_html_e( 'ON', 'topten-simple-theme-options' ); ?></span>
+							<span class="sto-switcher__label sto-switcher__label--off"><?php esc_html_e( 'OFF', 'topten-simple-theme-options' ); ?></span>
 						</span>
 					</button>
 					<span class="sto-advance-demo-toggle__hint" data-sto-advance-demo-status role="status" aria-live="polite"></span>
@@ -374,7 +378,7 @@ final class ThemeSettingsImportExport {
 			<div class="sto-advance-card sto-advance-card--demo">
 				<?php
 				FieldTitle::render_heading(
-					__( 'Demo mode', 'simple-theme-options' ),
+					__( 'Demo mode', 'topten-simple-theme-options' ),
 					'default',
 					null,
 					'sto-advance-demo',
@@ -390,12 +394,12 @@ final class ThemeSettingsImportExport {
 						class="sto-switcher<?php echo $demo_on ? ' sto-switcher--on' : ''; ?>"
 						data-sto-advance-demo-switch
 						aria-pressed="<?php echo $demo_on ? 'true' : 'false'; ?>"
-						aria-label="<?php esc_attr_e( 'Toggle demo mode for sample Theme Settings sections', 'simple-theme-options' ); ?>"
+						aria-label="<?php esc_attr_e( 'Toggle demo mode for sample Theme Settings sections', 'topten-simple-theme-options' ); ?>"
 					>
 						<span class="sto-switcher__track" aria-hidden="true">
 							<span class="sto-switcher__knob"></span>
-							<span class="sto-switcher__label sto-switcher__label--on"><?php esc_html_e( 'ON', 'simple-theme-options' ); ?></span>
-							<span class="sto-switcher__label sto-switcher__label--off"><?php esc_html_e( 'OFF', 'simple-theme-options' ); ?></span>
+							<span class="sto-switcher__label sto-switcher__label--on"><?php esc_html_e( 'ON', 'topten-simple-theme-options' ); ?></span>
+							<span class="sto-switcher__label sto-switcher__label--off"><?php esc_html_e( 'OFF', 'topten-simple-theme-options' ); ?></span>
 						</span>
 					</button>
 					<span class="sto-advance-demo-toggle__hint" data-sto-advance-demo-status role="status" aria-live="polite"></span>
@@ -403,16 +407,15 @@ final class ThemeSettingsImportExport {
 			</div>
 				<?php else : ?>
 			<div class="sto-advance-card sto-advance-card--muted">
-				<p class="sto-advance-card__desc"><?php esc_html_e( 'Demo samples are packaged for this site. Use Tools → Simple Backup to turn demo mode on or off.', 'simple-theme-options' ); ?></p>
+				<p class="sto-advance-card__desc"><?php esc_html_e( 'Demo samples are packaged for this site. Use Tools → Simple Settings to turn demo mode on or off.', 'topten-simple-theme-options' ); ?></p>
 			</div>
 				<?php endif; ?>
-			<?php endif; ?>
 
 			<?php if ( $total_rows > 0 ) : ?>
 			<div class="sto-advance-card sto-advance-card--import-log" data-sto-advance-import-log="1">
 				<?php
 				FieldTitle::render_heading(
-					__( 'Imports', 'simple-theme-options' ),
+					__( 'Imports', 'topten-simple-theme-options' ),
 					'default',
 					null,
 					'sto-advance-import-log',
@@ -427,7 +430,7 @@ final class ThemeSettingsImportExport {
 						echo esc_html(
 							sprintf(
 								/* translators: %1$d: shown rows, %2$d: total imports */
-								__( 'Showing the %1$d most recent imports (%2$d total).', 'simple-theme-options' ),
+								__( 'Showing the %1$d most recent imports (%2$d total).', 'topten-simple-theme-options' ),
 								self::MAX_IMPORT_HISTORY_UI,
 								$total_rows
 							)
@@ -437,7 +440,7 @@ final class ThemeSettingsImportExport {
 				<?php endif; ?>
 				<p class="sto-advance-import-log__bulk">
 					<button type="button" class="button sto-advance-import-bulk-remove" data-sto-advance-import-bulk-remove disabled>
-						<?php esc_html_e( 'Delete selected', 'simple-theme-options' ); ?>
+						<?php esc_html_e( 'Delete selected', 'topten-simple-theme-options' ); ?>
 					</button>
 				</p>
 				<div class="sto-advance-table-wrap">
@@ -445,10 +448,10 @@ final class ThemeSettingsImportExport {
 						<thead>
 							<tr>
 								<th scope="col" class="sto-advance-table__check">
-									<input type="checkbox" data-sto-advance-import-select-all aria-label="<?php esc_attr_e( 'Select all imports', 'simple-theme-options' ); ?>" />
+									<input type="checkbox" data-sto-advance-import-select-all aria-label="<?php esc_attr_e( 'Select all imports', 'topten-simple-theme-options' ); ?>" />
 								</th>
-								<th scope="col"><?php esc_html_e( 'File', 'simple-theme-options' ); ?></th>
-								<th scope="col" class="sto-advance-table__actions"><?php esc_html_e( 'Actions', 'simple-theme-options' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'File', 'topten-simple-theme-options' ); ?></th>
+								<th scope="col" class="sto-advance-table__actions"><?php esc_html_e( 'Actions', 'topten-simple-theme-options' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -472,20 +475,24 @@ final class ThemeSettingsImportExport {
 									aria-expanded="false"
 								>
 									<td class="sto-advance-table__check" data-sto-import-ignore-toggle>
-										<input type="checkbox" data-sto-advance-import-cb value="<?php echo esc_attr( $rid ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Select import %s', 'simple-theme-options' ), $fname !== '' ? $fname : $rid ) ); ?>" />
+										<input type="checkbox" data-sto-advance-import-cb value="<?php echo esc_attr( $rid ); ?>" aria-label="<?php echo esc_attr( sprintf(
+											/* translators: %s: import file name */
+											__( 'Select import %s', 'topten-simple-theme-options' ),
+											$fname !== '' ? $fname : $rid
+										) ); ?>" />
 									</td>
 									<td>
-										<code class="sto-advance-table__filename"><?php echo esc_html( $fname !== '' ? $fname : __( '(untitled import)', 'simple-theme-options' ) ); ?></code>
-										<span class="sto-advance-import-row__hint"><?php esc_html_e( 'Click row to set where these keys appear', 'simple-theme-options' ); ?></span>
+										<code class="sto-advance-table__filename"><?php echo esc_html( $fname !== '' ? $fname : __( '(untitled import)', 'topten-simple-theme-options' ) ); ?></code>
+										<span class="sto-advance-import-row__hint"><?php esc_html_e( 'Click row to set where these keys appear', 'topten-simple-theme-options' ); ?></span>
 									</td>
 									<td class="sto-advance-table__actions" data-sto-import-ignore-toggle>
 										<button type="button" class="button button-small sto-advance-table-btn" data-sto-advance-import-download-entry="<?php echo esc_attr( $rid ); ?>">
 											<i class="fa-light fa-download" aria-hidden="true"></i>
-											<?php esc_html_e( 'Download', 'simple-theme-options' ); ?>
+											<?php esc_html_e( 'Download', 'topten-simple-theme-options' ); ?>
 										</button>
 										<button type="button" class="button button-small sto-advance-table-btn" data-sto-advance-import-remove-entry="<?php echo esc_attr( $rid ); ?>">
 											<i class="fa-light fa-trash" aria-hidden="true"></i>
-											<?php esc_html_e( 'Delete', 'simple-theme-options' ); ?>
+											<?php esc_html_e( 'Delete', 'topten-simple-theme-options' ); ?>
 										</button>
 									</td>
 								</tr>
@@ -505,7 +512,7 @@ final class ThemeSettingsImportExport {
 			<div class="sto-advance-card">
 				<?php
 				FieldTitle::render_heading(
-					__( 'Export', 'simple-theme-options' ),
+					__( 'Export', 'topten-simple-theme-options' ),
 					'default',
 					null,
 					'sto-advance-export',
@@ -517,20 +524,20 @@ final class ThemeSettingsImportExport {
 				<p class="sto-advance-card__desc">
 					<?php
 					if ( 'settings' === $context ) {
-						esc_html_e( 'Includes every option key registered on the leaves you checked under Export scope (field samples included).', 'simple-theme-options' );
+						esc_html_e( 'Includes every option key registered on the leaves you checked under Export scope (field samples included).', 'topten-simple-theme-options' );
 					} else {
-						esc_html_e( 'Includes every option key registered on all Theme Settings leaves (field samples and extra menus included).', 'simple-theme-options' );
+						esc_html_e( 'Includes every option key registered on all Theme Settings leaves (field samples and extra menus included).', 'topten-simple-theme-options' );
 					}
 					?>
 				</p>
 				<div class="sto-advance-card__actions">
 					<button type="button" class="button button-primary sto-advance-btn" data-sto-advance-export-copy>
 						<i class="fa-light fa-copy" aria-hidden="true"></i>
-						<?php esc_html_e( 'Copy to clipboard', 'simple-theme-options' ); ?>
+						<?php esc_html_e( 'Copy to clipboard', 'topten-simple-theme-options' ); ?>
 					</button>
 					<button type="button" class="button sto-advance-btn" data-sto-advance-export-file>
 						<i class="fa-light fa-download" aria-hidden="true"></i>
-						<?php esc_html_e( 'Download JSON file', 'simple-theme-options' ); ?>
+						<?php esc_html_e( 'Download JSON file', 'topten-simple-theme-options' ); ?>
 					</button>
 				</div>
 				<p class="sto-advance-status" data-sto-advance-export-status role="status" aria-live="polite" hidden></p>
@@ -539,7 +546,7 @@ final class ThemeSettingsImportExport {
 			<div class="sto-advance-card">
 				<?php
 				FieldTitle::render_heading(
-					__( 'Import', 'simple-theme-options' ),
+					__( 'Import', 'topten-simple-theme-options' ),
 					'default',
 					null,
 					'sto-advance-import',
@@ -548,12 +555,12 @@ final class ThemeSettingsImportExport {
 					''
 				);
 				?>
-				<p class="sto-advance-card__desc"><?php esc_html_e( 'Use a JSON file from a previous export, or paste JSON and apply. By default this merges keys from the file into your existing option store (other keys stay). Turn on “replace entire store” only if this backup should be the only contents of sto_options. Fields appear in Theme Settings only while the plugin or theme that registered them is active — stored values remain for when you activate it again.', 'simple-theme-options' ); ?></p>
+				<p class="sto-advance-card__desc"><?php esc_html_e( 'Use a JSON file from a previous export, or paste JSON and apply. By default this merges keys from the file into your existing option store (other keys stay). Turn on “replace entire store” only if this backup should be the only contents of sto_options. Fields appear in Theme Settings only while the plugin or theme that registered them is active — stored values remain for when you activate it again.', 'topten-simple-theme-options' ); ?></p>
 
 				<p class="sto-advance-import-merge">
 					<label class="sto-advance-import-merge__label">
 						<input type="checkbox" data-sto-advance-import-replace-all value="1" />
-						<?php esc_html_e( 'Replace entire option store (remove every key not listed in this file)', 'simple-theme-options' ); ?>
+						<?php esc_html_e( 'Replace entire option store (remove every key not listed in this file)', 'topten-simple-theme-options' ); ?>
 					</label>
 				</p>
 
@@ -561,18 +568,18 @@ final class ThemeSettingsImportExport {
 					<input type="file" class="sto-advance-file-input" data-sto-advance-file accept=".json,application/json" />
 					<span class="sto-advance-dropzone__inner">
 						<i class="fa-light fa-file-arrow-up sto-advance-dropzone__icon" aria-hidden="true"></i>
-						<span class="sto-advance-dropzone__title"><?php esc_html_e( 'Drop a backup file here', 'simple-theme-options' ); ?></span>
-						<span class="sto-advance-dropzone__hint"><?php esc_html_e( 'or click to choose a .json file', 'simple-theme-options' ); ?></span>
+						<span class="sto-advance-dropzone__title"><?php esc_html_e( 'Drop a backup file here', 'topten-simple-theme-options' ); ?></span>
+						<span class="sto-advance-dropzone__hint"><?php esc_html_e( 'or click to choose a .json file', 'topten-simple-theme-options' ); ?></span>
 					</span>
 				</label>
 
 				<?php $paste_id = 'sto-advance-paste' . $idsuf; ?>
 				<div class="sto-advance-paste-row">
-					<label class="sto-advance-label" for="<?php echo esc_attr( $paste_id ); ?>"><?php esc_html_e( 'Or paste exported JSON', 'simple-theme-options' ); ?></label>
+					<label class="sto-advance-label" for="<?php echo esc_attr( $paste_id ); ?>"><?php esc_html_e( 'Or paste exported JSON', 'topten-simple-theme-options' ); ?></label>
 					<div class="sto-advance-paste-actions">
 						<button type="button" class="button sto-advance-btn" data-sto-advance-paste-clipboard>
 							<i class="fa-light fa-paste" aria-hidden="true"></i>
-							<?php esc_html_e( 'Read from clipboard', 'simple-theme-options' ); ?>
+							<?php esc_html_e( 'Read from clipboard', 'topten-simple-theme-options' ); ?>
 						</button>
 					</div>
 					<textarea
@@ -581,17 +588,17 @@ final class ThemeSettingsImportExport {
 						data-sto-advance-textarea
 						rows="8"
 						spellcheck="false"
-						placeholder="<?php esc_attr_e( 'Paste JSON here…', 'simple-theme-options' ); ?>"
+						placeholder="<?php esc_attr_e( 'Paste JSON here…', 'topten-simple-theme-options' ); ?>"
 					></textarea>
 				</div>
 
 				<div class="sto-advance-card__actions sto-advance-card__actions--import">
 					<button type="button" class="button button-primary sto-advance-btn" data-sto-advance-import-apply>
 						<i class="fa-light fa-file-import" aria-hidden="true"></i>
-						<?php esc_html_e( 'Apply import', 'simple-theme-options' ); ?>
+						<?php esc_html_e( 'Apply import', 'topten-simple-theme-options' ); ?>
 					</button>
 					<button type="button" class="button sto-advance-btn" data-sto-advance-import-clear>
-						<?php esc_html_e( 'Clear', 'simple-theme-options' ); ?>
+						<?php esc_html_e( 'Clear', 'topten-simple-theme-options' ); ?>
 					</button>
 				</div>
 				<p class="sto-advance-status sto-advance-status--error" data-sto-advance-import-status role="alert" hidden></p>
@@ -603,7 +610,7 @@ final class ThemeSettingsImportExport {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to export settings.', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to export settings.', 'topten-simple-theme-options' ) ), 403 );
 		}
 
 		$options = function_exists( 'sto_get_options' ) ? sto_get_options() : array();
@@ -616,13 +623,13 @@ final class ThemeSettingsImportExport {
 
 		$allowed_pages = $menu->get_registered_menu_slugs();
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked above.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- checked above; JSON decoded and slugs allowlisted.
 		if ( isset( $_POST['export_menu_slugs'] ) ) {
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string; slugs allowlisted after decode.
 			$raw_json = wp_unslash( (string) $_POST['export_menu_slugs'] );
 			$decoded  = json_decode( $raw_json, true );
 			if ( ! is_array( $decoded ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid export scope. Refresh the page and try again.', 'simple-theme-options' ) ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Invalid export scope. Refresh the page and try again.', 'topten-simple-theme-options' ) ), 400 );
 			}
 			$slugs = array();
 			foreach ( $decoded as $item ) {
@@ -633,7 +640,7 @@ final class ThemeSettingsImportExport {
 			}
 			$slugs = array_values( array_unique( $slugs ) );
 			if ( $slugs === array() ) {
-				wp_send_json_error( array( 'message' => __( 'Select at least one options screen to export.', 'simple-theme-options' ) ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Select at least one options screen to export.', 'topten-simple-theme-options' ) ), 400 );
 			}
 			$export_keys = $menu->get_exportable_registered_option_keys_for_menu_pages( $slugs );
 		} else {
@@ -647,7 +654,7 @@ final class ThemeSettingsImportExport {
 		if ( $export_keys === array() ) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'No option keys were found to export. If a filter removes all keys, adjust it or register fields on your Theme Settings leaves.', 'simple-theme-options' ),
+					'message' => __( 'No option keys were found to export. If a filter removes all keys, adjust it or register fields on your Theme Settings leaves.', 'topten-simple-theme-options' ),
 				),
 				400
 			);
@@ -657,9 +664,13 @@ final class ThemeSettingsImportExport {
 
 		$payload = $this->build_export_payload_for_options( $subset );
 
-		$json = wp_json_encode( $payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-		if ( ! is_string( $json ) ) {
-			wp_send_json_error( array( 'message' => __( 'Could not build export data.', 'simple-theme-options' ) ), 500 );
+		$json_flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+		if ( defined( 'JSON_INVALID_UTF8_SUBSTITUTE' ) ) {
+			$json_flags |= JSON_INVALID_UTF8_SUBSTITUTE;
+		}
+		$json = wp_json_encode( $payload, $json_flags );
+		if ( ! is_string( $json ) || $json === '' ) {
+			wp_send_json_error( array( 'message' => __( 'Could not build export data.', 'topten-simple-theme-options' ) ), 500 );
 		}
 
 		wp_send_json_success(
@@ -674,46 +685,46 @@ final class ThemeSettingsImportExport {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to import settings.', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to import settings.', 'topten-simple-theme-options' ) ), 403 );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked above.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- checked above; JSON validated after read.
 		$raw_body = isset( $_POST['import_payload'] ) ? wp_unslash( (string) $_POST['import_payload'] ) : '';
 		$raw_body = is_string( $raw_body ) ? trim( $raw_body ) : '';
 
 		if ( $raw_body === '' ) {
-			wp_send_json_error( array( 'message' => __( 'Paste or upload JSON before importing.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Paste or upload JSON before importing.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		if ( strlen( $raw_body ) > self::MAX_IMPORT_BYTES ) {
-			wp_send_json_error( array( 'message' => __( 'That file is too large to import.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'That file is too large to import.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- checked above; sanitized via sanitize_import_filename().
 		$source_name = isset( $_POST['import_source_name'] ) ? wp_unslash( (string) $_POST['import_source_name'] ) : '';
 		$source_name = $this->sanitize_import_filename( $source_name );
 
 		$decoded = json_decode( $raw_body, true );
 		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $decoded ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid JSON. Use an export from this screen or the same plugin version.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Invalid JSON. Use an export from this screen or the same plugin version.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		$options = $this->extract_options_array_from_decoded( $decoded );
 		if ( ! is_array( $options ) ) {
-			wp_send_json_error( array( 'message' => __( 'The JSON must contain an options object (use a full export file).', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'The JSON must contain an options object (use a full export file).', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		if ( $options === array() ) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'This backup contains no option keys. Import was cancelled so your current settings were not erased.', 'simple-theme-options' ),
+					'message' => __( 'This backup contains no option keys. Import was cancelled so your current settings were not erased.', 'topten-simple-theme-options' ),
 				),
 				400
 			);
 		}
 
 		if ( ! $this->is_safe_options_tree( $options ) ) {
-			wp_send_json_error( array( 'message' => __( 'That backup uses unsupported data types or structure.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'That backup uses unsupported data types or structure.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		/**
@@ -721,14 +732,14 @@ final class ThemeSettingsImportExport {
 		 *
 		 * @param array<string, mixed> $options Keys from the import file only.
 		 */
-		$options = apply_filters( 'sto_theme_settings_import_options_before_save', $options );
+		$options = apply_filters( 'sto_theme_settings_import_options_before_save', $options ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 		if ( ! is_array( $options ) ) {
-			wp_send_json_error( array( 'message' => __( 'Import was blocked by a filter.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Import was blocked by a filter.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		$keys_from_file = $this->sanitize_key_list( array_keys( $options ) );
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked above.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- checked above; wp_validate_boolean().
 		$replace_all = isset( $_POST['import_replace_all'] ) && wp_validate_boolean( wp_unslash( $_POST['import_replace_all'] ) );
 
 		if ( ! $replace_all ) {
@@ -762,7 +773,7 @@ final class ThemeSettingsImportExport {
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Settings imported. Reloading…', 'simple-theme-options' ),
+				'message' => __( 'Settings imported. Reloading…', 'topten-simple-theme-options' ),
 			)
 		);
 	}
@@ -771,21 +782,17 @@ final class ThemeSettingsImportExport {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to change this setting.', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to change this setting.', 'topten-simple-theme-options' ) ), 403 );
 		}
 
-		if ( ! OptionsMenu::instance()->is_demo_capability_allowed() ) {
-			wp_send_json_error( array( 'message' => __( 'Demo mode is not available for this site.', 'simple-theme-options' ) ), 400 );
-		}
-
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified above; boolean flag via wp_validate_boolean( wp_unslash() ).
 		$from_settings = isset( $_POST['from_settings'] ) && wp_validate_boolean( wp_unslash( $_POST['from_settings'] ) );
 
 		if ( OptionsMenu::instance()->is_packaged_demo_menu() && ! $from_settings ) {
-			wp_send_json_error( array( 'message' => __( 'Demo mode for packaged sample sites is toggled from Tools → Simple Backup.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Demo mode for packaged sample sites is toggled from Tools → Simple Settings.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- checked above; allowlisted string compare below.
 		$raw = isset( $_POST['ui_demo'] ) ? wp_unslash( (string) $_POST['ui_demo'] ) : '0';
 		$on  = in_array( $raw, array( '1', 'true', 'yes', 'on' ), true );
 
@@ -793,7 +800,7 @@ final class ThemeSettingsImportExport {
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Preference saved. Reloading…', 'simple-theme-options' ),
+				'message' => __( 'Preference saved. Reloading…', 'topten-simple-theme-options' ),
 			)
 		);
 	}
@@ -802,20 +809,20 @@ final class ThemeSettingsImportExport {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to change this setting.', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to change this setting.', 'topten-simple-theme-options' ) ), 403 );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$import_id = isset( $_POST['import_id'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['import_id'] ) ) : '';
 		if ( $import_id === '' || ! preg_match( '/^[a-zA-Z0-9]+$/', $import_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid import reference.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Invalid import reference.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		if ( $this->find_import_entry_by_id( $import_id ) === null ) {
-			wp_send_json_error( array( 'message' => __( 'That import was not found.', 'simple-theme-options' ) ), 404 );
+			wp_send_json_error( array( 'message' => __( 'That import was not found.', 'topten-simple-theme-options' ) ), 404 );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON decoded; save_import_settings() sanitizes.
 		$raw = isset( $_POST['display_locations'] ) ? wp_unslash( $_POST['display_locations'] ) : '';
 		if ( is_string( $raw ) && $raw !== '' ) {
 			$decoded = json_decode( $raw, true );
@@ -827,12 +834,12 @@ final class ThemeSettingsImportExport {
 		}
 
 		if ( ! ThemeSettingsDisplayLocations::instance()->save_import_settings( $import_id, $payload ) ) {
-			wp_send_json_error( array( 'message' => __( 'Could not save display settings. Try again.', 'simple-theme-options' ) ), 500 );
+			wp_send_json_error( array( 'message' => __( 'Could not save display settings. Try again.', 'topten-simple-theme-options' ) ), 500 );
 		}
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Display settings saved.', 'simple-theme-options' ),
+				'message' => __( 'Display settings saved.', 'topten-simple-theme-options' ),
 			)
 		);
 	}
@@ -841,18 +848,18 @@ final class ThemeSettingsImportExport {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to change settings.', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to change settings.', 'topten-simple-theme-options' ) ), 403 );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$import_id = isset( $_POST['import_id'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['import_id'] ) ) : '';
 		if ( $import_id === '' || ! preg_match( '/^[a-zA-Z0-9]+$/', $import_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid import reference.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Invalid import reference.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		$entry = $this->find_import_entry_by_id( $import_id );
 		if ( $entry === null ) {
-			wp_send_json_error( array( 'message' => __( 'That import was not found.', 'simple-theme-options' ) ), 404 );
+			wp_send_json_error( array( 'message' => __( 'That import was not found.', 'topten-simple-theme-options' ) ), 404 );
 		}
 
 		$keys = isset( $entry['keys'] ) && is_array( $entry['keys'] ) ? $this->sanitize_key_list( $entry['keys'] ) : array();
@@ -866,7 +873,7 @@ final class ThemeSettingsImportExport {
 		update_option( 'sto_options', $opts );
 		$this->remove_import_entry_by_id( $import_id );
 
-		wp_send_json_success( array( 'message' => __( 'Import removed from the database.', 'simple-theme-options' ) ) );
+		wp_send_json_success( array( 'message' => __( 'Import removed from the database.', 'topten-simple-theme-options' ) ) );
 	}
 
 	/**
@@ -876,13 +883,13 @@ final class ThemeSettingsImportExport {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to change settings.', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to change settings.', 'topten-simple-theme-options' ) ), 403 );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each id sanitized in loop below.
 		$raw = isset( $_POST['import_ids'] ) ? wp_unslash( $_POST['import_ids'] ) : array();
 		if ( ! is_array( $raw ) ) {
-			wp_send_json_error( array( 'message' => __( 'No imports were selected.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'No imports were selected.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		$ids = array();
@@ -895,7 +902,7 @@ final class ThemeSettingsImportExport {
 		}
 		$ids = array_keys( $ids );
 		if ( $ids === array() ) {
-			wp_send_json_error( array( 'message' => __( 'No valid import references.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'No valid import references.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		$union_keys = array();
@@ -913,7 +920,7 @@ final class ThemeSettingsImportExport {
 		}
 
 		if ( $found_ids === array() ) {
-			wp_send_json_error( array( 'message' => __( 'Those imports were not found.', 'simple-theme-options' ) ), 404 );
+			wp_send_json_error( array( 'message' => __( 'Those imports were not found.', 'topten-simple-theme-options' ) ), 404 );
 		}
 
 		$opts = function_exists( 'sto_get_options' ) ? sto_get_options() : array();
@@ -929,30 +936,30 @@ final class ThemeSettingsImportExport {
 			$this->remove_import_entry_by_id( $import_id );
 		}
 
-		wp_send_json_success( array( 'message' => __( 'Selected imports were removed from the database.', 'simple-theme-options' ) ) );
+		wp_send_json_success( array( 'message' => __( 'Selected imports were removed from the database.', 'topten-simple-theme-options' ) ) );
 	}
 
 	public function ajax_import_entry_export() {
 		check_ajax_referer( 'sto_theme_settings_import_export', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to export settings.', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to export settings.', 'topten-simple-theme-options' ) ), 403 );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$import_id = isset( $_POST['import_id'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['import_id'] ) ) : '';
 		if ( $import_id === '' || ! preg_match( '/^[a-zA-Z0-9]+$/', $import_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid import reference.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'Invalid import reference.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		$entry = $this->find_import_entry_by_id( $import_id );
 		if ( $entry === null ) {
-			wp_send_json_error( array( 'message' => __( 'That import was not found.', 'simple-theme-options' ) ), 404 );
+			wp_send_json_error( array( 'message' => __( 'That import was not found.', 'topten-simple-theme-options' ) ), 404 );
 		}
 
 		$keys = isset( $entry['keys'] ) && is_array( $entry['keys'] ) ? $this->sanitize_key_list( $entry['keys'] ) : array();
 		if ( $keys === array() ) {
-			wp_send_json_error( array( 'message' => __( 'No keys to export.', 'simple-theme-options' ) ), 400 );
+			wp_send_json_error( array( 'message' => __( 'No keys to export.', 'topten-simple-theme-options' ) ), 400 );
 		}
 
 		$opts = function_exists( 'sto_get_options' ) ? sto_get_options() : array();
@@ -968,7 +975,7 @@ final class ThemeSettingsImportExport {
 		$payload  = $this->build_export_payload_for_options( $subset );
 		$json     = wp_json_encode( $payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 		if ( ! is_string( $json ) ) {
-			wp_send_json_error( array( 'message' => __( 'Could not build export data.', 'simple-theme-options' ) ), 500 );
+			wp_send_json_error( array( 'message' => __( 'Could not build export data.', 'topten-simple-theme-options' ) ), 500 );
 		}
 
 		$basefile = isset( $entry['filename'] ) ? $this->sanitize_import_filename( (string) $entry['filename'] ) : 'import';
@@ -1038,7 +1045,7 @@ final class ThemeSettingsImportExport {
 		$migrated = array(
 			array(
 				'id'                => wp_generate_password( 12, false, false ),
-				'filename'          => __( 'Previous import', 'simple-theme-options' ),
+				'filename'          => __( 'Previous import', 'topten-simple-theme-options' ),
 				'keys'              => $this->sanitize_key_list( $legacy['keys'] ),
 				'imported_at'       => isset( $legacy['imported_at'] ) ? (string) $legacy['imported_at'] : gmdate( 'c' ),
 				'display_locations' => ThemeSettingsDisplayLocations::instance()->get_default_settings(),
@@ -1143,16 +1150,25 @@ final class ThemeSettingsImportExport {
 	 * work is applied before reading the registry (e.g. `admin-ajax.php` export without a Theme Settings screen load).
 	 */
 	private function ensure_option_fields_registry_ready( OptionsMenu $menu ): void {
-		if ( did_action( 'sto_include_option_fields' ) ) {
-			return;
-		}
+		SampleFieldModules::boot_discovered_field_modules_for_registry();
 
 		/**
-		 * Same signature as {@see OptionsMenu::include_fields()} (private); third-party code may listen here.
+		 * Themes may register fields on `init` after the first menu `include_fields()` pass.
 		 *
 		 * @param OptionsMenu $menu
 		 */
-		do_action( 'sto_include_option_fields', $menu );
+		do_action( 'sto_prepare_theme_settings_export', $menu ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
+
+		if ( ! did_action( 'sto_include_option_fields' ) ) {
+			/**
+			 * Same signature as {@see OptionsMenu::include_fields()} (private); third-party code may listen here.
+			 *
+			 * @param OptionsMenu $menu
+			 */
+			do_action( 'sto_include_option_fields', $menu ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
+		}
+
+		FieldRegistrationDeferral::flush( $menu );
 	}
 
 	/**
@@ -1208,7 +1224,7 @@ final class ThemeSettingsImportExport {
 			'sto_export_version' => self::EXPORT_FORMAT_VERSION,
 			'exported_at'        => gmdate( 'c' ),
 			'site_url'           => home_url( '/' ),
-			'generator'          => 'Simple Theme Options',
+			'generator'          => STO_PLUGIN_NAME,
 			'options'            => $options,
 		);
 
@@ -1217,7 +1233,7 @@ final class ThemeSettingsImportExport {
 		 *
 		 * @param array<string, mixed> $payload
 		 */
-		return apply_filters( 'sto_theme_settings_export_payload', $payload );
+		return apply_filters( 'sto_theme_settings_export_payload', $payload ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 	}
 
 	/**

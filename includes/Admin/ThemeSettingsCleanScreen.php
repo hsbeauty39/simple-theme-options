@@ -37,7 +37,7 @@ final class ThemeSettingsCleanScreen {
 			return;
 		}
 
-		if ( ! apply_filters( 'sto_theme_settings_suppress_external_notices', true ) ) {
+		if ( ! apply_filters( 'sto_theme_settings_suppress_external_notices', true ) ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 			return;
 		}
 
@@ -50,13 +50,15 @@ final class ThemeSettingsCleanScreen {
 			remove_all_actions( $notice_hook );
 		}
 
-		if ( ! apply_filters( 'sto_theme_settings_suppress_php_display_errors', true ) ) {
+		if ( ! apply_filters( 'sto_theme_settings_suppress_php_display_errors', true ) ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 			return;
 		}
 
 		if ( function_exists( 'wp_is_ini_value_changeable' ) && wp_is_ini_value_changeable( 'display_errors' ) ) {
+			// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- Suppress PHP notices on Theme Settings screen only.
 			ini_set( 'display_errors', '0' );
 		} elseif ( function_exists( 'ini_set' ) ) {
+			// phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged, WordPress.PHP.NoSilencedErrors.Discouraged
 			@ini_set( 'display_errors', '0' );
 		}
 	}

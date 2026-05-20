@@ -51,36 +51,68 @@
         }
     }
 
+    function exportErrorMessage(xhr, fallbackKey) {
+        var msg = i18n(fallbackKey || 'exportFailed');
+        try {
+            if (xhr && xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+                return xhr.responseJSON.data.message;
+            }
+            if (xhr && typeof xhr.responseText === 'string' && xhr.responseText !== '' && xhr.responseText !== '0' && xhr.responseText !== '-1') {
+                var parsed = JSON.parse(xhr.responseText);
+                if (parsed && parsed.data && parsed.data.message) {
+                    return parsed.data.message;
+                }
+            }
+        } catch (ignore) {
+            /* use fallback */
+        }
+        if (xhr && (xhr.status === 403 || xhr.status === 401)) {
+            return i18n('exportFailed') + ' (' + (xhr.status || '') + ')';
+        }
+        return msg;
+    }
+
     function triggerExport($root, done) {
         var c = cfg();
+        if (!c.ajaxUrl || !c.actionExport || !c.nonce) {
+            done(i18n('exportConfigMissing'));
+            return;
+        }
         var post = {
             action: c.actionExport,
             nonce: c.nonce
         };
         if ($root && $root.length && $root.attr('data-sto-advance-import-export-from') === 'settings') {
-            var slugs = [];
-            $root.find('[data-sto-export-menu-slug]:checked').each(function() {
-                var v = $(this).val();
-                if (v) {
-                    slugs.push(String(v));
+            var $scopeBoxes = $root.find('[data-sto-export-menu-slug]');
+            if ($scopeBoxes.length) {
+                var slugs = [];
+                $scopeBoxes.filter(':checked').each(function() {
+                    var v = $(this).val();
+                    if (v) {
+                        slugs.push(String(v));
+                    }
+                });
+                if (!slugs.length) {
+                    done(i18n('exportScopeRequired'));
+                    return;
                 }
-            });
-            if (slugs.length) {
                 post.export_menu_slugs = JSON.stringify(slugs);
             }
         }
-        $.post(
-            c.ajaxUrl,
-            post
-        ).done(function(res) {
-            if (res && res.success && res.data && res.data.json) {
+        $.ajax({
+            url: c.ajaxUrl,
+            type: 'POST',
+            dataType: 'json',
+            data: post
+        }).done(function(res) {
+            if (res && res.success && res.data && typeof res.data.json === 'string' && res.data.json !== '') {
                 done(null, res.data.json, res.data.filename || 'theme-settings-export.json');
             } else {
                 var msg = (res && res.data && res.data.message) ? res.data.message : i18n('exportFailed');
                 done(msg);
             }
-        }).fail(function() {
-            done(i18n('exportFailed'));
+        }).fail(function(xhr) {
+            done(exportErrorMessage(xhr, 'exportFailed'));
         });
     }
 
@@ -198,7 +230,7 @@
                 return base + join + 'sto_imported=1';
             }
         }
-        var scfg = window.simple_theme_options && window.simple_theme_options.sto_search;
+        var scfg = window.battery_simple_theme_options && window.battery_simple_theme_options.sto_search;
         var slug = cfg().sectionSlug || 'advance';
         if (!scfg || !scfg.admin_base || !scfg.page) {
             return window.location.href.split('#')[0];

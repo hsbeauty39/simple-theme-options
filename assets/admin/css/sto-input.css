@@ -101,12 +101,12 @@
  * container; we overlay that strip on the toolbar and pad the toolbar so
  * controls do not slide underneath.
  * ------------------------------------------------------------------------- */
-.sto-field-row-input--editor .wp-editor-wrap {
+.sto-classic-editor-field .wp-editor-wrap {
     position: relative;
     max-width: 100%;
 }
 
-.sto-field-row-input--editor .wp-editor-tools {
+.sto-classic-editor-field .wp-editor-tools {
     position: absolute;
     top: 1px;
     right: 1px;
@@ -130,19 +130,19 @@
     pointer-events: auto;
 }
 
-.sto-field-row-input--editor .wp-media-buttons,
-.sto-field-row-input--editor .wp-editor-tabs {
+.sto-classic-editor-field .wp-media-buttons,
+.sto-classic-editor-field .wp-editor-tabs {
     float: none;
 }
 
-.sto-field-row-input--editor .wp-media-buttons {
+.sto-classic-editor-field .wp-media-buttons {
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
     margin: 0;
 }
 
-.sto-field-row-input--editor .wp-media-buttons .button {
+.sto-classic-editor-field .wp-media-buttons .button {
     margin-top: 0;
     margin-bottom: 0;
     line-height: 1.4;
@@ -151,7 +151,7 @@
     align-items: center;
 }
 
-.sto-field-row-input--editor .wp-editor-tabs {
+.sto-classic-editor-field .wp-editor-tabs {
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
@@ -159,7 +159,7 @@
     margin: 0;
 }
 
-.sto-field-row-input--editor .wp-switch-editor {
+.sto-classic-editor-field .wp-switch-editor {
     box-sizing: border-box;
     float: none;
     margin: 0 0 0 4px;
@@ -171,81 +171,81 @@
     align-items: center;
 }
 
-.sto-field-row-input--editor .wp-switch-editor.switch-tmce {
+.sto-classic-editor-field .wp-switch-editor.switch-tmce {
     margin-left: 0;
 }
 
 /* Active tab: WP admin primary blue (reference: Visual selected). */
-.sto-field-row-input--editor .tmce-active .switch-tmce {
+.sto-classic-editor-field .tmce-active .switch-tmce {
     background: #2271b1;
     border-color: #2271b1;
     color: #fff;
 }
 
-.sto-field-row-input--editor .tmce-active .switch-html {
+.sto-classic-editor-field .tmce-active .switch-html {
     background: #f0f0f1;
     border-color: #c3c4c7;
     color: #50575e;
 }
 
-.sto-field-row-input--editor .html-active .switch-html {
+.sto-classic-editor-field .html-active .switch-html {
     background: #2271b1;
     border-color: #2271b1;
     color: #fff;
 }
 
-.sto-field-row-input--editor .html-active .switch-tmce {
+.sto-classic-editor-field .html-active .switch-tmce {
     background: #f0f0f1;
     border-color: #c3c4c7;
     color: #50575e;
 }
 
-.sto-field-row-input--editor .wp-editor-container {
+.sto-classic-editor-field .wp-editor-container {
     border-radius: 0 0 4px 4px;
 }
 
 /* Reserve space on the first TinyMCE row so icons stay left of the overlay. */
-.sto-field-row-input--editor .wp-editor-wrap.tmce-active div.mce-toolbar-grp > div > .mce-toolbar:first-child,
-.sto-field-row-input--editor .wp-editor-wrap.tmce-active div.mce-toolbar-grp > .mce-toolbar:first-child {
+.sto-classic-editor-field .wp-editor-wrap.tmce-active div.mce-toolbar-grp > div > .mce-toolbar:first-child,
+.sto-classic-editor-field .wp-editor-wrap.tmce-active div.mce-toolbar-grp > .mce-toolbar:first-child {
     padding-right: clamp(200px, 34vw, 360px);
     box-sizing: border-box;
 }
 
 /* Code tab: quicktags bar is the top row — reserve the same strip. */
-.sto-field-row-input--editor .wp-editor-wrap.html-active .quicktags-toolbar {
+.sto-classic-editor-field .wp-editor-wrap.html-active .quicktags-toolbar {
     padding-right: clamp(200px, 34vw, 360px);
     box-sizing: border-box;
 }
 
-.rtl .sto-field-row-input--editor .wp-editor-tools {
+.rtl .sto-classic-editor-field .wp-editor-tools {
     right: auto;
     left: 1px;
 }
 
-.rtl .sto-field-row-input--editor .wp-editor-wrap.tmce-active div.mce-toolbar-grp > div > .mce-toolbar:first-child,
-.rtl .sto-field-row-input--editor .wp-editor-wrap.tmce-active div.mce-toolbar-grp > .mce-toolbar:first-child {
+.rtl .sto-classic-editor-field .wp-editor-wrap.tmce-active div.mce-toolbar-grp > div > .mce-toolbar:first-child,
+.rtl .sto-classic-editor-field .wp-editor-wrap.tmce-active div.mce-toolbar-grp > .mce-toolbar:first-child {
     padding-right: 0;
     padding-left: clamp(200px, 34vw, 360px);
 }
 
-.rtl .sto-field-row-input--editor .wp-editor-wrap.html-active .quicktags-toolbar {
+.rtl .sto-classic-editor-field .wp-editor-wrap.html-active .quicktags-toolbar {
     padding-right: 0;
     padding-left: clamp(200px, 34vw, 360px);
 }
 
 /* Slightly tighter chrome for option panels */
-.sto-field-row-input--editor div.mce-toolbar-grp {
+.sto-classic-editor-field div.mce-toolbar-grp {
     padding: 0 2px;
 }
 
 /* Optional toolbar_end slot: match default mce-btn height / alignment on row 1 */
-.sto-field-row-input--editor .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn {
+.sto-classic-editor-field .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn {
     display: inline-flex;
     align-items: center;
     margin: 2px 0 2px 1px;
 }
 
-.sto-field-row-input--editor .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn button {
+.sto-classic-editor-field .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn button {
     box-sizing: border-box;
     min-height: 26px;
     height: 26px;
@@ -255,7 +255,7 @@
     font-weight: 500;
 }
 
-.sto-field-row-input--editor .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn.mce-active button,
-.sto-field-row-input--editor .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn:hover button {
+.sto-classic-editor-field .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn.mce-active button,
+.sto-classic-editor-field .mce-toolbar .mce-btn.sto-input-mce-toolbar-end-btn:hover button {
     color: #1d2327;
 }

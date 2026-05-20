@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\GoogleMapControl;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -112,6 +113,8 @@ final class GoogleMapControl {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -390,23 +393,26 @@ final class GoogleMapControl {
 		$toolbar_markup = ( $tabs_pane_bp === '' && ! empty( $bps_storage ) ) ? ResponsiveControl::toolbar_markup( $bps_storage, $field_id ) : '';
 
 		$i18n = array(
-			'searchPlaceholder' => __( 'Search address…', 'simple-theme-options' ),
-			'searchHint'        => __( 'Press Enter to search. The line below and the address fields stay in sync with the map.', 'simple-theme-options' ),
-			'geocodeError'      => __( 'Could not look up that place. Try again in a moment.', 'simple-theme-options' ),
-			'address'           => __( 'Address', 'simple-theme-options' ),
-			'street'            => __( 'Street', 'simple-theme-options' ),
-			'city'              => __( 'City', 'simple-theme-options' ),
-			'state'             => __( 'State', 'simple-theme-options' ),
-			'zip'               => __( 'ZIP', 'simple-theme-options' ),
-			'country'           => __( 'Country', 'simple-theme-options' ),
-			'lat'               => __( 'Latitude', 'simple-theme-options' ),
-			'lng'               => __( 'Longitude', 'simple-theme-options' ),
+			'searchPlaceholder' => __( 'Search address…', 'topten-simple-theme-options' ),
+			'searchHint'        => __( 'Press Enter to search. The line below and the address fields stay in sync with the map.', 'topten-simple-theme-options' ),
+			'geocodeError'      => __( 'Could not look up that place. Try again in a moment.', 'topten-simple-theme-options' ),
+			'address'           => __( 'Address', 'topten-simple-theme-options' ),
+			'street'            => __( 'Street', 'topten-simple-theme-options' ),
+			'city'              => __( 'City', 'topten-simple-theme-options' ),
+			'state'             => __( 'State', 'topten-simple-theme-options' ),
+			'zip'               => __( 'ZIP', 'topten-simple-theme-options' ),
+			'country'           => __( 'Country', 'topten-simple-theme-options' ),
+			'lat'               => __( 'Latitude', 'topten-simple-theme-options' ),
+			'lng'               => __( 'Longitude', 'topten-simple-theme-options' ),
 		);
 
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -623,7 +629,7 @@ final class GoogleMapControl {
 			$label = $title !== '' ? $title : $fid;
 			$messages[] = sprintf(
 				/* translators: %s: field label */
-				__( '“%s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+				__( '“%s” must be filled in before this section can be saved.', 'topten-simple-theme-options' ),
 				$label
 			);
 		}

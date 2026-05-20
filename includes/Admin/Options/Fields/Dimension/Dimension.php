@@ -2,8 +2,9 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\Dimension;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
-
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
+use SimpleThemeOptions\Admin\Options\Fields\Common\UnitFieldStoredJson;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSanitizePostedProxy;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
@@ -17,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Multi-slot numeric dimensions (e.g. top / right / bottom / left) with shared **units** and optional **link**.
- * Stored as JSON: **`u`**, **`c`** (custom suffix when **`u`** = **`custom`**), **`linked`** (bool), **`values`** => map **side_key** → numeric string (empty allowed per side).
+ * Stored as JSON: **`unit`**, **`custom_suffix`** (when **`unit`** = **`custom`**), **`linked`** (bool), **`values`** => map **side_key** → numeric string (empty allowed per side). Legacy keys **`u`** / **`c`** are read on load only.
  *
  * Register with **`'type' => 'dimension'`** (or **`Dimension::register()`** standalone). Keys: **`section_slug`**, **`id`**, **`title`**, optional **`description`**, **`default`** (partial array merged),
  * **`sides`** => list of **`array( 'key' => 'top', 'label' => 'TOP' )`** (1–6 entries, unique keys), **`units`** => ordered subset of **`px`**, **`%`**, **`rem`**, **`em`**, **`custom`** (default all five),
@@ -96,20 +97,18 @@ final class Dimension {
 		if ( ! is_array( $dec ) || empty( $dec['values'] ) || ! is_array( $dec['values'] ) ) {
 			return '';
 		}
-		$u = isset( $dec['u'] ) ? sanitize_key( (string) $dec['u'] ) : 'px';
-		$c = isset( $dec['c'] ) ? preg_replace( '/[^a-zA-Z0-9%]/', '', (string) $dec['c'] ) : '';
-		if ( ! in_array( $u, self::UNITS, true ) ) {
-			$u = 'px';
-		}
+		$unit_keys     = UnitFieldStoredJson::parse_dimension_unit_keys( $dec, self::UNITS );
+		$unit          = $unit_keys['unit'];
+		$custom_suffix = preg_replace( '/[^a-zA-Z0-9%]/', '', (string) $unit_keys['custom_suffix'] );
 		$parts = array();
-		foreach ( $dec['values'] as $v ) {
-			$v = is_scalar( $v ) ? trim( (string) $v ) : '';
-			if ( $v === '' || ! is_numeric( $v ) ) {
+		foreach ( $dec['values'] as $side_value ) {
+			$side_value = is_scalar( $side_value ) ? trim( (string) $side_value ) : '';
+			if ( $side_value === '' || ! is_numeric( $side_value ) ) {
 				$parts[] = '';
-			} elseif ( $u === 'custom' ) {
-				$parts[] = $v . $c;
-			} elseif ( in_array( $u, array( 'px', '%', 'rem', 'em' ), true ) ) {
-				$parts[] = $v . $u;
+			} elseif ( $unit === 'custom' ) {
+				$parts[] = $side_value . $custom_suffix;
+			} elseif ( in_array( $unit, array( 'px', '%', 'rem', 'em' ), true ) ) {
+				$parts[] = $side_value . $unit;
 			} else {
 				$parts[] = '';
 			}
@@ -128,6 +127,8 @@ final class Dimension {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -301,7 +302,16 @@ final class Dimension {
 	 */
 	public function sanitize_stored_value( $raw, $field = null ) {
 		if ( ! is_array( $field ) ) {
-			return wp_json_encode( array( 'u' => 'px', 'c' => '', 'linked' => true, 'values' => array() ) );
+			return wp_json_encode(
+				UnitFieldStoredJson::encode_dimension_state(
+					array(
+						'unit'          => 'px',
+						'custom_suffix' => '',
+						'linked'        => true,
+						'values'        => array(),
+					)
+				)
+			);
 		}
 
 		$sides   = isset( $field['sides'] ) && is_array( $field['sides'] ) ? $field['sides'] : $this->default_sides();
@@ -316,15 +326,15 @@ final class Dimension {
 			$parsed = $def;
 		}
 
-		$parsed['u'] = in_array( $parsed['u'], $allowed, true ) ? $parsed['u'] : (string) ( $allowed[0] ?? 'px' );
-		$parsed['c'] = $this->sanitize_custom_suffix( (string) $parsed['c'] );
-		if ( $parsed['u'] !== 'custom' ) {
-			$parsed['c'] = '';
+		$parsed['unit'] = in_array( $parsed['unit'], $allowed, true ) ? $parsed['unit'] : (string) ( $allowed[0] ?? 'px' );
+		$parsed['custom_suffix'] = $this->sanitize_custom_suffix( (string) $parsed['custom_suffix'] );
+		if ( $parsed['unit'] !== 'custom' ) {
+			$parsed['custom_suffix'] = '';
 		}
 
 		$ul = isset( $field['unit_label'] ) ? (string) $field['unit_label'] : '';
 		if ( $this->dimension_label_replaces_custom_suffix_ui( $allowed, $ul ) ) {
-			$parsed['c'] = '';
+			$parsed['custom_suffix'] = '';
 		}
 
 		if ( empty( $field['show_link'] ) ) {
@@ -373,11 +383,13 @@ final class Dimension {
 		}
 
 		return wp_json_encode(
-			array(
-				'u'      => $parsed['u'],
-				'c'      => $parsed['c'],
-				'linked' => ! empty( $parsed['linked'] ),
-				'values' => $outv,
+			UnitFieldStoredJson::encode_dimension_state(
+				array(
+					'unit'          => $parsed['unit'],
+					'custom_suffix' => $parsed['custom_suffix'],
+					'linked'        => ! empty( $parsed['linked'] ),
+					'values'        => $outv,
+				)
 			)
 		);
 	}
@@ -413,7 +425,7 @@ final class Dimension {
 			$label = $title !== '' ? $title : $fid;
 			$messages[] = sprintf(
 				/* translators: %s: field label */
-				__( '“%s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+				__( '“%s” must be filled in before this section can be saved.', 'topten-simple-theme-options' ),
 				$label
 			);
 		}
@@ -551,7 +563,10 @@ final class Dimension {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -620,9 +635,9 @@ final class Dimension {
 		if ( $parsed === null ) {
 			$parsed = $this->empty_state( $sides, $allowed );
 		}
-		$active_u = in_array( $parsed['u'], $allowed, true ) ? $parsed['u'] : $allowed[0];
+		$active_unit = in_array( $parsed['unit'], $allowed, true ) ? $parsed['unit'] : $allowed[0];
 		$linked   = ! empty( $parsed['linked'] );
-		$forced_u = 1 === count( $allowed ) ? (string) $allowed[0] : '';
+		$forced_unit = 1 === count( $allowed ) ? (string) $allowed[0] : '';
 		?>
 		<div
 			class="sto-dimension"
@@ -639,15 +654,15 @@ final class Dimension {
 			<?php if ( $suppress_suffix ) : ?>
 				data-sto-dimension-custom-suffix="0"
 			<?php endif; ?>
-			<?php if ( $forced_u !== '' ) : ?>
-				data-sto-dimension-forced-unit="<?php echo esc_attr( $forced_u ); ?>"
+			<?php if ( $forced_unit !== '' ) : ?>
+				data-sto-dimension-forced-unit="<?php echo esc_attr( $forced_unit ); ?>"
 			<?php endif; ?>
 		>
 			<?php
 			$show_rail = ( $unit_label !== '' ) || ! $suppress_suffix;
 			?>
 			<div class="sto-dimension__row">
-				<div class="sto-dimension__matrix" role="group" aria-label="<?php esc_attr_e( 'Dimension values', 'simple-theme-options' ); ?>">
+				<div class="sto-dimension__matrix" role="group" aria-label="<?php esc_attr_e( 'Dimension values', 'topten-simple-theme-options' ); ?>">
 				<?php
 				$vals = isset( $parsed['values'] ) && is_array( $parsed['values'] ) ? $parsed['values'] : array();
 				foreach ( $sides as $row ) :
@@ -656,7 +671,7 @@ final class Dimension {
 						continue;
 					}
 					$lab = isset( $row['label'] ) ? (string) $row['label'] : strtoupper( $k );
-					$v   = isset( $vals[ $k ] ) ? trim( (string) $vals[ $k ] ) : '';
+					$side_value = isset( $vals[ $k ] ) ? trim( (string) $vals[ $k ] ) : '';
 					$vid = 'sto-dimension-n-' . $suffix . '-' . $k;
 					?>
 				<div class="sto-dimension__cell">
@@ -668,7 +683,7 @@ final class Dimension {
 						data-sto-dimension-min="<?php echo esc_attr( (string) $min ); ?>"
 						data-sto-dimension-max="<?php echo esc_attr( (string) $max ); ?>"
 						data-sto-dimension-step="<?php echo esc_attr( $step_attr ); ?>"
-						value="<?php echo esc_attr( $v ); ?>"
+						value="<?php echo esc_attr( $side_value ); ?>"
 						inputmode="decimal"
 						autocomplete="off"
 						spellcheck="false"
@@ -686,8 +701,8 @@ final class Dimension {
 						class="sto-dimension__link<?php echo $linked ? ' sto-is-active' : ''; ?>"
 						data-sto-dimension-link="1"
 						aria-pressed="<?php echo $linked ? 'true' : 'false'; ?>"
-						aria-label="<?php esc_attr_e( 'Link all sides to the same value', 'simple-theme-options' ); ?>"
-						title="<?php esc_attr_e( 'Link values', 'simple-theme-options' ); ?>"
+						aria-label="<?php esc_attr_e( 'Link all sides to the same value', 'topten-simple-theme-options' ); ?>"
+						title="<?php esc_attr_e( 'Link values', 'topten-simple-theme-options' ); ?>"
 					><i class="fa-light <?php echo $linked ? 'fa-link' : 'fa-link-slash'; ?>" aria-hidden="true"></i></button>
 				</div>
 					<?php
@@ -700,14 +715,14 @@ final class Dimension {
 					<span class="sto-dimension__unit-label"><?php echo esc_html( $unit_label ); ?></span>
 				<?php endif; ?>
 				<?php if ( ! $suppress_suffix ) : ?>
-				<div class="sto-dimension__units" role="group" aria-label="<?php esc_attr_e( 'Unit', 'simple-theme-options' ); ?>">
+				<div class="sto-dimension__units" role="group" aria-label="<?php esc_attr_e( 'Unit', 'topten-simple-theme-options' ); ?>">
 					<?php if ( count( $allowed ) > 1 ) : ?>
-						<?php foreach ( $allowed as $u ) : ?>
+						<?php foreach ( $allowed as $unit_option ) : ?>
 						<button
 							type="button"
-							class="sto-dimension__unit<?php echo $u === $active_u ? ' sto-is-active' : ''; ?>"
-							data-sto-dimension-unit="<?php echo esc_attr( $u ); ?>"
-						><?php echo esc_html( $this->format_unit_label( $u ) ); ?></button>
+							class="sto-dimension__unit<?php echo $unit_option === $active_unit ? ' sto-is-active' : ''; ?>"
+							data-sto-dimension-unit="<?php echo esc_attr( $unit_option ); ?>"
+						><?php echo esc_html( $this->format_unit_label( $unit_option ) ); ?></button>
 						<?php endforeach; ?>
 					<?php else : ?>
 						<span class="sto-dimension__unit-badge"><?php echo esc_html( $this->format_unit_label( $allowed[0] ) ); ?></span>
@@ -717,10 +732,10 @@ final class Dimension {
 					type="text"
 					class="sto-dimension__custom-suffix"
 					id="<?php echo esc_attr( 'sto-dimension-c-' . $suffix ); ?>"
-					value="<?php echo esc_attr( $parsed['c'] ); ?>"
-					placeholder="<?php esc_attr_e( 'e.g. vw', 'simple-theme-options' ); ?>"
+					value="<?php echo esc_attr( $parsed['custom_suffix'] ); ?>"
+					placeholder="<?php esc_attr_e( 'e.g. vw', 'topten-simple-theme-options' ); ?>"
 					autocomplete="off"
-					<?php echo ( $active_u === 'custom' && ! $suppress_suffix ) ? '' : ' hidden disabled'; ?>
+					<?php echo ( $active_unit === 'custom' && ! $suppress_suffix ) ? '' : ' hidden disabled'; ?>
 				/>
 				<?php endif; ?>
 				</div>
@@ -736,10 +751,10 @@ final class Dimension {
 	 */
 	private function default_sides() {
 		return array(
-			array( 'key' => 'top', 'label' => __( 'TOP', 'simple-theme-options' ) ),
-			array( 'key' => 'right', 'label' => __( 'RIGHT', 'simple-theme-options' ) ),
-			array( 'key' => 'bottom', 'label' => __( 'BOTTOM', 'simple-theme-options' ) ),
-			array( 'key' => 'left', 'label' => __( 'LEFT', 'simple-theme-options' ) ),
+			array( 'key' => 'top', 'label' => __( 'TOP', 'topten-simple-theme-options' ) ),
+			array( 'key' => 'right', 'label' => __( 'RIGHT', 'topten-simple-theme-options' ) ),
+			array( 'key' => 'bottom', 'label' => __( 'BOTTOM', 'topten-simple-theme-options' ) ),
+			array( 'key' => 'left', 'label' => __( 'LEFT', 'topten-simple-theme-options' ) ),
 		);
 	}
 
@@ -775,7 +790,7 @@ final class Dimension {
 	/**
 	 * @param array<int, array{key:string,label:string}> $sides
 	 * @param array<int, string>                        $allowed
-	 * @return array{u:string,c:string,linked:bool,values:array<string,string>}
+	 * @return array{unit:string,custom_suffix:string,linked:bool,values:array<string,string>}
 	 */
 	private function empty_state( array $sides, array $allowed ) {
 		$vals = array();
@@ -787,10 +802,10 @@ final class Dimension {
 		}
 
 		return array(
-			'u'      => (string) ( $allowed[0] ?? 'px' ),
-			'c'      => '',
-			'linked' => true,
-			'values' => $vals,
+			'unit'          => (string) ( $allowed[0] ?? 'px' ),
+			'custom_suffix' => '',
+			'linked'        => true,
+			'values'        => $vals,
 		);
 	}
 
@@ -798,31 +813,17 @@ final class Dimension {
 	 * @param mixed                                      $raw
 	 * @param array<int, array{key:string,label:string}> $sides
 	 * @param array<int, string>                        $allowed
-	 * @return array{u:string,c:string,linked:bool,values:array<string,string>}
+	 * @return array{unit:string,custom_suffix:string,linked:bool,values:array<string,string>}
 	 */
 	private function normalize_default_state( $raw, array $sides, array $allowed ) {
 		$base = $this->empty_state( $sides, $allowed );
 		if ( ! is_array( $raw ) ) {
 			return $base;
 		}
-		if ( isset( $raw['u'] ) ) {
-			$uu = sanitize_key( (string) $raw['u'] );
-			if ( in_array( $uu, $allowed, true ) ) {
-				$base['u'] = $uu;
-			}
-		}
-		if ( isset( $raw['c'] ) ) {
-			$base['c'] = $this->sanitize_custom_suffix( (string) $raw['c'] );
-		}
-		if ( array_key_exists( 'linked', $raw ) ) {
-			$base['linked'] = ! empty( $raw['linked'] );
-		}
-		if ( isset( $raw['values'] ) && is_array( $raw['values'] ) ) {
-			foreach ( $base['values'] as $k => $_ ) {
-				if ( isset( $raw['values'][ $k ] ) ) {
-					$base['values'][ $k ] = trim( (string) $raw['values'][ $k ] );
-				}
-			}
+
+		$base = UnitFieldStoredJson::merge_dimension_default_partial( $raw, $base, $allowed );
+		if ( array_key_exists( 'custom_suffix', $raw ) || array_key_exists( 'c', $raw ) ) {
+			$base['custom_suffix'] = $this->sanitize_custom_suffix( (string) $base['custom_suffix'] );
 		}
 
 		return $base;
@@ -831,7 +832,7 @@ final class Dimension {
 	/**
 	 * @param array<int, array{key:string,label:string}> $sides
 	 * @param array<int, string>                        $allowed
-	 * @return array<string, array{u:string,c:string,linked:bool,values:array<string,string>>>
+	 * @return array<string, array{unit:string,custom_suffix:string,linked:bool,values:array<string,string>>>
 	 */
 	private function get_value_map( $field_id, array $default_state, array $breakpoints, array $field ) {
 		$sides   = isset( $field['sides'] ) && is_array( $field['sides'] ) ? $field['sides'] : $this->default_sides();
@@ -864,8 +865,8 @@ final class Dimension {
 
 	/**
 	 * @param array<int, string> $breakpoints
-	 * @param array{u:string,c:string,linked:bool,values:array<string,string>} $state
-	 * @return array<string, array{u:string,c:string,linked:bool,values:array<string,string>>>
+	 * @param array{unit:string,custom_suffix:string,linked:bool,values:array<string,string>} $state
+	 * @return array<string, array{unit:string,custom_suffix:string,linked:bool,values:array<string,string>>>
 	 */
 	private function fill_breakpoint_states( array $breakpoints, array $state ) {
 		$out = array();
@@ -878,8 +879,8 @@ final class Dimension {
 	}
 
 	/**
-	 * @param array{u:string,c:string,linked:bool,values:array<string,string>} $default_state
-	 * @return array{u:string,c:string,linked:bool,values:array<string,string>}
+	 * @param array{unit:string,custom_suffix:string,linked:bool,values:array<string,string>} $default_state
+	 * @return array{unit:string,custom_suffix:string,linked:bool,values:array<string,string>}
 	 */
 	private function get_option_state( $field_id, array $default_state, array $field ) {
 		$saved_options = get_option( 'sto_options', array() );
@@ -904,7 +905,7 @@ final class Dimension {
 	 * @param string                                      $json
 	 * @param array<int, array{key:string,label:string}> $sides
 	 * @param array<int, string>                        $allowed
-	 * @return array{u:string,c:string,linked:bool,values:array<string,string>}|null
+	 * @return array{unit:string,custom_suffix:string,linked:bool,values:array<string,string>}|null
 	 */
 	private function parse_json_cell( $json, array $sides, array $allowed ) {
 		$json = is_string( $json ) ? trim( $json ) : '';
@@ -915,14 +916,12 @@ final class Dimension {
 		if ( ! is_array( $dec ) ) {
 			return null;
 		}
-		$u = isset( $dec['u'] ) ? sanitize_key( (string) $dec['u'] ) : (string) ( $allowed[0] ?? 'px' );
-		if ( ! in_array( $u, $allowed, true ) ) {
-			$u = (string) ( $allowed[0] ?? 'px' );
-		}
-		$c      = isset( $dec['c'] ) ? $this->sanitize_custom_suffix( (string) $dec['c'] ) : '';
-		$linked = ! empty( $dec['linked'] );
-		$vals   = isset( $dec['values'] ) && is_array( $dec['values'] ) ? $dec['values'] : array();
-		$outv   = array();
+		$unit_keys     = UnitFieldStoredJson::parse_dimension_unit_keys( $dec, $allowed );
+		$unit          = $unit_keys['unit'];
+		$custom_suffix = $this->sanitize_custom_suffix( (string) $unit_keys['custom_suffix'] );
+		$linked        = ! empty( $dec['linked'] ) || ! empty( $dec['link'] );
+		$vals          = isset( $dec['values'] ) && is_array( $dec['values'] ) ? $dec['values'] : array();
+		$outv          = array();
 		foreach ( $sides as $row ) {
 			$k = isset( $row['key'] ) ? sanitize_key( (string) $row['key'] ) : '';
 			if ( $k === '' ) {
@@ -930,12 +929,23 @@ final class Dimension {
 			}
 			$outv[ $k ] = isset( $vals[ $k ] ) ? trim( (string) $vals[ $k ] ) : '';
 		}
+		$legacy_map = array(
+			't' => 'top',
+			'r' => 'right',
+			'b' => 'bottom',
+			'l' => 'left',
+		);
+		foreach ( $legacy_map as $legacy_key => $side_key ) {
+			if ( isset( $dec[ $legacy_key ] ) && isset( $outv[ $side_key ] ) && $outv[ $side_key ] === '' ) {
+				$outv[ $side_key ] = trim( (string) $dec[ $legacy_key ] );
+			}
+		}
 
 		return array(
-			'u'      => $u,
-			'c'      => $u === 'custom' ? $c : '',
-			'linked' => $linked,
-			'values' => $outv,
+			'unit'          => $unit,
+			'custom_suffix' => $unit === 'custom' ? $custom_suffix : '',
+			'linked'        => $linked,
+			'values'        => $outv,
 		);
 	}
 

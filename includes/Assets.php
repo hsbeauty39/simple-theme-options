@@ -11,6 +11,7 @@ use SimpleThemeOptions\Admin\CustomFonts\CustomFontsAdmin;
 use SimpleThemeOptions\Data\CustomFontsRegistry;
 use SimpleThemeOptions\Admin\Options\ImportExport\ThemeSettingsImportExport;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
+use SimpleThemeOptions\Admin\ThemeSettingsDisplayLocations;
 use SimpleThemeOptions\Admin\ThemeSettingsMetabox;
 use SimpleThemeOptions\Admin\ThemeSettingsTermBox;
 use SimpleThemeOptions\ViewportOptions;
@@ -168,7 +169,79 @@ final class Assets {
 			|| $this->is_sto_freemius_sibling_screen( $hook_suffix )
 			|| $this->is_sto_theme_settings_metabox_screen( $hook_suffix )
 			|| $this->is_sto_woocommerce_product_data_screen( $hook_suffix )
-			|| $this->is_sto_theme_settings_term_screen( $hook_suffix );
+			|| $this->is_sto_theme_settings_term_screen( $hook_suffix )
+			|| $this->is_sto_customizer_controls_screen( $hook_suffix );
+	}
+
+	/**
+	 * WordPress Customizer controls sidebar (Theme Settings panel).
+	 *
+	 * @param string $hook_suffix Script/style hook suffix.
+	 */
+	private function is_sto_customizer_controls_screen( $hook_suffix = '' ): bool {
+		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return false;
+		}
+
+		if ( ! ThemeSettingsDisplayLocations::instance()->is_customizer_enabled() ) {
+			return false;
+		}
+
+		if ( $hook_suffix === 'customize_controls' ) {
+			return true;
+		}
+
+		global $pagenow;
+
+		return isset( $pagenow ) && $pagenow === 'customize.php';
+	}
+
+	/**
+	 * Enqueue Theme Settings assets inside the Customizer controls pane.
+	 */
+	public function enqueue_customizer_controls_assets(): void {
+		$this->enqueue_styles( 'customize_controls' );
+		$this->enqueue_scripts( 'customize_controls' );
+
+		$src     = STO_URL . 'assets/admin/css/sto-customizer.css';
+		$version = $this->bust_cache_version( $src, STO_VERSION );
+		wp_enqueue_style( 'sto-customizer', $src, array( 'sto-style' ), $version );
+
+		$js_src     = STO_URL . 'assets/admin/js/sto-customizer.js';
+		$js_version = $this->bust_cache_version( $js_src, STO_VERSION );
+		wp_enqueue_script( 'sto-customizer', $js_src, array( 'jquery', 'customize-controls', 'display-section-on-menu' ), $js_version, true );
+		wp_enqueue_script( 'display-section-on-menu' );
+
+		wp_localize_script(
+			'sto-customizer',
+			'stoCustomizer',
+			array(
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'action'   => 'sto_save_theme_options_customizer',
+				'nonce'    => wp_create_nonce( 'sto_save_theme_options_customizer' ),
+				'i18n'     => array(
+					'saved'       => __( 'Theme Settings saved.', 'topten-simple-theme-options' ),
+					'save_failed' => __( 'Could not save Theme Settings.', 'topten-simple-theme-options' ),
+				),
+			)
+		);
+
+		wp_add_inline_script(
+			'sto-customizer',
+			'(function ($) {
+				function runStoCustomizerLayoutFix() {
+					if (typeof window.stoFixCustomizerEmbedLayout === "function") {
+						window.stoFixCustomizerEmbedLayout();
+					}
+				}
+				$(runStoCustomizerLayoutFix);
+				$(window).on("load", runStoCustomizerLayoutFix);
+				setTimeout(runStoCustomizerLayoutFix, 100);
+				setTimeout(runStoCustomizerLayoutFix, 600);
+				setTimeout(runStoCustomizerLayoutFix, 1500);
+			})(jQuery);',
+			'after'
+		);
 	}
 
 	/**
@@ -206,8 +279,12 @@ final class Assets {
 
 		$styles = $this->get_styles();
 		foreach ( $styles as $handle => $style ) {
+			$deps = $style['deps'];
+			if ( $handle === 'sto-premium-locked' && class_exists( PremiumFieldGate::class ) && ! PremiumFieldGate::is_locked() ) {
+				$deps = array( 'sto-style' );
+			}
 			$version = $this->bust_cache_version( $style['src'], $style['version'] );
-			wp_enqueue_style( $handle, $style['src'], $style['deps'], $version );
+			wp_enqueue_style( $handle, $style['src'], $deps, $version );
 		}
 
 		if ( $this->should_enqueue_metabox_wc_tabs_styles( $hook_suffix ) ) {
@@ -219,7 +296,7 @@ final class Assets {
 		if ( $this->is_sto_woocommerce_product_data_screen( $hook_suffix ) ) {
 			$src     = STO_URL . 'assets/admin/css/sto-wc-product-data-panels.css';
 			$version = $this->bust_cache_version( $src, STO_VERSION );
-			wp_enqueue_style( 'sto-wc-product-data-panels', $src, array( 'sto-style', 'woocommerce_admin_styles' ), $version );
+			wp_enqueue_style( 'sto-wc-product-data-panels', $src, array( 'sto-style', 'sto-input', 'woocommerce_admin_styles' ), $version );
 		}
 	}
 
@@ -484,11 +561,6 @@ final class Assets {
 				'deps'    => array( 'sto-style', 'sto-select2' ),
 				'version' => STO_VERSION,
 			),
-			'sto-rich-modern-editor' => array(
-				'src'     => STO_URL . 'assets/admin/css/sto-rich-modern-editor.css',
-				'deps'    => array( 'sto-style', 'wp-components', 'wp-block-editor', 'wp-edit-blocks' ),
-				'version' => STO_VERSION,
-			),
 		);
 	}
 
@@ -520,10 +592,20 @@ final class Assets {
 			wp_localize_jquery_ui_datepicker();
 		}
 
-		$page_slug = OptionsMenu::instance()->get_request_options_menu_slug();
+		$options_menu = OptionsMenu::instance();
+		$page_slug    = $options_menu->get_request_options_menu_slug();
 		if ( ! $page_slug ) {
-			$slugs     = OptionsMenu::instance()->get_registered_menu_slugs();
+			$slugs     = $options_menu->get_registered_menu_slugs();
 			$page_slug = ! empty( $slugs[0] ) ? (string) $slugs[0] : 'theme-settings';
+		}
+
+		if ( $this->is_sto_customizer_controls_screen( $hook_suffix ) ) {
+			foreach ( $options_menu->get_registered_menu_slugs() as $candidate_slug ) {
+				if ( $options_menu->get_sections_for_navigation_for_menu_page( (string) $candidate_slug ) !== array() ) {
+					$page_slug = (string) $candidate_slug;
+					break;
+				}
+			}
 		}
 
 		$on_post_metabox       = $this->is_sto_theme_settings_metabox_screen( $hook_suffix );
@@ -592,7 +674,7 @@ final class Assets {
 		}
 
 		$metabox_js = array(
-			'active' => ( $on_post_metabox || $on_wc_product_data ) ? 1 : 0,
+			'active' => $on_post_metabox ? 1 : 0,
 		);
 		$term_js    = array(
 			'active' => ( $on_term_screen && $term_taxonomy !== '' ) ? 1 : 0,
@@ -953,9 +1035,15 @@ final class Assets {
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),
+			'sto-advanced-repeater-editor' => array(
+				'src'       => STO_URL . 'assets/admin/js/sto-advanced-repeater-editor.js',
+				'deps'      => array( 'jquery' ),
+				'version'   => STO_VERSION,
+				'in_footer' => true,
+			),
 			'sto-advanced-repeater-field' => array(
 				'src'       => STO_URL . 'assets/admin/js/sto-advanced-repeater-field.js',
-				'deps'      => array( 'jquery', 'jquery-ui-sortable' ),
+				'deps'      => array( 'jquery', 'jquery-ui-sortable', 'sto-advanced-repeater-editor' ),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),
@@ -1026,29 +1114,6 @@ final class Assets {
 				// `sto-select2-vendor` provides `jQuery.fn.select2` for the chrome-bar language
 				// switcher upgrade — see `initLangSelect2()` in `sto-code-editor.js`.
 				'deps'      => array( 'jquery', 'code-editor', 'sto-select2-vendor', 'display-section-on-menu' ),
-				'version'   => STO_VERSION,
-				'in_footer' => true,
-			),
-			'sto-rich-modern-editor' => array(
-				'src'       => STO_URL . 'assets/admin/js/sto-rich-modern-editor.js',
-				'deps'      => array(
-					'jquery',
-					'wp-blocks',
-					'wp-element',
-					'wp-data',
-					'wp-hooks',
-					'wp-compose',
-					'wp-components',
-					'wp-api-fetch',
-					'wp-media-utils',
-					'wp-block-editor',
-					'wp-block-library',
-					'wp-format-library',
-					'wp-rich-text',
-					'wp-keycodes',
-					'wp-keyboard-shortcuts',
-					'display-section-on-menu',
-				),
 				'version'   => STO_VERSION,
 				'in_footer' => true,
 			),

@@ -11,7 +11,8 @@ use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSingletonAccessors;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
 use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
-use SimpleThemeOptions\Admin\Options\Fields\RichModernEditor\RichModernEditor;
+use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
+use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
 use SimpleThemeOptions\Admin\Options\RequiredVisibility;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
@@ -20,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * **Advanced repeater** — ordered **items** (JSON in **`sto_options[id]`**), each item a map of **logical sub-keys**
  * built from a **schema** (`fields`). Supports **nested repeaters**, **`fieldset`** grouping (nested object), and
- * scalar leaves: **`text`**, **`number`**, **`textarea`**, **`select`**, **`switcher`**, **`icon_select`**, **`rich_modern_editor`**. Admin: **Add item**, **drag**
+ * scalar leaves: **`text`**, **`number`**, **`textarea`**, **`editor`** (classic `wp_editor` — not inside repeaters on WooCommerce Product data), **`select`**, **`switcher`**, **`icon_select`**. Admin: **Add item**, **drag**
  * reorder (**jQuery UI Sortable**), **collapse / expand** per item, **remove** row. New rows match the same **collapsed /
  * expanded** default as the initial markup. Optional **`default_collapsed`** (bool) on **`register()`** — when **true**
  * (default), every root and nested item renders **collapsed** until the user expands it. Set **`default_collapsed` =>
@@ -56,8 +57,110 @@ final class AdvancedRepeaterControl {
 	 */
 	private $fields_by_id = array();
 
+	/**
+	 * While rendering WooCommerce Product data STO panels, also emit `name` on repeater leaves.
+	 *
+	 * @var bool
+	 */
+	private static $wc_product_data_leaf_submit_names = false;
+
 	protected function init() {
 		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::ADVANCED_REPEATER, 2 );
+		add_action( 'woocommerce_admin_process_product_object', array( $this, 'inject_repeater_leaf_bucket_into_sto_options_post' ), 5 );
+	}
+
+	/**
+	 * WooCommerce product save: rebuild `sto_options[repeater_id]` JSON from per-leaf POST names
+	 * before Menu persistence runs (hidden JSON is often stale when block editors were not flushed).
+	 *
+	 * @param \WC_Product $product Product being saved.
+	 */
+	public function inject_repeater_leaf_bucket_into_sto_options_post( $product ): void {
+		if ( ! $product instanceof \WC_Product ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! isset( $_POST['sto_options'] ) || ! is_array( $_POST['sto_options'] ) ) {
+			$_POST['sto_options'] = array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		}
+
+		$bucket = array();
+		if ( isset( $_POST['sto_options_adv_rep_leaves'] ) && is_array( $_POST['sto_options_adv_rep_leaves'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$bucket = wp_unslash( $_POST['sto_options_adv_rep_leaves'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			if ( ! is_array( $bucket ) ) {
+				$bucket = array();
+			}
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- WooCommerce product save.
+		$posted_sto_options = is_array( $_POST['sto_options'] ) ? wp_unslash( $_POST['sto_options'] ) : array();
+		$field_ids          = array();
+		foreach ( array_keys( $bucket ) as $bucket_field_id ) {
+			$field_ids[] = sanitize_key( (string) $bucket_field_id );
+		}
+		foreach ( array_keys( $posted_sto_options ) as $posted_field_id ) {
+			$field_ids[] = sanitize_key( (string) $posted_field_id );
+		}
+		$field_ids = array_values( array_unique( array_filter( $field_ids ) ) );
+
+		foreach ( $field_ids as $field_id ) {
+			if ( $field_id === '' || ! $this->registry_is_registered_field_id( $field_id ) ) {
+				continue;
+			}
+
+			$field = $this->fields_by_id[ $field_id ] ?? null;
+			if ( ! is_array( $field ) || empty( $field['schema'] ) ) {
+				continue;
+			}
+
+			$schema = $field['schema'];
+			$rows   = isset( $bucket[ $field_id ] ) && is_array( $bucket[ $field_id ] ) ? $bucket[ $field_id ] : array();
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- WooCommerce product save.
+			$existing_raw = isset( $_POST['sto_options'][ $field_id ] ) ? wp_unslash( $_POST['sto_options'][ $field_id ] ) : '';
+			$json_rows    = array();
+			$parsed_json  = $this->parse_items( $existing_raw );
+			foreach ( $parsed_json as $json_row ) {
+				if ( is_array( $json_row ) ) {
+					$json_rows[] = $this->sanitize_item_for_schema(
+						$schema,
+						$this->normalize_adv_rep_row_for_schema( $schema, $json_row ),
+						0,
+						$field_id
+					);
+				}
+			}
+
+			$dom_rows = array();
+			foreach ( $rows as $row_data ) {
+				if ( is_array( $row_data ) ) {
+					$dom_rows[] = $this->sanitize_item_for_schema(
+						$schema,
+						$this->normalize_adv_rep_row_for_schema( $schema, $row_data ),
+						0,
+						$field_id
+					);
+				}
+			}
+
+			if ( $dom_rows !== array() && $json_rows !== array() ) {
+				$merged_rows = $this->merge_repeater_row_sets( $schema, $json_rows, $dom_rows );
+			} elseif ( $dom_rows !== array() ) {
+				$merged_rows = $dom_rows;
+			} else {
+				$merged_rows = $json_rows;
+			}
+
+			$merged_rows = $this->filter_storage_rows( $schema, $merged_rows );
+
+			if ( $merged_rows === array() && $dom_rows !== array() ) {
+				$merged_rows = $this->filter_storage_rows( $schema, $dom_rows );
+			}
+
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$_POST['sto_options'][ $field_id ] = wp_json_encode( array_values( $merged_rows ) );
+		}
 	}
 
 	/**
@@ -112,6 +215,21 @@ final class AdvancedRepeaterControl {
 			return;
 		}
 
+		$wc_disallows_editor = $this->section_slug_uses_wc_product_data( $section_slug )
+			&& $this->schema_includes_editor_leaf( $schema );
+		if ( $wc_disallows_editor && function_exists( '_doing_it_wrong' ) ) {
+			_doing_it_wrong(
+				'AdvancedRepeaterControl::register',
+				sprintf(
+					/* translators: 1: repeater field id, 2: section slug */
+					esc_html__( 'Advanced repeater "%1$s" on WooCommerce Product data (section "%2$s") must not use `editor` leaves. Use `textarea` instead.', 'topten-simple-theme-options' ),
+					esc_html( $field_id ),
+					esc_html( $section_slug )
+				),
+				'1.0.0'
+			);
+		}
+
 		$field['section_slug']   = $section_slug;
 		$field['id']             = $field_id;
 		$field['title']          = isset( $field['title'] ) ? (string) $field['title'] : '';
@@ -129,6 +247,7 @@ final class AdvancedRepeaterControl {
 		$field['default_rows']        = $this->normalize_default_items( isset( $field['default'] ) ? $field['default'] : array(), $schema, $max );
 		$field['default_collapsed']   = array_key_exists( 'default_collapsed', $field ) ? (bool) $field['default_collapsed'] : true;
 		$field['repeater_title_view']   = isset( $field['repeater_title_view'] ) ? sanitize_key( (string) $field['repeater_title_view'] ) : '';
+		$field['wc_disallows_editor_in_repeater'] = $wc_disallows_editor;
 
 		if ( ! isset( $this->fields_by_section[ $section_slug ] ) ) {
 			$this->fields_by_section[ $section_slug ] = array();
@@ -162,6 +281,63 @@ final class AdvancedRepeaterControl {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $schema Normalized schema nodes.
+	 */
+	private function schema_includes_editor_leaf( array $schema ): bool {
+		foreach ( $schema as $node ) {
+			if ( ! is_array( $node ) ) {
+				continue;
+			}
+			$type = isset( $node['type'] ) ? (string) $node['type'] : '';
+			if ( $type === 'editor' ) {
+				return true;
+			}
+			if ( in_array( $type, array( 'fieldset', 'advanced_repeater' ), true ) && ! empty( $node['fields'] ) && is_array( $node['fields'] ) ) {
+				if ( $this->schema_includes_editor_leaf( $node['fields'] ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	private function section_slug_uses_wc_product_data( string $section_slug ): bool {
+		$section_slug = sanitize_key( $section_slug );
+		if ( $section_slug === '' || ! class_exists( OptionsMenu::class ) ) {
+			return false;
+		}
+
+		return OptionsMenu::instance()->get_menu_page_slug_for_leaf_section( $section_slug ) !== '';
+	}
+
+	private function repeater_disallows_editor_leaves( string $field_id ): bool {
+		$field_id = sanitize_key( $field_id );
+		if ( $field_id === '' ) {
+			return false;
+		}
+
+		$field = $this->fields_by_id[ $field_id ] ?? null;
+
+		return is_array( $field ) && ! empty( $field['wc_disallows_editor_in_repeater'] );
+	}
+
+	private function render_wc_repeater_editor_disallowed_notice(): void {
+		?>
+		<div class="notice notice-warning inline sto-adv-rep__editor-policy-notice">
+			<p>
+				<?php
+				esc_html_e(
+					'WP Editor fields are not supported inside repeaters on WooCommerce Product data tabs. Use a textarea field instead.',
+					'topten-simple-theme-options'
+				);
+				?>
+			</p>
+		</div>
+		<?php
 	}
 
 	/**
@@ -287,26 +463,38 @@ final class AdvancedRepeaterControl {
 				continue;
 			}
 
-			if ( $type === 'rich_modern_editor' ) {
-				$editor_height = isset( $item['editor_height'] ) && is_numeric( $item['editor_height'] ) ? (int) $item['editor_height'] : 320;
-				if ( $editor_height < 160 ) {
-					$editor_height = 160;
+			if ( $type === 'editor' ) {
+				$editor_height = isset( $item['editor_height'] ) && is_numeric( $item['editor_height'] ) ? (int) $item['editor_height'] : 280;
+				if ( $editor_height < 100 ) {
+					$editor_height = 100;
 				}
 				if ( $editor_height > 1200 ) {
 					$editor_height = 1200;
 				}
 				$out[] = array(
-					'type'          => 'rich_modern_editor',
+					'type'          => 'editor',
 					'id'            => $id,
 					'title'         => isset( $item['title'] ) ? (string) $item['title'] : '',
 					'description'   => isset( $item['description'] ) ? (string) $item['description'] : '',
 					'default'       => isset( $item['default'] ) && is_scalar( $item['default'] ) ? (string) $item['default'] : '',
 					'editor_height' => $editor_height,
-					'media_upload'  => ! array_key_exists( 'media_upload', $item ) || (bool) $item['media_upload'],
+					'media_buttons' => ! array_key_exists( 'media_buttons', $item ) || (bool) $item['media_buttons'],
+					'teeny'         => ! empty( $item['teeny'] ),
 					'required'      => $this->normalize_leaf_required( $item ),
 					'html_required' => ! empty( $item['html_required'] ),
 				);
 				++$count;
+				continue;
+			}
+
+			if ( in_array( $type, array( 'rich_modern_editor', 'richmoderneditor', 'block_editor', 'gutenberg' ), true ) ) {
+				if ( function_exists( '_doing_it_wrong' ) ) {
+					_doing_it_wrong(
+						'AdvancedRepeaterControl',
+						esc_html__( 'The rich_modern_editor field type was removed. Use textarea or a standalone classic editor field outside the repeater.', 'topten-simple-theme-options' ),
+						'1.0.0'
+					);
+				}
 				continue;
 			}
 
@@ -389,7 +577,7 @@ final class AdvancedRepeaterControl {
 		foreach ( $schema as $node ) {
 			$t  = $node['type'];
 			$id = $node['id'];
-			if ( in_array( $t, array( 'text', 'number', 'textarea', 'switcher', 'rich_modern_editor' ), true ) ) {
+			if ( in_array( $t, array( 'text', 'number', 'textarea', 'editor', 'switcher' ), true ) ) {
 				$row[ $id ] = isset( $node['default'] ) ? (string) $node['default'] : ( $t === 'switcher' ? '0' : '' );
 			} elseif ( $t === 'select' ) {
 				$row[ $id ] = isset( $node['default'] ) ? (string) $node['default'] : '';
@@ -420,7 +608,7 @@ final class AdvancedRepeaterControl {
 	 * @param int                              $depth
 	 * @return array<string, mixed>
 	 */
-	private function sanitize_item_for_schema( array $schema, array $row, $depth ) {
+	private function sanitize_item_for_schema( array $schema, array $row, $depth, string $root_repeater_field_id = '' ) {
 		if ( $depth > self::MAX_NEST_DEPTH ) {
 			return array();
 		}
@@ -433,7 +621,7 @@ final class AdvancedRepeaterControl {
 			}
 			$val = $row[ $id ];
 			if ( $t === 'fieldset' && is_array( $val ) ) {
-				$out[ $id ] = $this->sanitize_item_for_schema( $node['fields'], $val, $depth + 1 );
+				$out[ $id ] = $this->sanitize_item_for_schema( $node['fields'], $val, $depth + 1, $root_repeater_field_id );
 				continue;
 			}
 			if ( $t === 'advanced_repeater' ) {
@@ -445,7 +633,7 @@ final class AdvancedRepeaterControl {
 						break;
 					}
 					if ( is_array( $inner_row ) ) {
-						$acc[] = $this->sanitize_item_for_schema( $node['fields'], $inner_row, $depth + 1 );
+						$acc[] = $this->sanitize_item_for_schema( $node['fields'], $inner_row, $depth + 1, $root_repeater_field_id );
 					}
 				}
 				if ( $acc === array() ) {
@@ -455,7 +643,7 @@ final class AdvancedRepeaterControl {
 				continue;
 			}
 			if ( in_array( $t, array( 'text', 'textarea' ), true ) ) {
-				$out[ $id ] = sanitize_text_field( is_scalar( $val ) ? (string) $val : '' );
+				$out[ $id ] = sanitize_text_field( is_scalar( $val ) ? wp_unslash( (string) $val ) : '' );
 				continue;
 			}
 			if ( $t === 'number' ) {
@@ -484,11 +672,14 @@ final class AdvancedRepeaterControl {
 				);
 				continue;
 			}
-			if ( $t === 'rich_modern_editor' ) {
-				$out[ $id ] = RichModernEditor::instance()->sanitize_stored_value(
-					is_scalar( $val ) ? (string) $val : '',
-					$node
-				);
+			if ( $t === 'editor' ) {
+				if ( $root_repeater_field_id !== '' && $this->repeater_disallows_editor_leaves( $root_repeater_field_id ) ) {
+					continue;
+				}
+				$markup = is_scalar( $val ) ? (string) $val : '';
+				// Do not wp_unslash markup here — leaf bucket / json_decode values are already unslashed;
+				// stripslashes on "\r\n" sequences becomes literal "rn".
+				$out[ $id ] = Input::instance()->sanitize_editor_html( $markup );
 				continue;
 			}
 		}
@@ -551,6 +742,13 @@ final class AdvancedRepeaterControl {
 				}
 				continue;
 			}
+			if ( $t === 'editor' ) {
+				$html = is_scalar( $val ) ? (string) $val : '';
+				if ( Input::classic_editor_html_has_meaningful_content( $html ) ) {
+					return false;
+				}
+				continue;
+			}
 			if ( is_string( $val ) && trim( $val ) !== '' ) {
 				return false;
 			}
@@ -586,15 +784,297 @@ final class AdvancedRepeaterControl {
 			if ( $raw === '' ) {
 				return array();
 			}
-			$d = json_decode( $raw, true );
+			$decoded = json_decode( $raw, true );
+			if ( ! is_array( $decoded ) ) {
+				$decoded = json_decode( wp_unslash( $raw ), true );
+			}
 
-			return is_array( $d ) ? $d : array();
+			return is_array( $decoded ) ? $decoded : array();
 		}
 		if ( is_array( $raw ) ) {
 			return $raw;
 		}
 
 		return array();
+	}
+
+	/**
+	 * Enable per-leaf `name` attributes for the next WC Product data panel render pass.
+	 */
+	public static function enable_wc_product_data_leaf_submit_names(): void {
+		self::$wc_product_data_leaf_submit_names = true;
+	}
+
+	/**
+	 * Disable per-leaf `name` attributes after WC Product data panel render.
+	 */
+	public static function disable_wc_product_data_leaf_submit_names(): void {
+		self::$wc_product_data_leaf_submit_names = false;
+	}
+
+	/**
+	 * Whether repeater leaves should also POST under `sto_options_adv_rep_leaves` (WooCommerce product data).
+	 */
+	private function should_render_adv_rep_leaf_submit_names(): bool {
+		return self::$wc_product_data_leaf_submit_names || (bool) doing_action( 'woocommerce_product_data_panels' );
+	}
+
+	/**
+	 * `name` attribute for a root repeater row leaf (backup when hidden JSON is stale).
+	 *
+	 * @param string $field_id   Repeater field id.
+	 * @param int    $row_index  0-based row index.
+	 * @param string $leaf_id    Schema leaf id.
+	 */
+	private function submit_leaf_name_attr( string $field_id, int $row_index, string $leaf_id ): string {
+		$field_id  = sanitize_key( $field_id );
+		$leaf_id   = sanitize_key( $leaf_id );
+		$row_index = max( 0, $row_index );
+		if ( $field_id === '' || $leaf_id === '' ) {
+			return '';
+		}
+
+		return sprintf(
+			' name="%s"',
+			esc_attr(
+				sprintf(
+					'sto_options_adv_rep_leaves[%s][%d][%s]',
+					$field_id,
+					$row_index,
+					$leaf_id
+				)
+			)
+		);
+	}
+
+	/**
+	 * Prefer leaf POST bucket when it carries more data than parsed hidden JSON.
+	 *
+	 * @param string                           $field_id
+	 * @param array<int, array<string, mixed>> $schema
+	 * @param array<int, array<string, mixed>> $json_rows
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function merge_posted_leaf_rows_from_request( string $field_id, array $schema, array $json_rows ): array {
+		$dom_rows = $this->build_rows_from_adv_rep_leaf_bucket( $field_id, $schema );
+		if ( $dom_rows === array() ) {
+			return $json_rows;
+		}
+
+		if ( $json_rows === array() ) {
+			return $dom_rows;
+		}
+
+		return $this->merge_repeater_row_sets( $schema, $json_rows, $dom_rows );
+	}
+
+	/**
+	 * Rows posted as `sto_options_adv_rep_leaves[field_id][row][leaf]` (WooCommerce product data backup).
+	 *
+	 * @param string                           $field_id Repeater field id.
+	 * @param array<int, array<string, mixed>> $schema   Normalized schema.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function build_rows_from_adv_rep_leaf_bucket( string $field_id, array $schema ): array {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce product save; capability checked upstream.
+		if ( ! isset( $_POST['sto_options_adv_rep_leaves'] ) || ! is_array( $_POST['sto_options_adv_rep_leaves'] ) ) {
+			return array();
+		}
+
+		$field_id = sanitize_key( $field_id );
+		$bucket   = wp_unslash( $_POST['sto_options_adv_rep_leaves'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Rows sanitized via sanitize_item_for_schema().
+		if ( $field_id === '' || ! isset( $bucket[ $field_id ] ) || ! is_array( $bucket[ $field_id ] ) ) {
+			return array();
+		}
+
+		$dom_rows = array();
+		foreach ( $bucket[ $field_id ] as $row_data ) {
+			if ( ! is_array( $row_data ) ) {
+				continue;
+			}
+			$dom_rows[] = $this->sanitize_item_for_schema(
+				$schema,
+				$this->normalize_adv_rep_row_for_schema( $schema, $row_data ),
+				0
+			);
+		}
+
+		return $dom_rows;
+	}
+
+	/**
+	 * WC leaf POST uses flat keys; fieldset schemas expect nested blocks (e.g. spec_row.spec_name).
+	 *
+	 * @param array<int, array<string, mixed>> $schema
+	 * @param array<string, mixed>             $row
+	 * @return array<string, mixed>
+	 */
+	private function normalize_adv_rep_row_for_schema( array $schema, array $row ): array {
+		if ( $row === array() ) {
+			return $row;
+		}
+
+		$normalized = array();
+
+		foreach ( $schema as $node ) {
+			$node_id = isset( $node['id'] ) ? sanitize_key( (string) $node['id'] ) : '';
+			$type    = isset( $node['type'] ) ? sanitize_key( (string) $node['type'] ) : '';
+			if ( $node_id === '' ) {
+				continue;
+			}
+
+			if ( $type === 'fieldset' && ! empty( $node['fields'] ) && is_array( $node['fields'] ) ) {
+				$block = array();
+				if ( isset( $row[ $node_id ] ) && is_array( $row[ $node_id ] ) ) {
+					$block = $this->normalize_adv_rep_row_for_schema( $node['fields'], $row[ $node_id ] );
+				}
+				foreach ( $node['fields'] as $inner ) {
+					if ( ! is_array( $inner ) ) {
+						continue;
+					}
+					$inner_id = isset( $inner['id'] ) ? sanitize_key( (string) $inner['id'] ) : '';
+					if ( $inner_id === '' || ! array_key_exists( $inner_id, $row ) ) {
+						continue;
+					}
+					$block[ $inner_id ] = $row[ $inner_id ];
+				}
+				if ( $block !== array() ) {
+					$normalized[ $node_id ] = $block;
+				}
+				continue;
+			}
+
+			if ( $type === 'advanced_repeater' ) {
+				$nested_list = isset( $row[ $node_id ] ) && is_array( $row[ $node_id ] ) ? $row[ $node_id ] : array();
+				if ( $nested_list !== array() && ! empty( $node['fields'] ) && is_array( $node['fields'] ) ) {
+					$nested_schema = $node['fields'];
+					$normalized_nested = array();
+					foreach ( $nested_list as $nested_row ) {
+						if ( is_array( $nested_row ) ) {
+							$normalized_nested[] = $this->normalize_adv_rep_row_for_schema( $nested_schema, $nested_row );
+						}
+					}
+					if ( $normalized_nested !== array() ) {
+						$normalized[ $node_id ] = $normalized_nested;
+					}
+				}
+				continue;
+			}
+
+			if ( array_key_exists( $node_id, $row ) ) {
+				$normalized[ $node_id ] = $row[ $node_id ];
+			}
+		}
+
+		return $normalized !== array() ? $normalized : $row;
+	}
+
+	/**
+	 * When JSON and leaf POST both carry editor HTML, keep the richest markup (Visual mirror vs hidden JSON).
+	 *
+	 * @param string ...$candidates Raw HTML candidates.
+	 */
+	private function pick_richest_editor_html_for_merge( string ...$candidates ): string {
+		$best_html = '';
+
+		foreach ( $candidates as $candidate_html ) {
+			$candidate_html = is_scalar( $candidate_html ) ? (string) $candidate_html : '';
+			if ( ! Input::classic_editor_html_has_meaningful_content( $candidate_html ) ) {
+				continue;
+			}
+			if ( $best_html === '' || strlen( trim( $candidate_html ) ) > strlen( trim( $best_html ) ) ) {
+				$best_html = $candidate_html;
+			}
+		}
+
+		if ( $best_html !== '' ) {
+			return $best_html;
+		}
+
+		foreach ( $candidates as $candidate_html ) {
+			$candidate_html = is_scalar( $candidate_html ) ? trim( (string) $candidate_html ) : '';
+			if ( $candidate_html !== '' && strlen( $candidate_html ) > strlen( trim( $best_html ) ) ) {
+				$best_html = $candidate_html;
+			}
+		}
+
+		return $best_html;
+	}
+
+	/**
+	 * Merge hidden JSON rows with per-leaf POST values (prefer non-empty leaf per row).
+	 *
+	 * @param array<int, array<string, mixed>> $schema
+	 * @param array<int, array<string, mixed>> $json_rows
+	 * @param array<int, array<string, mixed>> $dom_rows
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function merge_repeater_row_sets( array $schema, array $json_rows, array $dom_rows ): array {
+		$row_count = max( count( $json_rows ), count( $dom_rows ) );
+		if ( $row_count <= 0 ) {
+			return array();
+		}
+
+		$merged = array();
+		for ( $row_index = 0; $row_index < $row_count; $row_index++ ) {
+			$json_row = isset( $json_rows[ $row_index ] ) && is_array( $json_rows[ $row_index ] ) ? $json_rows[ $row_index ] : array();
+			$dom_row  = isset( $dom_rows[ $row_index ] ) && is_array( $dom_rows[ $row_index ] ) ? $dom_rows[ $row_index ] : array();
+			$json_row = $this->normalize_adv_rep_row_for_schema( $schema, $json_row );
+			$dom_row  = $this->normalize_adv_rep_row_for_schema( $schema, $dom_row );
+			$merged[] = $this->merge_repeater_row_leaves( $schema, $json_row, $dom_row );
+		}
+
+		return $merged;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $schema
+	 * @param array<string, mixed>             $json_row
+	 * @param array<string, mixed>             $dom_row
+	 * @return array<string, mixed>
+	 */
+	private function merge_repeater_row_leaves( array $schema, array $json_row, array $dom_row ): array {
+		$merged = $json_row;
+		foreach ( $schema as $node ) {
+			$leaf_id = isset( $node['id'] ) ? sanitize_key( (string) $node['id'] ) : '';
+			$type    = isset( $node['type'] ) ? sanitize_key( (string) $node['type'] ) : '';
+			if ( $leaf_id === '' ) {
+				continue;
+			}
+
+			if ( $type === 'fieldset' && ! empty( $node['fields'] ) && is_array( $node['fields'] ) ) {
+				$json_sub = isset( $json_row[ $leaf_id ] ) && is_array( $json_row[ $leaf_id ] ) ? $json_row[ $leaf_id ] : array();
+				$dom_sub  = isset( $dom_row[ $leaf_id ] ) && is_array( $dom_row[ $leaf_id ] ) ? $dom_row[ $leaf_id ] : array();
+				$json_sub = $this->normalize_adv_rep_row_for_schema( $node['fields'], $json_sub );
+				$dom_sub  = $this->normalize_adv_rep_row_for_schema( $node['fields'], $dom_sub );
+				$merged[ $leaf_id ] = $this->merge_repeater_row_leaves( $node['fields'], $json_sub, $dom_sub );
+				continue;
+			}
+
+			if ( $type === 'advanced_repeater' ) {
+				continue;
+			}
+
+			$dom_value  = isset( $dom_row[ $leaf_id ] ) ? $dom_row[ $leaf_id ] : '';
+			$json_value = isset( $json_row[ $leaf_id ] ) ? $json_row[ $leaf_id ] : '';
+
+			if ( $type === 'editor' ) {
+				$dom_html  = is_scalar( $dom_value ) ? (string) $dom_value : '';
+				$json_html = is_scalar( $json_value ) ? (string) $json_value : '';
+				$pick_html = $this->pick_richest_editor_html_for_merge( $dom_html, $json_html );
+				if ( Input::classic_editor_html_has_meaningful_content( $pick_html ) ) {
+					$merged[ $leaf_id ] = Input::instance()->sanitize_editor_html( $pick_html );
+				}
+				continue;
+			}
+
+			$dom_string = is_scalar( $dom_value ) ? trim( (string) $dom_value ) : '';
+			if ( $dom_string !== '' ) {
+				$merged[ $leaf_id ] = (string) $dom_value;
+			}
+		}
+
+		return $merged;
 	}
 
 	/**
@@ -612,16 +1092,34 @@ final class AdvancedRepeaterControl {
 		$max    = isset( $field['max'] ) ? absint( $field['max'] ) : 0;
 		$cap    = ( $max > 0 ) ? min( $max, self::MAX_ROWS ) : self::MAX_ROWS;
 
-		$parsed = $this->parse_items( $raw );
-		$out    = array();
+		$parsed    = $this->parse_items( $raw );
+		$json_rows = array();
 		foreach ( $parsed as $row ) {
-			if ( count( $out ) >= $cap ) {
+			if ( count( $json_rows ) >= $cap ) {
 				break;
 			}
 			if ( is_array( $row ) ) {
-				$out[] = $this->sanitize_item_for_schema( $schema, $row, 0 );
+				$json_rows[] = $this->sanitize_item_for_schema(
+					$schema,
+					$this->normalize_adv_rep_row_for_schema( $schema, $row ),
+					0
+				);
 			}
 		}
+
+		$leaf_rows = $this->build_rows_from_adv_rep_leaf_bucket( $field_id, $schema );
+		if ( $leaf_rows !== array() && $json_rows === array() ) {
+			$out = $leaf_rows;
+		} elseif ( $leaf_rows !== array() && $json_rows !== array() ) {
+			$out = $this->merge_repeater_row_sets( $schema, $json_rows, $leaf_rows );
+		} else {
+			$out = $json_rows;
+		}
+
+		if ( $out === array() && $leaf_rows !== array() ) {
+			$out = $leaf_rows;
+		}
+
 		$out = $this->filter_storage_rows( $schema, $out );
 
 		return wp_json_encode( array_values( $out ) );
@@ -716,9 +1214,18 @@ final class AdvancedRepeaterControl {
 			<?php if ( PremiumFieldGate::render_controls_or_locked_placeholder( $title, 'advanced_repeater' ) ) : ?>
 			<?php else : ?>
 
+			<?php
+			if ( ! empty( $field['wc_disallows_editor_in_repeater'] ) && $this->should_render_adv_rep_leaf_submit_names() ) {
+				$this->render_wc_repeater_editor_disallowed_notice();
+			}
+			?>
+
 			<div
 				class="sto-adv-rep"
 				data-sto-adv-rep="1"
+				<?php if ( $this->should_render_adv_rep_leaf_submit_names() ) : ?>
+					data-sto-adv-rep-submit-leaves="1"
+				<?php endif; ?>
 				data-sto-adv-rep-max="<?php echo esc_attr( $max_attr ); ?>"
 				<?php if ( $repeater_title_view !== '' ) : ?>
 					data-sto-adv-rep-title-view="<?php echo esc_attr( $repeater_title_view ); ?>"
@@ -738,7 +1245,7 @@ final class AdvancedRepeaterControl {
 						if ( ! is_array( $item_row ) ) {
 							$item_row = array();
 						}
-						$item_row = $this->sanitize_item_for_schema( $schema, $item_row, 0 );
+						$item_row = $this->sanitize_item_for_schema( $schema, $item_row, 0, $field_id );
 						$row_exp  = ! $default_collapsed;
 						?>
 						<li class="sto-adv-rep__item" data-sto-adv-rep-item>
@@ -755,7 +1262,7 @@ final class AdvancedRepeaterControl {
 								</button>
 							</div>
 							<div class="sto-adv-rep__body" data-sto-adv-rep-body<?php echo $row_exp ? '' : ' style="display:none;"'; ?>>
-								<?php $this->render_schema_nodes( $schema, $item_row, (string) $field_id . '_' . (int) $idx, $field_id, 0, $default_collapsed ); ?>
+								<?php $this->render_schema_nodes( $schema, $item_row, (string) $field_id . '_' . (int) $idx, $field_id, 0, $default_collapsed, (int) $idx ); ?>
 							</div>
 						</li>
 					<?php endforeach; ?>
@@ -780,7 +1287,7 @@ final class AdvancedRepeaterControl {
 	 * @param int                              $depth
 	 * @param bool                             $default_collapsed When true, nested repeater rows render collapsed (same as root).
 	 */
-	private function render_schema_nodes( array $schema, array $values, string $html_id_prefix, string $field_id, int $depth, bool $default_collapsed = true ) {
+	private function render_schema_nodes( array $schema, array $values, string $html_id_prefix, string $field_id, int $depth, bool $default_collapsed = true, int $submit_row_index = -1 ) {
 		foreach ( $schema as $node ) {
 			$id    = $node['id'];
 			$type  = $node['type'];
@@ -795,7 +1302,7 @@ final class AdvancedRepeaterControl {
 						<div class="sto-adv-rep__fieldset-title"><?php echo esc_html( $title ); ?></div>
 					<?php endif; ?>
 					<?php
-					$this->render_schema_nodes( $node['fields'], $inner_vals, $html_id_prefix . '_' . $id, $field_id, $depth + 1, $default_collapsed );
+					$this->render_schema_nodes( $node['fields'], $inner_vals, $html_id_prefix . '_' . $id, $field_id, $depth + 1, $default_collapsed, $submit_row_index );
 					?>
 				</div>
 				<?php
@@ -846,7 +1353,7 @@ final class AdvancedRepeaterControl {
 									</button>
 								</div>
 								<div class="sto-adv-rep__body" data-sto-adv-rep-body<?php echo $nexp ? '' : ' style="display:none;"'; ?>>
-									<?php $this->render_schema_nodes( $node['fields'], $inner_row, $html_id_prefix . '_' . $id . '_' . (int) $j, $field_id, $depth + 1, $default_collapsed ); ?>
+									<?php $this->render_schema_nodes( $node['fields'], $inner_row, $html_id_prefix . '_' . $id . '_' . (int) $j, $field_id, $depth + 1, $default_collapsed, -1 ); ?>
 								</div>
 							</li>
 						<?php endforeach; ?>
@@ -865,6 +1372,9 @@ final class AdvancedRepeaterControl {
 			if ( in_array( $type, array( 'text', 'number', 'textarea' ), true ) ) {
 				$field_wrap_class = 'sto-adv-rep__field' . ( $type === 'textarea' ? ' sto-adv-rep__field--textarea' : '' );
 				$ctrl_mod         = $type === 'number' ? 'number' : ( $type === 'textarea' ? 'textarea' : 'text' );
+				$leaf_name_attr   = ( $submit_row_index >= 0 && $this->should_render_adv_rep_leaf_submit_names() )
+					? $this->submit_leaf_name_attr( $field_id, $submit_row_index, $id )
+					: '';
 				?>
 				<div class="<?php echo esc_attr( $field_wrap_class ); ?>" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="<?php echo esc_attr( $type ); ?>"<?php echo $this->leaf_adv_rep_required_attr( $node ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 					<?php if ( $title !== '' ) : ?>
@@ -872,14 +1382,14 @@ final class AdvancedRepeaterControl {
 					<?php endif; ?>
 					<div class="sto-input-wrap">
 						<?php if ( $type === 'textarea' ) : ?>
-							<textarea id="<?php echo esc_attr( $fid ); ?>" class="sto-input-control sto-input-control--textarea sto-adv-rep__input" rows="3" data-sto-adv-rep-input><?php echo esc_textarea( $vstr ); ?></textarea>
+							<textarea id="<?php echo esc_attr( $fid ); ?>" class="sto-input-control sto-input-control--textarea sto-adv-rep__input" rows="3" data-sto-adv-rep-input<?php echo $leaf_name_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_textarea( $vstr ); ?></textarea>
 						<?php else : ?>
 							<input
 								id="<?php echo esc_attr( $fid ); ?>"
 								type="<?php echo esc_attr( $type === 'number' ? 'number' : 'text' ); ?>"
 								class="sto-input-control sto-input-control--<?php echo esc_attr( $ctrl_mod ); ?> sto-adv-rep__input"
 								value="<?php echo esc_attr( $vstr ); ?>"
-								data-sto-adv-rep-input
+								data-sto-adv-rep-input<?php echo $leaf_name_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 								<?php echo $type === 'number' && isset( $node['min'] ) && $node['min'] !== '' ? ' min="' . esc_attr( (string) $node['min'] ) . '"' : ''; ?>
 								<?php echo $type === 'number' && isset( $node['max'] ) && $node['max'] !== '' ? ' max="' . esc_attr( (string) $node['max'] ) . '"' : ''; ?>
 								<?php echo $type === 'number' && isset( $node['step'] ) && $node['step'] !== '' ? ' step="' . esc_attr( (string) $node['step'] ) . '"' : ''; ?>
@@ -947,30 +1457,42 @@ final class AdvancedRepeaterControl {
 				continue;
 			}
 
-			if ( $type === 'rich_modern_editor' ) {
-				$editor_height = isset( $node['editor_height'] ) ? (int) $node['editor_height'] : 320;
-				$media_upload  = ! empty( $node['media_upload'] );
+			if ( $type === 'editor' ) {
 				?>
-				<div class="sto-adv-rep__field sto-adv-rep__field--rich-modern-editor" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="rich_modern_editor"<?php echo $this->leaf_adv_rep_required_attr( $node ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+				<div class="sto-adv-rep__field sto-adv-rep__field--editor sto-classic-editor-field" data-sto-adv-rep-leaf data-sto-adv-rep-key="<?php echo esc_attr( $id ); ?>" data-sto-adv-rep-kind="editor"<?php echo $this->leaf_adv_rep_required_attr( $node ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 					<?php if ( $title !== '' ) : ?>
 						<span class="sto-adv-rep__label"><?php echo esc_html( $title ); ?></span>
 					<?php endif; ?>
-					<div
-						class="sto-rich-modern-editor"
-						data-sto-rich-modern-editor="1"
-						data-sto-media-upload="<?php echo esc_attr( $media_upload ? '1' : '0' ); ?>"
-						style="--sto-rich-modern-editor-min-height: <?php echo esc_attr( (string) $editor_height ); ?>px;"
-					>
-						<div class="sto-rich-modern-editor__mount" aria-label="<?php esc_attr_e( 'Block editor', 'topten-simple-theme-options' ); ?>"></div>
-						<textarea
-							id="<?php echo esc_attr( $fid ); ?>"
-							class="sto-rich-modern-editor__input sto-adv-rep__input"
-							rows="6"
-							data-sto-adv-rep-input
-						><?php echo esc_textarea( $vstr ); ?></textarea>
-					</div>
 					<?php if ( $desc !== '' ) : ?>
 						<p class="sto-field-description sto-adv-rep__hint"><?php echo esc_html( $desc ); ?></p>
+					<?php endif; ?>
+					<?php if ( $this->repeater_disallows_editor_leaves( $field_id ) ) : ?>
+						<?php $this->render_wc_repeater_editor_disallowed_notice(); ?>
+						<p class="sto-field-description sto-adv-rep__hint">
+							<?php
+							esc_html_e(
+								'This leaf is ignored on save. Replace `editor` with `textarea` in your repeater schema.',
+								'topten-simple-theme-options'
+							);
+							?>
+						</p>
+					<?php else : ?>
+						<?php
+						$textarea_name = '';
+						if ( $submit_row_index >= 0 && $this->should_render_adv_rep_leaf_submit_names() ) {
+							$textarea_name = sprintf(
+								'sto_options_adv_rep_leaves[%s][%d][%s]',
+								$field_id,
+								$submit_row_index,
+								$id
+							);
+						}
+						?>
+						<div class="sto-input-wrap sto-adv-rep__editor-wrap">
+							<?php
+							Input::instance()->render_embedded_wp_editor( $node, $textarea_name, $vstr, $fid );
+							?>
+						</div>
 					<?php endif; ?>
 				</div>
 				<?php
@@ -1010,6 +1532,17 @@ final class AdvancedRepeaterControl {
 	 * @param array<int, array<string, mixed>> $default_rows
 	 */
 	private function get_merged_json( $field_id, array $default_rows ): string {
+		$post_id = $this->resolve_product_edit_post_id_for_repeater_read();
+		if ( $post_id > 0 && function_exists( 'sto_get_post_option' ) ) {
+			$from_post = sto_get_post_option( $field_id, $post_id, null );
+			if ( null !== $from_post ) {
+				return $this->registry_sanitize_posted_value(
+					$field_id,
+					is_string( $from_post ) ? $from_post : ( is_array( $from_post ) ? wp_json_encode( $from_post ) : '' )
+				);
+			}
+		}
+
 		$saved = get_option( 'sto_options', array() );
 		if ( ! is_array( $saved ) || ! isset( $saved[ $field_id ] ) ) {
 			return $default_rows !== array() ? wp_json_encode( array_values( $default_rows ) ) : $this->registry_sanitize_posted_value( $field_id, array() );
@@ -1020,6 +1553,35 @@ final class AdvancedRepeaterControl {
 			$field_id,
 			is_string( $stored ) ? $stored : ( is_array( $stored ) ? wp_json_encode( $stored ) : '' )
 		);
+	}
+
+	/**
+	 * Product edit screen: read repeater JSON from per-post Theme Settings meta when present.
+	 */
+	private function resolve_product_edit_post_id_for_repeater_read(): int {
+		if ( ! is_admin() ) {
+			return 0;
+		}
+
+		if ( isset( $_GET['post'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$post_id = absint( wp_unslash( $_GET['post'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( $post_id > 0 && get_post_type( $post_id ) === 'product' ) {
+				return $post_id;
+			}
+		}
+
+		global $post, $thepostid;
+		if ( $post instanceof \WP_Post && $post->post_type === 'product' ) {
+			return (int) $post->ID;
+		}
+		if ( ! empty( $thepostid ) ) {
+			$post_id = (int) $thepostid;
+			if ( $post_id > 0 && get_post_type( $post_id ) === 'product' ) {
+				return $post_id;
+			}
+		}
+
+		return 0;
 	}
 
 	/**
@@ -1106,7 +1668,13 @@ final class AdvancedRepeaterControl {
 			}
 			$val = isset( $row[ $id ] ) ? $row[ $id ] : '';
 			$empty = ( is_string( $val ) && trim( $val ) === '' ) || $val === null;
+			if ( $t === 'editor' ) {
+				$empty = ! Input::classic_editor_html_has_meaningful_content( is_scalar( $val ) ? (string) $val : '' );
+			}
 			if ( $empty ) {
+				if ( $t === 'text' && ! $this->repeater_row_has_meaningful_sibling_content( $schema, $row, $id ) ) {
+					continue;
+				}
 				$stitle = isset( $node['title'] ) ? trim( (string) $node['title'] ) : $id;
 				$out[]  = sprintf(
 					/* translators: 1: repeater field title, 2: row number, 3: inner field title */
@@ -1117,6 +1685,36 @@ final class AdvancedRepeaterControl {
 				);
 			}
 		}
+	}
+
+	/**
+	 * Whether another leaf in the same repeater row has non-empty stored content (e.g. block markup).
+	 *
+	 * @param array<int, array<string, mixed>> $schema
+	 * @param array<string, mixed>             $row
+	 * @param string                           $skip_leaf_id Leaf being validated.
+	 */
+	private function repeater_row_has_meaningful_sibling_content( array $schema, array $row, string $skip_leaf_id ): bool {
+		foreach ( $schema as $node ) {
+			$leaf_id = isset( $node['id'] ) ? sanitize_key( (string) $node['id'] ) : '';
+			$type    = isset( $node['type'] ) ? sanitize_key( (string) $node['type'] ) : '';
+			if ( $leaf_id === '' || $leaf_id === $skip_leaf_id ) {
+				continue;
+			}
+			$stored_value = isset( $row[ $leaf_id ] ) ? $row[ $leaf_id ] : '';
+			if ( $type === 'editor' ) {
+				$html = is_scalar( $stored_value ) ? (string) $stored_value : '';
+				if ( Input::classic_editor_html_has_meaningful_content( $html ) ) {
+					return true;
+				}
+				continue;
+			}
+			if ( is_string( $stored_value ) && trim( $stored_value ) !== '' ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

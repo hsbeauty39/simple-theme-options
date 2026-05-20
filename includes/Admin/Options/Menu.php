@@ -11,7 +11,6 @@ use SimpleThemeOptions\Admin\Options\Fields\BorderControl\BorderControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
-use SimpleThemeOptions\Admin\Options\Fields\RichModernEditor\RichModernEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Switcher\Switcher;
@@ -80,6 +79,13 @@ final class Menu {
 	 * @var array<string, string>
 	 */
 	private $registered_menu_labels = array();
+
+	/**
+	 * When rendering inside the Customizer embed control.
+	 *
+	 * @var array{menu: string, section: string}|null
+	 */
+	private $customizer_embed_context = null;
 
 	/**
 	 * Whether each registered root appears under **Appearance → …** / wp-admin menu (false = metabox / term panel only).
@@ -506,7 +512,46 @@ final class Menu {
 			if ( $leaf_slug === '' ) {
 				continue;
 			}
-			$result = $this->persist_theme_settings_leaf( $menu_page_slug, $leaf_slug, $posted_options_raw, false, $post_id );
+			$result = $this->persist_theme_settings_leaf( $menu_page_slug, $leaf_slug, $posted_options_raw, true, $post_id );
+			if ( is_wp_error( $result ) ) {
+				$last_error = $result;
+			}
+		}
+
+		return $last_error instanceof \WP_Error ? $last_error : true;
+	}
+
+	/**
+	 * Persist every WooCommerce **Product data** STO menu root from `$_POST['sto_options']` (central save).
+	 *
+	 * @param \WC_Product $product Product being saved.
+	 * @return true|\WP_Error|null Last error from any menu root, or null when nothing to save.
+	 */
+	public function persist_all_woocommerce_product_data_panels_from_request( $product ) {
+		if ( ! $product instanceof \WC_Product ) {
+			return null;
+		}
+
+		$product_id = (int) $product->get_id();
+		if ( $product_id <= 0 || ! current_user_can( 'edit_post', $product_id ) ) {
+			return null;
+		}
+
+		if ( ! isset( $_POST['sto_options'] ) || ! is_array( $_POST['sto_options'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified by WooCommerce product save.
+			return null;
+		}
+
+		$posted_raw = wp_unslash( $_POST['sto_options'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- WC product save; sanitized per field downstream.
+		if ( ! is_array( $posted_raw ) ) {
+			return null;
+		}
+
+		$last_error = null;
+		foreach ( $this->registered_menu_slugs as $menu_page_slug ) {
+			if ( ! $this->uses_woocommerce_product_data_panels( (string) $menu_page_slug ) ) {
+				continue;
+			}
+			$result = $this->persist_all_post_option_leaves_from_request( (string) $menu_page_slug, $product_id, $posted_raw );
 			if ( is_wp_error( $result ) ) {
 				$last_error = $result;
 			}
@@ -581,6 +626,7 @@ final class Menu {
 		FieldRegistrationDeferral::flush( $this );
 
 		$this->push_sto_options_metabox_overlay( $post_id );
+		AdvancedRepeaterControl::enable_wc_product_data_leaf_submit_names();
 		try {
 			ThemeSettingsDisplayLocations::instance()->set_render_surface(
 				ThemeSettingsDisplayLocations::SURFACE_ADMIN,
@@ -665,6 +711,7 @@ final class Menu {
 			</div>
 			<?php
 		} finally {
+			AdvancedRepeaterControl::disable_wc_product_data_leaf_submit_names();
 			$this->pop_sto_options_metabox_overlay();
 		}
 	}
@@ -887,6 +934,9 @@ final class Menu {
 			add_action( 'admin_init', array( $this, 'maybe_handle_save_request' ) );
 			add_action( 'admin_init', array( $this, 'maybe_handle_reset_request' ) );
 			add_action( 'admin_init', array( $this, 'redirect_theme_settings_to_canonical_leaf' ), 1 );
+			add_action( 'admin_notices', array( $this, 'render_woocommerce_product_data_validation_admin_notice' ) );
+			add_filter( 'redirect_post_location', array( $this, 'filter_redirect_post_location_preserve_wc_sto_context' ), 10, 2 );
+			add_action( 'woocommerce_admin_process_product_object', array( $this, 'persist_all_woocommerce_product_data_panels_from_request' ), 15, 1 );
 		}
 
 		if ( $show_in_admin_menu ) {
@@ -1274,7 +1324,6 @@ final class Menu {
             AlignmentControl::get_field_ids_for_section( $section_slug ),
             Range::get_field_ids_for_section( $section_slug ),
             CodeEditor::get_field_ids_for_section( $section_slug ),
-            RichModernEditor::get_field_ids_for_section( $section_slug ),
             Typography::get_field_ids_for_section( $section_slug ),
             DynamicObject::get_field_ids_for_section( $section_slug ),
         );
@@ -1298,6 +1347,74 @@ final class Menu {
         $uid = get_current_user_id();
 
         return $uid > 0 ? 'sto_ts_validate_' . $uid : 'sto_ts_validate_0';
+    }
+
+    /**
+     * Show validation errors after a failed WooCommerce product **Product data** STO save.
+     */
+    /**
+     * After product save, restore STO section + WooCommerce Product data tab from POST hints.
+     *
+     * @param string $location Redirect URL.
+     * @param int    $post_id  Post ID.
+     */
+    public function filter_redirect_post_location_preserve_wc_sto_context( $location, $post_id ) {
+        $post_id = (int) $post_id;
+        if ( $post_id <= 0 || ! is_string( $location ) || $location === '' ) {
+            return $location;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- WooCommerce product save; context hints only.
+        if ( ! isset( $_POST['post_type'] ) || sanitize_key( wp_unslash( $_POST['post_type'] ) ) !== 'product' ) {
+            return $location;
+        }
+
+		if ( isset( $_POST['sto_wc_return_section'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$section_slug = sanitize_key( wp_unslash( (string) $_POST['sto_wc_return_section'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            if ( $section_slug !== '' ) {
+                $location = add_query_arg( 'section', $section_slug, $location );
+            }
+        }
+
+		if ( isset( $_POST['sto_wc_active_panel'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$panel_hash = sanitize_text_field( wp_unslash( (string) $_POST['sto_wc_active_panel'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $panel_hash = ltrim( $panel_hash, '#' );
+            if ( $panel_hash !== '' && preg_match( '/^[a-z0-9_-]+$/i', $panel_hash ) ) {
+                $location = add_query_arg( 'sto_wc_panel', $panel_hash, $location );
+            }
+        }
+
+        return $location;
+    }
+
+    public function render_woocommerce_product_data_validation_admin_notice(): void {
+        $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+        if ( ! $screen || $screen->base !== 'post' || $screen->post_type !== 'product' ) {
+            return;
+        }
+
+        $validation_payload = get_transient( $this->get_validation_notice_transient_name() );
+        if ( ! is_array( $validation_payload ) || ( $validation_payload['context'] ?? '' ) !== 'wc_product' ) {
+            return;
+        }
+
+        delete_transient( $this->get_validation_notice_transient_name() );
+
+        $messages = isset( $validation_payload['messages'] ) && is_array( $validation_payload['messages'] )
+            ? $validation_payload['messages']
+            : array();
+        $messages = array_values( array_filter( array_map( 'strval', $messages ) ) );
+        if ( empty( $messages ) ) {
+            return;
+        }
+
+        echo '<div class="notice notice-error is-dismissible"><p><strong>';
+        esc_html_e( 'Product Theme Settings could not be saved', 'topten-simple-theme-options' );
+        echo '</strong></p><ul style="margin:0 0 0.5em 1.25em;list-style:disc;">';
+        foreach ( $messages as $message ) {
+            echo '<li>' . esc_html( $message ) . '</li>';
+        }
+        echo '</ul></div>';
     }
 
     /**
@@ -1504,12 +1621,6 @@ final class Menu {
                 continue;
             }
 
-            if ( RichModernEditor::is_registered_field_id( $option_key ) ) {
-                $raw_rich = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
-                $sanitized_options[ $option_key ] = RichModernEditor::sanitize_posted_value( $option_key, $raw_rich );
-                continue;
-            }
-
             if ( ButtonGroup::is_registered_field_id( $option_key ) ) {
                 $raw_bg = array_key_exists( $option_key, $posted_options ) ? $posted_options[ $option_key ] : '';
                 $sanitized_options[ $option_key ] = ButtonGroup::sanitize_posted_value( $option_key, $raw_bg );
@@ -1568,7 +1679,6 @@ final class Menu {
          */
         $base_validation_errors = array_merge(
             CodeEditor::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
-            RichModernEditor::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
             Input::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
             DateField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
             DateTimeField::instance()->collect_html_required_violations_for_section( $section_slug, $sanitized_options ),
@@ -1585,12 +1695,18 @@ final class Menu {
 
         if ( ! empty( $validation_errors ) ) {
             if ( $store_validation_transient ) {
+                $notice_payload = array(
+                    'section'  => $section_slug,
+                    'messages' => array_values( array_filter( array_map( 'strval', $validation_errors ) ) ),
+                );
+                if ( $metabox_post_id > 0 ) {
+                    $notice_payload['context']  = 'wc_product';
+                    $notice_payload['post_id']  = $metabox_post_id;
+                    $notice_payload['menu_slug'] = $menu_page_slug;
+                }
                 set_transient(
                     $this->get_validation_notice_transient_name(),
-                    array(
-                        'section'  => $section_slug,
-                        'messages' => array_values( array_filter( array_map( 'strval', $validation_errors ) ) ),
-                    ),
+                    $notice_payload,
                     120
                 );
             }
@@ -1928,7 +2044,6 @@ final class Menu {
             ShadowControl::get_all_fields_for_search(),
             GradientControl::get_all_fields_for_search(),
             CodeEditor::get_all_fields_for_search(),
-            RichModernEditor::get_all_fields_for_search(),
             LinkColor::get_all_fields_for_search()
         );
 
@@ -2102,6 +2217,10 @@ final class Menu {
      * Active `admin.php?page=` slug for the current request when on an STO options screen; otherwise the first registered slug.
      */
     public function get_request_options_menu_slug() {
+        if ( is_array( $this->customizer_embed_context ) && $this->customizer_embed_context['menu'] !== '' ) {
+            return $this->customizer_embed_context['menu'];
+        }
+
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
         if ( $page !== '' && in_array( $page, $this->registered_menu_slugs, true ) ) {
@@ -2109,6 +2228,51 @@ final class Menu {
         }
 
         return $this->get_parent_menu_slug();
+    }
+
+    public function is_customizer_embed(): bool {
+        if ( is_array( $this->customizer_embed_context ) ) {
+            return true;
+        }
+
+        return ThemeSettingsDisplayLocations::instance()->is_customizer_surface();
+    }
+
+    /**
+     * Output the full Theme Settings panel for the Customizer (sidebar + all leaf fields).
+     *
+     * @param string $menu_page_slug Registered menu root slug.
+     */
+    public function render_customizer_embed( string $menu_page_slug ): void {
+        $menu_page_slug = sanitize_key( $menu_page_slug );
+        if ( $menu_page_slug === '' || ! in_array( $menu_page_slug, $this->registered_menu_slugs, true ) ) {
+            echo '<p class="sto-customizer-empty-leaf">';
+            esc_html_e( 'Theme Settings are not available for this menu.', 'topten-simple-theme-options' );
+            echo '</p>';
+
+            return;
+        }
+
+        $default_leaf = $this->get_default_leaf_section_slug_for_menu_page( $menu_page_slug );
+
+        $this->customizer_embed_context = array(
+            'menu'    => $menu_page_slug,
+            'section' => $default_leaf,
+        );
+
+        ThemeSettingsDisplayLocations::instance()->set_render_surface(
+            ThemeSettingsDisplayLocations::SURFACE_CUSTOMIZER
+        );
+
+        FieldRegistrationDeferral::flush( $this );
+
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markup from get_section_markup(); fields escape at output.
+        echo $this->get_section_markup();
+
+        $this->customizer_embed_context = null;
+        ThemeSettingsDisplayLocations::instance()->set_render_surface(
+            ThemeSettingsDisplayLocations::SURFACE_ADMIN
+        );
     }
 
     /**
@@ -2153,6 +2317,11 @@ final class Menu {
         }
 
         if ( $page === 'theme-settings' ) {
+            return true;
+        }
+
+        global $pagenow;
+        if ( isset( $pagenow ) && $pagenow === 'customize.php' ) {
             return true;
         }
 
@@ -2236,6 +2405,10 @@ final class Menu {
     }
 
     private function get_current_section_slug() {
+        if ( is_array( $this->customizer_embed_context ) && $this->customizer_embed_context['section'] !== '' ) {
+            return $this->resolve_to_first_leaf_slug( $this->customizer_embed_context['section'] );
+        }
+
         $req_page = $this->get_request_options_menu_slug();
 
         $selected_slug = '';
@@ -2519,6 +2692,48 @@ final class Menu {
         return $this->get_sub_sections_by_parent_slug( sanitize_key( (string) $parent_slug ), true );
     }
 
+    /**
+     * Render STO fields for one leaf inside the Customizer (no admin chrome / sidebar).
+     *
+     * @param string $leaf_section_slug Navigable leaf slug.
+     */
+    public function render_fields_for_customizer_leaf( string $leaf_section_slug ): void {
+        $leaf_section_slug = sanitize_key( $leaf_section_slug );
+        if ( $leaf_section_slug === '' ) {
+            return;
+        }
+
+        $section_row = $this->get_nav_section_row_by_slug( $leaf_section_slug );
+        if ( $section_row === null ) {
+            echo '<p class="sto-customizer-empty-leaf">';
+            esc_html_e( 'No fields are registered for this section.', 'topten-simple-theme-options' );
+            echo '</p>';
+
+            return;
+        }
+
+        FieldRegistrationDeferral::flush( $this );
+        $this->render_section_panel(
+            $section_row,
+            $leaf_section_slug,
+            ThemeSettingsDisplayLocations::SURFACE_CUSTOMIZER
+        );
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function get_nav_section_row_by_slug( string $slug ): ?array {
+        $slug = sanitize_key( $slug );
+        if ( $slug === '' ) {
+            return null;
+        }
+
+        $row = $this->get_section_by_slug( $slug );
+
+        return is_array( $row ) ? $row : null;
+    }
+
     private function render_section_panel( $section, $current_section_slug, $surface = null, $surface_context = array() ) {
         $is_active = $current_section_slug === $section['slug'];
         if ( $surface === null ) {
@@ -2575,6 +2790,35 @@ final class Menu {
         }
 
         return false;
+    }
+
+    /**
+     * Sidebar placeholder when a menu root has no visible sections (e.g. packaged demo with UI demo off).
+     *
+     * @param string $menu_page_slug Registered `admin.php?page=` slug.
+     */
+    private function render_empty_sidebar_notice( string $menu_page_slug ): void {
+        $menu_page_slug = sanitize_key( $menu_page_slug );
+        ?>
+        <li class="sto-option-panel-sidebar-item sto-option-panel-sidebar-item--empty">
+            <div class="sto-option-panel-sidebar-empty">
+                <?php if ( $this->is_menu_root_packaged_demo( $menu_page_slug ) && ! $this->is_demo_mode_enabled() ) : ?>
+                    <p><?php esc_html_e( 'Field samples are turned off for this demo menu.', 'topten-simple-theme-options' ); ?></p>
+                    <p>
+                        <?php
+                        printf(
+                            /* translators: %s: Tools → Simple Backup admin URL */
+                            wp_kses_post( __( 'Enable them under <a href="%s">Tools → Simple Backup</a>, or open <strong>UAEBattery</strong> in the admin menu for this theme’s options.', 'topten-simple-theme-options' ) ),
+                            esc_url( admin_url( 'tools.php?page=' . rawurlencode( ThemeSettingsImportExport::SETTINGS_ADVANCE_PAGE ) ) )
+                        );
+                        ?>
+                    </p>
+                <?php else : ?>
+                    <p><?php esc_html_e( 'No sections are registered for this menu yet.', 'topten-simple-theme-options' ); ?></p>
+                <?php endif; ?>
+            </div>
+        </li>
+        <?php
     }
 
     private function render_sidebar_item( $item, $current_section_slug, $is_child = false, $menu_page_slug = '', $sidebar_link_base = '' ) {
@@ -2667,11 +2911,13 @@ final class Menu {
 
         ob_start();
         ?>
-        <div class="wrap sto-section-content">
-            <?php PremiumFieldGate::render_panel_banner( $panel_heading ); ?>
-            <div class="sto-option-panel-wrapper" data-sto-default-leaf="<?php echo esc_attr( $default_leaf ); ?>">
+        <div class="wrap sto-section-content<?php echo $this->is_customizer_embed() ? ' sto-section-content--customizer-embed' : ''; ?>">
+            <?php if ( ! $this->is_customizer_embed() ) { PremiumFieldGate::render_panel_banner( $panel_heading ); } ?>
+            <div class="<?php echo esc_attr( implode( ' ', $this->is_customizer_embed() ? array( 'sto-option-panel-wrapper', 'sto-option-panel-wrapper--customizer-embed' ) : array( 'sto-option-panel-wrapper' ) ) ); ?>" data-sto-default-leaf="<?php echo esc_attr( $default_leaf ); ?>" data-sto-menu-page="<?php echo esc_attr( $req ); ?>">
                 <div class="sto-option-panel-head sto-panel-head-with-search">
+                    <?php if ( ! $this->is_customizer_embed() ) { ?>
                     <h1 class="sto-option-panel-title"><?php echo esc_html( $panel_heading ); ?></h1>
+                    <?php } ?>
                     <div class="sto-quick-search" data-sto-quick-search>
                         <div class="sto-quick-search-field">
                             <span class="sto-quick-search-icon-wrap" aria-hidden="true">
@@ -2697,23 +2943,34 @@ final class Menu {
                         ></div>
                     </div>
                 </div>
+                <?php if ( ! $this->is_customizer_embed() ) { ?>
                 <div class="sto-option-panel-body">
                     <div class="sto-option-panel-nav-layout">
+                <?php } ?>
                         <div class="sto-option-panel-sidebar-wrap">
                             <ul class="sto-option-panel-sidebar" role="navigation" aria-label="<?php esc_attr_e( 'Theme Settings sections', 'topten-simple-theme-options' ); ?>">
-                                <?php foreach ( $this->get_sections_for_navigation_for_menu_page( $req ) as $section ) { ?>
-                                    <?php $this->render_sidebar_item( $section, $current_section_slug, false, $req ); ?>
-                                <?php } ?>
+                                <?php
+                                $nav_sections_for_page = $this->get_sections_for_navigation_for_menu_page( $req );
+                                if ( $nav_sections_for_page === array() ) {
+                                    $this->render_empty_sidebar_notice( $req );
+                                } else {
+                                    foreach ( $nav_sections_for_page as $section ) {
+                                        $this->render_sidebar_item( $section, $current_section_slug, false, $req );
+                                    }
+                                }
+                                ?>
                                 <?php PremiumFieldGate::render_sidebar_upgrade_cta(); ?>
                             </ul>
                         </div>
                         <div class="sto-option-panel-main">
+                            <?php if ( ! $this->is_customizer_embed() ) { ?>
                             <div class="sto-option-panel-content-head">
                                 <span class="sto-option-panel-content-icon-wrap">
                                     <i class="<?php echo esc_attr( $content_icon ); ?> sto-option-panel-content-icon"></i>
                                 </span>
                                 <h2 class="sto-option-panel-content-title"><?php echo esc_html( $content_title ); ?></h2>
                             </div>
+                            <?php } ?>
                             <?php
                             // phpcs:disable WordPress.Security.NonceVerification.Recommended -- One-time admin notices after redirect; values sanitized.
                             ?>
@@ -2756,7 +3013,7 @@ final class Menu {
                             $sto_form_action = $this->get_theme_settings_url( $current_section_slug, $req );
                             $sto_form_action = remove_query_arg( array( 'sto_saved', 'sto_imported', 'sto_validation_error', 'sto_reset_section', 'sto_reset_all' ), $sto_form_action );
                             ?>
-                            <form id="sto-theme-settings-options-form" method="post" class="sto-options-form" action="<?php echo esc_url( $sto_form_action ); ?>">
+                            <form id="sto-theme-settings-options-form" method="post" class="sto-options-form<?php echo $this->is_customizer_embed() ? ' sto-options-form--customizer-embed' : ''; ?>" action="<?php echo esc_url( $sto_form_action ); ?>">
                                 <?php wp_nonce_field( 'sto_save_options_action', 'sto_save_options_nonce' ); ?>
                                 <input type="hidden" name="sto_ts_page" value="<?php echo esc_attr( $req ); ?>" />
                                 <input type="hidden" name="sto_ts_section" value="<?php echo esc_attr( $current_section_slug ); ?>" />
@@ -2769,7 +3026,7 @@ final class Menu {
                                     <?php } ?>
                                     <?php endif; ?>
                                 </div>
-                                <?php if ( ! ThemeSettingsImportExport::is_advance_leaf_slug( $current_section_slug ) && ! ( empty( $leaf_sections ) && $this->is_packaged_demo_sample_nav_hidden() ) ) : ?>
+                                <?php if ( ! $this->is_customizer_embed() && ! ThemeSettingsImportExport::is_advance_leaf_slug( $current_section_slug ) && ! ( empty( $leaf_sections ) && $this->is_packaged_demo_sample_nav_hidden() ) ) : ?>
                                 <?php
                                 $sto_reset_section_confirm = esc_js(
                                     __( 'Reset every field in this section to its default value? This cannot be undone.', 'topten-simple-theme-options' )
@@ -2809,8 +3066,10 @@ final class Menu {
                                 <?php endif; ?>
                             </form>
                         </div>
+                <?php if ( ! $this->is_customizer_embed() ) { ?>
                     </div>
                 </div>
+                <?php } ?>
             </div>
         </div>
         <?php

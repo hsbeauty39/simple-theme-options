@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * Invoked from {@see \SimpleThemeOptions\Plugin::register_hooks()} after {@see \SimpleThemeOptions\Admin\Sample\Menu::instance()}
  * for users with the **manage_options** capability, so {@see \SimpleThemeOptions\Admin\Sample\Menu::init()} only registers the Theme Settings admin page
- * (with **`packaged_demo`** + **`demo`** flags on {@see \SimpleThemeOptions\Admin\Options\Menu::register()}).
+ * after {@see \SimpleThemeOptions\Admin\Sample\Menu} registers the packaged sample root ({@see \SimpleThemeOptions\Admin\Options\Menu::PACKAGED_DEMO_MENU_SLUG}).
  *
  * Field modules live under `includes/Admin/Sample/Fields/{Group}/{ClassName}.php`.
  * Each module is a **PascalCase** `.php` file whose basename matches the PHP class name
@@ -24,15 +24,20 @@ final class SampleFieldModules {
 	 * Boot every discovered field module, then register sidebar / submenu sections.
 	 */
 	public static function boot() {
-		self::boot_discovered_field_modules();
-
 		if ( ! OptionsMenu::instance()->is_demo_mode_enabled() ) {
-			Sections::instance()->register_without_demo();
-
 			return;
 		}
 
+		self::boot_discovered_field_modules();
 		Sections::instance()->register();
+	}
+
+	/**
+	 * Boot sample field registrar singletons so the option registry is populated (e.g. admin-ajax export).
+	 * Does not register sidebar sections; safe when demo mode is off.
+	 */
+	public static function boot_discovered_field_modules_for_registry(): void {
+		self::boot_discovered_field_modules();
 	}
 
 	/**

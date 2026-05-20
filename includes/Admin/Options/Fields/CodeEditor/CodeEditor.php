@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\CodeEditor;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
@@ -178,6 +179,8 @@ final class CodeEditor {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -330,7 +333,7 @@ final class CodeEditor {
 
 			$messages[] = sprintf(
 				/* translators: %s: field label */
-				__( '“%s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+				__( '“%s” must be filled in before this section can be saved.', 'topten-simple-theme-options' ),
 				$error_field_label
 			);
 		}
@@ -560,7 +563,10 @@ final class CodeEditor {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -696,7 +702,7 @@ final class CodeEditor {
 			<div class="sto-code-editor__bar">
 				<?php if ( $switch ) : ?>
 					<label class="screen-reader-text" for="<?php echo esc_attr( $ta_id . '-lang' ); ?>">
-						<?php esc_html_e( 'Editor language', 'simple-theme-options' ); ?>
+						<?php esc_html_e( 'Editor language', 'topten-simple-theme-options' ); ?>
 					</label>
 					<?php
 					/*
@@ -713,7 +719,7 @@ final class CodeEditor {
 						id="<?php echo esc_attr( $ta_id . '-lang' ); ?>"
 						class="sto-code-editor__lang-select"
 						data-sto-code-lang-select
-						aria-label="<?php esc_attr_e( 'Editor language', 'simple-theme-options' ); ?>"
+						aria-label="<?php esc_attr_e( 'Editor language', 'topten-simple-theme-options' ); ?>"
 					>
 						<?php foreach ( self::SWITCHER_MODES as $opt ) : ?>
 							<option
@@ -727,7 +733,7 @@ final class CodeEditor {
 						<?php endforeach; ?>
 					</select>
 				<?php else : ?>
-					<span class="sto-code-editor__mode-pill" aria-label="<?php esc_attr_e( 'Editor mode', 'simple-theme-options' ); ?>">
+					<span class="sto-code-editor__mode-pill" aria-label="<?php esc_attr_e( 'Editor mode', 'topten-simple-theme-options' ); ?>">
 						<i class="fa-light fa-code" aria-hidden="true"></i>
 						<span class="sto-code-editor__mode-label"><?php echo esc_html( $mode_label ); ?></span>
 					</span>
@@ -743,10 +749,10 @@ final class CodeEditor {
 					class="sto-code-editor__auto-badge"
 					data-sto-code-auto-badge
 					aria-live="polite"
-					title="<?php esc_attr_e( 'Language auto-detected from content', 'simple-theme-options' ); ?>"
+					title="<?php esc_attr_e( 'Language auto-detected from content', 'topten-simple-theme-options' ); ?>"
 				>
 					<i class="fa-light fa-wand-magic-sparkles" aria-hidden="true"></i>
-					<span><?php esc_html_e( 'Auto', 'simple-theme-options' ); ?></span>
+					<span><?php esc_html_e( 'Auto', 'topten-simple-theme-options' ); ?></span>
 				</span>
 
 				<div class="sto-code-editor__bar-spacer" aria-hidden="true"></div>
@@ -755,9 +761,9 @@ final class CodeEditor {
 					class="sto-code-editor__shortcut sto-code-editor__shortcut--wrap"
 					data-sto-code-wrap-hint
 					data-sto-wrap-active="<?php echo $lw ? '1' : '0'; ?>"
-					title="<?php esc_attr_e( 'Toggle word wrap — Alt + Z (Option + Z on macOS)', 'simple-theme-options' ); ?>"
+					title="<?php esc_attr_e( 'Toggle word wrap — Alt + Z (Option + Z on macOS)', 'topten-simple-theme-options' ); ?>"
 				>
-					<kbd><?php esc_html_e( 'Alt', 'simple-theme-options' ); ?></kbd>
+					<kbd><?php esc_html_e( 'Alt', 'topten-simple-theme-options' ); ?></kbd>
 					<span aria-hidden="true">+</span>
 					<kbd>Z</kbd>
 				</span>
@@ -765,7 +771,7 @@ final class CodeEditor {
 				<?php if ( $ac ) : ?>
 					<span
 						class="sto-code-editor__shortcut"
-						title="<?php esc_attr_e( 'Press Ctrl + Space (or Cmd + Space) to open the autocomplete menu', 'simple-theme-options' ); ?>"
+						title="<?php esc_attr_e( 'Press Ctrl + Space (or Cmd + Space) to open the autocomplete menu', 'topten-simple-theme-options' ); ?>"
 					>
 						<kbd>Ctrl</kbd>
 						<span aria-hidden="true">+</span>
@@ -778,8 +784,8 @@ final class CodeEditor {
 						type="button"
 						class="sto-code-editor__fullscreen"
 						data-sto-code-fullscreen
-						aria-label="<?php esc_attr_e( 'Toggle fullscreen', 'simple-theme-options' ); ?>"
-						title="<?php esc_attr_e( 'Toggle fullscreen', 'simple-theme-options' ); ?>"
+						aria-label="<?php esc_attr_e( 'Toggle fullscreen', 'topten-simple-theme-options' ); ?>"
+						title="<?php esc_attr_e( 'Toggle fullscreen', 'topten-simple-theme-options' ); ?>"
 					>
 						<i class="fa-light fa-expand sto-code-editor__icon-expand" aria-hidden="true"></i>
 						<i class="fa-light fa-compress sto-code-editor__icon-compress" aria-hidden="true"></i>
@@ -1062,7 +1068,7 @@ final class CodeEditor {
 	 */
 	private function mode_to_label( $mode ) {
 		$map = array(
-			'auto'       => __( 'Auto-detect', 'simple-theme-options' ),
+			'auto'       => __( 'Auto-detect', 'topten-simple-theme-options' ),
 			'css'        => 'CSS',
 			'html'       => 'HTML',
 			'javascript' => 'JavaScript',
@@ -1071,7 +1077,7 @@ final class CodeEditor {
 			'markdown'   => 'Markdown',
 			'xml'        => 'XML',
 			'yaml'       => 'YAML',
-			'text'       => __( 'Plain text', 'simple-theme-options' ),
+			'text'       => __( 'Plain text', 'topten-simple-theme-options' ),
 		);
 
 		return isset( $map[ $mode ] ) ? (string) $map[ $mode ] : strtoupper( $mode );

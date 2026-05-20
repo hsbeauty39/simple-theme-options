@@ -215,3 +215,246 @@ label.sto-switcher.sto-adv-rep__switcher {
 .sto-adv-rep__add.button {
 	margin-top: 0;
 }
+
+/*
+ * Classic editor in repeater rows (WC Product data + Theme Settings).
+ * Do not use Theme Settings’ absolute toolbar overlay here — narrow columns need normal block flow.
+ */
+.sto-adv-rep__field--editor.sto-classic-editor-field {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	clear: both;
+	box-sizing: border-box;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .sto-adv-rep__label,
+.sto-adv-rep__field--editor.sto-classic-editor-field .sto-adv-rep__hint {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	float: none;
+	clear: both;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .sto-adv-rep__hint {
+	margin: 0 0 8px;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .sto-adv-rep__editor-wrap {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	clear: both;
+	float: none;
+	box-sizing: border-box;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap {
+	position: relative;
+	display: block;
+	width: 100% !important;
+	max-width: 100% !important;
+	min-width: 0;
+	min-height: 300px;
+	clear: both;
+	float: none !important;
+	box-sizing: border-box;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-container {
+	display: block;
+	width: 100% !important;
+	max-width: 100% !important;
+	min-height: 0;
+	clear: both;
+	float: none !important;
+	box-sizing: border-box;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--code-ready {
+	min-height: 0;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .mce-tinymce,
+.sto-adv-rep__field--editor.sto-classic-editor-field .mce-tinymce iframe,
+.sto-adv-rep__field--editor.sto-classic-editor-field div.mce-edit-area,
+.sto-adv-rep__field--editor.sto-classic-editor-field textarea.wp-editor-area {
+	width: 100% !important;
+	max-width: 100% !important;
+	float: none !important;
+	clear: both;
+	box-sizing: border-box;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-tools {
+	position: static !important;
+	top: auto !important;
+	right: auto !important;
+	left: auto !important;
+	float: none !important;
+	display: flex !important;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	align-items: center;
+	width: 100% !important;
+	max-width: 100% !important;
+	height: auto !important;
+	min-height: 38px;
+	margin: 0 0 6px !important;
+	padding: 4px 6px !important;
+	box-sizing: border-box;
+	background: #f6f7f7;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active div.mce-toolbar-grp > div > .mce-toolbar:first-child,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active div.mce-toolbar-grp > .mce-toolbar:first-child,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active .quicktags-toolbar {
+	padding-right: 0 !important;
+	padding-left: 0 !important;
+	box-sizing: border-box;
+}
+
+/* Code vs Visual — one surface only (TinyMCE must not stack above the textarea). */
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active .wp-editor-container,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--code-ready .wp-editor-container {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active .mce-tinymce,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active .mce-tinymce iframe,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active div.mce-toolbar-grp,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active .mce-statusbar,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--code-ready .mce-tinymce,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--code-ready div.mce-toolbar-grp,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--code-ready .mce-statusbar {
+	display: none !important;
+	visibility: hidden !important;
+	height: 0 !important;
+	max-height: 0 !important;
+	min-height: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	overflow: hidden !important;
+	pointer-events: none !important;
+	position: absolute !important;
+	width: 1px !important;
+	left: -9999px !important;
+	opacity: 0 !important;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active .quicktags-toolbar,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--code-ready .quicktags-toolbar {
+	display: block !important;
+	flex: 0 0 auto;
+	padding-right: 6px !important;
+	padding-left: 6px !important;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.html-active textarea.wp-editor-area,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--code-ready textarea.wp-editor-area {
+	display: block !important;
+	visibility: visible !important;
+	position: relative !important;
+	z-index: 2 !important;
+	flex: 1 1 auto;
+	width: 100% !important;
+	max-width: 100% !important;
+	min-height: 280px !important;
+	height: auto !important;
+	margin: 0 !important;
+	opacity: 1 !important;
+	pointer-events: auto !important;
+	resize: vertical;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active .wp-editor-container,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--visual-ready .wp-editor-container {
+	display: flex;
+	flex-direction: column;
+	min-height: 280px;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active .quicktags-toolbar,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--visual-ready .quicktags-toolbar {
+	display: none !important;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active .mce-tinymce,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--visual-ready .mce-tinymce {
+	display: block !important;
+	visibility: visible !important;
+	position: relative !important;
+	left: auto !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	height: auto !important;
+	min-height: 220px !important;
+	max-height: none !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	overflow: visible !important;
+	pointer-events: auto !important;
+	opacity: 1 !important;
+	flex: 1 1 auto;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active div.mce-toolbar-grp,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--visual-ready div.mce-toolbar-grp {
+	display: block !important;
+	visibility: visible !important;
+	height: auto !important;
+	pointer-events: auto !important;
+	position: relative !important;
+	left: auto !important;
+	opacity: 1 !important;
+}
+
+/* HTML source under Visual (mirrors canvas; editable for quick checks). */
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active textarea.wp-editor-area,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--visual-ready textarea.wp-editor-area {
+	display: block !important;
+	visibility: visible !important;
+	position: relative !important;
+	z-index: 1 !important;
+	flex: 0 0 auto;
+	width: 100% !important;
+	max-width: 100% !important;
+	min-height: 7rem !important;
+	max-height: 12rem;
+	height: auto !important;
+	margin: 8px 0 0 !important;
+	padding: 8px 10px !important;
+	border-top: 1px solid #c3c4c7 !important;
+	background: #f6f7f7;
+	color: #1d2327;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+	line-height: 1.45;
+	opacity: 1 !important;
+	pointer-events: auto !important;
+	resize: vertical;
+	cursor: text;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.tmce-active textarea.wp-editor-area:focus,
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--visual-ready textarea.wp-editor-area:focus {
+	outline: 2px solid #2271b1;
+	outline-offset: -1px;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .sto-adv-rep__editor-table-notice {
+	margin: 0 0 8px;
+	color: #856404;
+}
+
+.sto-adv-rep__field--editor.sto-classic-editor-field .wp-editor-wrap.sto-adv-rep__editor--table-code-only .switch-tmce {
+	opacity: 0.45;
+	cursor: not-allowed;
+	pointer-events: none;
+}

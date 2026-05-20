@@ -424,146 +424,231 @@
 	position: relative;
 }
 
-/* Floating color dock (anchored to active pin via JS fixed left/top) */
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock--idle {
+/*
+ * Floating gradient color dock — portaled to document.body while open (sto-gradient-control.js).
+ * Selectors are not nested under .sto-field-row-gradient so styles apply after the portal.
+ */
+.sto-gradient-color-dock--idle {
 	position: fixed;
 	left: -9999px;
 	top: 0;
-	width: 280px;
-	max-width: min(320px, 94vw);
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
 	opacity: 0;
 	visibility: hidden;
 	pointer-events: none;
 	z-index: -1;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) {
+.sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) {
 	position: fixed;
 	z-index: 100100;
+	width: 300px;
 	max-width: min(300px, 94vw);
-	transform: translateX(-50%);
 	box-sizing: border-box;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock--above:not(.sto-gradient-color-dock--idle) {
+/*
+ * Customizer `.wp-full-overlay` uses z-index 500000 (see customize-widgets.css).
+ * Portaled docks at 100100 sit behind the controls pane and look "broken" on pin click.
+ */
+body.wp-customizer .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) {
+	z-index: 500110 !important;
+}
+
+.sto-gradient-color-dock--below:not(.sto-gradient-color-dock--idle) {
+	transform: translateX(-50%);
+}
+
+.sto-gradient-color-dock--above:not(.sto-gradient-color-dock--idle) {
 	transform: translate(-50%, -100%);
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock__chrome {
+.sto-gradient-color-dock__chrome {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
 	padding: 12px 14px 14px;
 	background: #f4f6f9;
 	border: 1px solid #e1e4ea;
 	border-radius: 12px;
 	box-shadow: 0 10px 40px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.06);
+	overflow: hidden;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock .sto-color-wrap {
-	flex-wrap: wrap;
-	gap: 8px;
-}
-
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock .wp-picker-container {
-	display: grid;
-	grid-template-columns: 1fr;
-	justify-items: stretch;
-	row-gap: 8px;
-	column-gap: 0;
+.sto-gradient-color-dock .sto-color-wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
 	width: 100%;
-	max-width: 100%;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock .wp-picker-container .wp-color-result.button {
-	grid-column: 1;
-	grid-row: 1;
-	justify-self: center;
-	width: 44px;
-	height: 44px;
-	max-width: 44px;
-	min-width: 44px;
-	border-radius: 50%;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+/* wp-color-result stays in DOM for Iris bootstrap; visually hidden but not 0×0 (clip breaks Iris in some browsers) */
+.sto-gradient-color-dock .wp-color-result.button {
+	position: absolute !important;
+	width: 32px !important;
+	height: 32px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	left: 0 !important;
+	top: 0 !important;
+	opacity: 0 !important;
+	overflow: hidden !important;
+	border: 0 !important;
+	z-index: 0;
+	pointer-events: none;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock .wp-picker-input-wrap {
-	grid-column: 1;
-	grid-row: 2;
-	width: 100% !important;
-	max-width: 100% !important;
-	justify-content: center;
+.sto-gradient-color-dock .wp-color-result-text {
+	display: none !important;
+}
+
+.sto-gradient-color-dock .wp-picker-container {
+	display: block;
+	width: 100%;
+	position: relative;
+}
+
+.sto-gradient-color-dock .wp-picker-input-wrap {
+	display: flex !important;
 	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	margin: 0 0 8px;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock .wp-picker-input-wrap input[type="text"].wp-color-picker {
-	width: 100% !important;
-	max-width: 100% !important;
+.sto-gradient-color-dock .wp-picker-input-wrap input[type="text"].wp-color-picker {
+	flex: 1 1 auto;
 	min-width: 0 !important;
+	width: auto !important;
+	max-width: none !important;
 	background: #f0f2f5 !important;
 	border-color: #dce0e6 !important;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock .wp-picker-container.wp-picker-active .wp-picker-holder {
-	grid-column: 1;
-	grid-row: 3;
-	width: 100%;
-	min-width: min(100%, 268px);
-	line-height: normal;
-	overflow: visible;
-	padding: 8px 10px 10px;
-	box-sizing: border-box;
+.sto-gradient-color-dock .wp-picker-container:not(.wp-picker-active) .wp-picker-holder {
+	display: none !important;
 }
 
-/* Iris must measure while the dock is visible — enforce a sane picker footprint in the floating dock. */
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) .iris-picker {
-	min-width: 240px !important;
+.sto-gradient-color-dock .wp-picker-container.wp-picker-active .wp-picker-holder {
+	display: block !important;
+	position: relative !important;
 	width: 100% !important;
-	max-width: 100%;
+	margin: 0 0 8px !important;
+	padding: 0 !important;
+	border: 0 !important;
+	box-shadow: none !important;
+	background: transparent !important;
+	overflow: visible !important;
+	line-height: normal;
 	box-sizing: border-box;
-	overflow: visible;
+	clear: both;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) .iris-picker-inner {
+.sto-gradient-color-dock .wp-picker-container.wp-picker-active .wp-picker-holder .iris-picker {
+	vertical-align: top;
+	line-height: normal;
+}
+
+/*
+ * Iris default: `.iris-picker-inner` is `position:absolute; bottom:0` (overlaps dock palette).
+ * Pull inner into normal flow — same fix as `.sto-color-wrap--palette-ui` in sto-color.css.
+ */
+.sto-gradient-color-dock .iris-picker {
+	display: block !important;
+	visibility: visible !important;
+	width: 248px !important;
+	max-width: 100%;
+	height: auto !important;
+	padding-bottom: 0 !important;
+	box-sizing: border-box;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	margin: 0;
+	overflow: hidden;
+}
+
+.sto-gradient-color-dock .iris-picker-inner,
+.sto-gradient-color-dock .iris-border .iris-picker-inner {
+	position: relative !important;
+	top: auto !important;
+	right: auto !important;
+	left: auto !important;
+	bottom: auto !important;
 	overflow: visible;
 	vertical-align: top;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) .iris-square {
-	min-width: 160px;
-	min-height: 160px;
+.sto-gradient-color-dock .iris-square,
+.sto-gradient-color-dock .iris-square-inner {
+	display: inline-block !important;
+	visibility: visible !important;
+	vertical-align: top;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) .iris-strip {
+.sto-gradient-color-dock .iris-border {
+	margin: 0 !important;
+	overflow: hidden;
+}
+
+/* Suggested swatches are `.sto-gradient-dock-palette` — hide Iris preset row only */
+.sto-gradient-color-dock .iris-picker .iris-palette-container {
+	display: none !important;
+}
+
+.sto-gradient-color-dock .sto-color-wrap.sto-color--alpha .wp-picker-container.wp-picker-active .wp-picker-holder {
+	min-width: 262px;
+	overflow: visible;
+}
+
+.sto-gradient-color-dock .sto-color-wrap.sto-color--alpha .iris-picker {
+	min-width: 262px !important;
+	width: 262px !important;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.sto-gradient-color-dock .sto-color-wrap.sto-color--alpha .iris-picker .iris-strip:not(.iris-strip-horiz) {
 	min-width: 18px;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock:not(.sto-gradient-color-dock--idle) .iris-picker .iris-palette-container {
-	position: relative !important;
-	bottom: auto !important;
-	left: auto !important;
-	right: auto !important;
-	width: 100% !important;
-	margin-top: 8px !important;
-	clear: both;
+.sto-gradient-color-dock .iris-strip:not(.iris-strip-horiz) {
+	min-width: 18px;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-color-dock .sto-color-reset {
+.sto-gradient-color-dock .iris-strip.iris-strip-alpha {
+	min-width: 18px;
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.sto-gradient-color-dock .sto-color-reset {
+	display: inline-flex;
+	order: 2;
+	margin: 0 0 4px;
 	flex: 0 0 auto;
+	align-self: flex-start;
 	border-radius: 8px;
 	background: #fff;
 	border: 1px solid #dce0e6;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-dock-palette {
+.sto-gradient-color-dock .sto-gradient-dock-palette {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, 26px);
 	gap: 8px;
 	justify-content: start;
 	align-items: start;
-	margin-top: 10px;
+	flex: 0 0 auto;
+	width: 100%;
+	margin: 0;
 	padding-top: 10px;
 	border-top: 1px solid #e6e9ef;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-dock-palette__label {
+.sto-gradient-color-dock .sto-gradient-dock-palette__label {
 	grid-column: 1 / -1;
 	font-size: 10px;
 	font-weight: 600;
@@ -573,7 +658,7 @@
 	margin: 0 0 2px;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-dock-swatch {
+.sto-gradient-color-dock .sto-gradient-dock-swatch {
 	width: 26px;
 	height: 26px;
 	padding: 0;
@@ -584,8 +669,8 @@
 	transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-dock-swatch:hover,
-.sto-option-panel-wrapper .sto-field-row-gradient .sto-gradient-dock-swatch:focus-visible {
+.sto-gradient-color-dock .sto-gradient-dock-swatch:hover,
+.sto-gradient-color-dock .sto-gradient-dock-swatch:focus-visible {
 	transform: scale(1.08);
 	box-shadow: 0 2px 8px rgba(34, 113, 177, 0.35);
 	outline: none;

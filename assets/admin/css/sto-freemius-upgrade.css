@@ -1,0 +1,155 @@
+/**
+ * Freemius “Upgrade” / “Start trial” submenu — gradient CTA (overrides SDK lime #adff2f).
+ * Scoped to Theme Settings roots; loads when Pro is inactive.
+ */
+
+:root {
+	--sto-upgrade-gradient: linear-gradient(
+		90deg,
+		#6d28d9 0%,
+		#a21caf 38%,
+		#db2777 62%,
+		#ea580c 100%
+	);
+	--sto-upgrade-gradient-hover: linear-gradient(
+		90deg,
+		#5b21b6 0%,
+		#86198f 38%,
+		#be185d 62%,
+		#c2410c 100%
+	);
+	--sto-upgrade-shadow: 0 4px 16px rgba(109, 40, 217, 0.38);
+	--sto-upgrade-shadow-hover: 0 8px 22px rgba(109, 40, 217, 0.48);
+	--sto-trial-gradient: linear-gradient(90deg, #0369a1 0%, #7c3aed 55%, #db2777 100%);
+}
+
+/* WP admin flyout — Upgrade / Start trial rows under Theme Settings menu roots. */
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.upgrade-mode),
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.trial-mode) {
+	margin-top: 6px;
+	padding-top: 6px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.upgrade-mode) > a,
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.trial-mode) > a {
+	display: block;
+	margin: 4px 10px 8px;
+	padding: 8px 12px !important;
+	border-radius: 10px;
+	font-weight: 600;
+	line-height: 1.35;
+	text-decoration: none;
+	color: #fff !important;
+	box-shadow: var(--sto-upgrade-shadow);
+	transition:
+		transform 0.15s ease,
+		box-shadow 0.15s ease,
+		filter 0.15s ease,
+		background 0.15s ease;
+}
+
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.upgrade-mode) > a {
+	background: var(--sto-upgrade-gradient) !important;
+}
+
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.trial-mode) > a {
+	background: var(--sto-trial-gradient) !important;
+	box-shadow: 0 4px 16px rgba(3, 105, 161, 0.35);
+}
+
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.upgrade-mode) > a:hover,
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.upgrade-mode) > a:focus,
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.trial-mode) > a:hover,
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.trial-mode) > a:focus {
+	color: #fff !important;
+	transform: translateY(-1px);
+	filter: brightness(1.05);
+}
+
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.upgrade-mode) > a:hover,
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.upgrade-mode) > a:focus {
+	background: var(--sto-upgrade-gradient-hover) !important;
+	box-shadow: var(--sto-upgrade-shadow-hover);
+}
+
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.upgrade-mode).current > a,
+#adminmenu .wp-submenu li:has(> a .fs-submenu-item.pricing.trial-mode).current > a {
+	color: #fff !important;
+	box-shadow: var(--sto-upgrade-shadow-hover);
+}
+
+/* Freemius wraps the label in a span — inherit pill styling, drop SDK green. */
+#adminmenu .wp-submenu a .fs-submenu-item.pricing.upgrade-mode,
+#adminmenu .wp-submenu a .fs-submenu-item.pricing.trial-mode {
+	color: inherit !important;
+	font-weight: inherit;
+	background: transparent !important;
+	-webkit-text-fill-color: unset;
+}
+
+/* STO in-page sidebar — compact Upgrade CTA (see PremiumFieldGate::render_sidebar_upgrade_cta). */
+.sto-option-panel-sidebar > .sto-option-panel-sidebar-item--upgrade-cta,
+.sto-option-panel-sidebar-item + .sto-option-panel-sidebar-item--upgrade-cta {
+	margin-top: 22px;
+}
+
+.sto-option-panel-sidebar-item--upgrade-cta {
+	padding-top: 14px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sto-option-panel-sidebar-item--upgrade-cta .sto-upgrade-cta {
+    justify-content: center;
+    gap: 6px;
+    min-height: 0;
+    height: auto;
+    padding: 10px 10px;
+    font-size: 12px;
+    line-height: 1.25;
+    font-weight: 600;
+    color: #fff !important;
+    background: var(--sto-upgrade-gradient);
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(109, 40, 217, 0.28);
+    transition: transform 0.15s ease,
+		box-shadow 0.15s ease,
+		filter 0.15s ease;
+    margin-top: 10px;
+}
+
+.sto-option-panel-sidebar > .sto-option-panel-sidebar-item:first-child {
+    margin-top: 0;
+    border: 0;
+}
+
+.sto-option-panel-sidebar-item--upgrade-cta .sto-upgrade-cta:hover,
+.sto-option-panel-sidebar-item--upgrade-cta .sto-upgrade-cta:focus {
+	color: #fff !important;
+	background: var(--sto-upgrade-gradient-hover);
+	box-shadow: 0 4px 14px rgba(109, 40, 217, 0.34);
+	transform: translateY(-1px);
+	filter: brightness(1.04);
+	outline: none;
+}
+
+.sto-option-panel-sidebar-item--upgrade-cta .sto-upgrade-cta .sto-option-panel-icon {
+	width: 12px;
+	height: 12px;
+	font-size: 12px;
+	line-height: 12px;
+	flex: 0 0 12px;
+	margin-top: 0;
+	color: rgba(255, 255, 255, 0.92);
+}
+
+.sto-option-panel-sidebar-item--upgrade-cta .sto-upgrade-cta .sto-option-panel-sidebar-item-title {
+	font-size: 12px;
+	line-height: 1.25;
+	font-weight: 600;
+}
+
+.sto-option-panel-sidebar-item--upgrade-cta .sto-upgrade-cta:focus-visible {
+	outline: 2px solid #c4b5fd;
+	outline-offset: 2px;
+}

@@ -37,7 +37,7 @@ final class FontFileMetadata {
 			$meta['family'] = self::clean_family_from_filename( $name );
 		}
 		if ( ( $meta['family'] ?? '' ) === '' ) {
-			$meta['family'] = __( 'Custom Font', 'simple-theme-options' );
+			$meta['family'] = __( 'Custom Font', 'topten-simple-theme-options' );
 		}
 
 		return self::normalize( $meta );

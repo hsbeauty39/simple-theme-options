@@ -225,7 +225,7 @@ final class FieldTitle {
 			<?php if ( $tooltip['preloader'] !== '' ) : ?>
 				data-sto-tooltip-preloader="<?php echo esc_attr( $tooltip['preloader'] ); ?>"
 			<?php endif; ?>
-			aria-label="<?php esc_attr_e( 'Show help preview', 'simple-theme-options' ); ?>"
+			aria-label="<?php esc_attr_e( 'Show help preview', 'topten-simple-theme-options' ); ?>"
 		>
 			<span class="sto-field-help-trigger__glyph" aria-hidden="true">?</span>
 		</button>

@@ -46,4 +46,11 @@ final class FieldRegistrationDeferral {
 			$work();
 		}
 	}
+
+	/**
+	 * Whether any field `register()` work is still queued (themes that register on `init` after the first menu `include_fields()` pass).
+	 */
+	public static function has_pending(): bool {
+		return self::$queue !== array();
+	}
 }

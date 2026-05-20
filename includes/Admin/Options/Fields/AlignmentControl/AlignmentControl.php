@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\AlignmentControl;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -21,7 +22,6 @@ defined( 'ABSPATH' ) || exit;
  *
  * Register with **`'type' => 'alignment'`** (or **`AlignmentControl::register()`**). Keys: **`section_slug`**, **`id`**, **`title`**, **`options`** (required) — same map shape as **ButtonGroup** (**value** => **label** string **or** array with **`label`**, optional **`tooltip`**, **`preview_image`**, **`icon`** Font Awesome class string), optional **`default`**, **`description`**, conditional **`required`**, **`html_required`**, **`tooltip`**, **`wrapper_class`**, optional **`responsive`** + **`device`**,
  * optional **`orientation`** => **`horizontal`** (default) or **`vertical`**, **`density`** => **`default`** or **`compact`**, **`show_labels`** (bool, default **true** — when **false** and an **`icon`** is set, only the icon shows with a screen-reader label), **`allow_clear`** (bool — when **true**, an empty value may be saved and a clear control is shown).
- * Optional **`css_map`**: map **option key** => **CSS fragment** (e.g. **`justify-content`** value) for theme helpers — not used in admin UI.
  */
 final class AlignmentControl {
 	use SingletonTrait;
@@ -86,6 +86,8 @@ final class AlignmentControl {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -120,16 +122,6 @@ final class AlignmentControl {
 
 		$field['show_labels'] = ! array_key_exists( 'show_labels', $field ) || ! empty( $field['show_labels'] );
 		$field['allow_clear'] = ! empty( $field['allow_clear'] );
-
-		$css_map = isset( $field['css_map'] ) && is_array( $field['css_map'] ) ? $field['css_map'] : array();
-		$clean   = array();
-		foreach ( $css_map as $k => $frag ) {
-			$kk = sanitize_key( (string) $k );
-			if ( $kk !== '' && isset( $options[ $kk ] ) ) {
-				$clean[ $kk ] = sanitize_text_field( (string) $frag );
-			}
-		}
-		$field['css_map'] = $clean;
 
 		$bps = ResponsiveConfig::breakpoints_for_field( $field );
 		$field['responsive_breakpoints'] = $bps;
@@ -328,43 +320,6 @@ final class AlignmentControl {
 	}
 
 	/**
-	 * Resolved CSS fragment from **`css_map`** for a stored value (theme use).
-	 *
-	 * @param string      $field_id Registered field id.
-	 * @param string|null $json_or_scalar When non-null, treat as stored scalar (not JSON).
-	 * @return string
-	 */
-	public function get_css_fragment_for_value( $field_id, $json_or_scalar = null ) {
-		$field_id = sanitize_key( (string) $field_id );
-		if ( $field_id === '' || ! isset( $this->fields_by_id[ $field_id ] ) ) {
-			return '';
-		}
-		$field = $this->fields_by_id[ $field_id ];
-		$val   = '';
-		if ( null !== $json_or_scalar && is_string( $json_or_scalar ) ) {
-			$val = sanitize_key( $json_or_scalar );
-		} else {
-			$opts = function_exists( 'sto_get_options' ) ? sto_get_options() : array();
-			if ( ! is_array( $opts ) || ! array_key_exists( $field_id, $opts ) ) {
-				return '';
-			}
-			$stored = $opts[ $field_id ];
-			if ( is_array( $stored ) && ResponsiveConfig::is_breakpoint_value_map( $stored ) ) {
-				$slice = ResponsiveConfig::value_for_required_eval( $stored );
-				$val   = is_scalar( $slice ) ? sanitize_key( (string) $slice ) : '';
-			} else {
-				$val = is_scalar( $stored ) ? sanitize_key( (string) $stored ) : '';
-			}
-		}
-		if ( $val === '' ) {
-			return '';
-		}
-		$map = isset( $field['css_map'] ) && is_array( $field['css_map'] ) ? $field['css_map'] : array();
-
-		return isset( $map[ $val ] ) ? (string) $map[ $val ] : '';
-	}
-
-	/**
 	 * @param string               $section_slug
 	 * @param array<string, mixed> $section
 	 */
@@ -441,7 +396,10 @@ final class AlignmentControl {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -532,21 +490,21 @@ final class AlignmentControl {
 					if ( $preview !== '' && $opt_tip !== '' ) {
 						$aria_help = sprintf(
 							/* translators: 1: option label, 2: help text */
-							__( 'Preview for %1$s. %2$s', 'simple-theme-options' ),
+							__( 'Preview for %1$s. %2$s', 'topten-simple-theme-options' ),
 							$opt_label,
 							$opt_tip
 						);
 					} elseif ( $opt_tip !== '' ) {
 						$aria_help = sprintf(
 							/* translators: 1: option label, 2: help text */
-							__( 'Help for %1$s: %2$s', 'simple-theme-options' ),
+							__( 'Help for %1$s: %2$s', 'topten-simple-theme-options' ),
 							$opt_label,
 							$opt_tip
 						);
 					} else {
 						$aria_help = sprintf(
 							/* translators: %s: option label */
-							__( 'Show layout preview for %s', 'simple-theme-options' ),
+							__( 'Show layout preview for %s', 'topten-simple-theme-options' ),
 							$opt_label
 						);
 					}
@@ -591,9 +549,9 @@ final class AlignmentControl {
 							type="button"
 							class="sto-alignment__clear"
 							data-sto-alignment-clear="1"
-							aria-label="<?php esc_attr_e( 'Clear selection', 'simple-theme-options' ); ?>"
-							title="<?php esc_attr_e( 'Clear', 'simple-theme-options' ); ?>"
-						><i class="fa-light fa-xmark" aria-hidden="true"></i><span class="screen-reader-text"><?php esc_html_e( 'Clear', 'simple-theme-options' ); ?></span></button>
+							aria-label="<?php esc_attr_e( 'Clear selection', 'topten-simple-theme-options' ); ?>"
+							title="<?php esc_attr_e( 'Clear', 'topten-simple-theme-options' ); ?>"
+						><i class="fa-light fa-xmark" aria-hidden="true"></i><span class="screen-reader-text"><?php esc_html_e( 'Clear', 'topten-simple-theme-options' ); ?></span></button>
 					</div>
 				<?php endif; ?>
 			</div>
@@ -711,7 +669,7 @@ final class AlignmentControl {
 			$label = $title !== '' ? $title : $fid;
 			$messages[] = sprintf(
 				/* translators: %s: field label */
-				__( '“%s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+				__( '“%s” must be filled in before this section can be saved.', 'topten-simple-theme-options' ),
 				$label
 			);
 		}

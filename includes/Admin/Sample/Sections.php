@@ -36,20 +36,22 @@ final class Sections {
 	private function register_nav_structure(): void {
 		$options_menu = OptionsMenu::instance();
 
-		$options_menu->add_section( __( 'Field samples', 'simple-theme-options' ), 'field-samples', 'fa-light fa-layer-group' );
-		$options_menu->add_sub_section( __( 'Navigation & lists', 'simple-theme-options' ), 'layout-nav', 'fa-light fa-list', 'field-samples' );
-		$options_menu->add_sub_section( __( 'Typography & frames', 'simple-theme-options' ), 'layout-type', 'fa-light fa-font', 'field-samples' );
-		$options_menu->add_sub_section( __( 'Inputs & buttons', 'simple-theme-options' ), 'layout-inputs', 'fa-light fa-keyboard', 'field-samples' );
-		$options_menu->add_sub_section( __( 'Measure, code & borders', 'simple-theme-options' ), 'layout-code-borders', 'fa-light fa-brackets-curly', 'field-samples' );
-		$options_menu->add_sub_section( __( 'Tabs & sidebar', 'simple-theme-options' ), 'layout-tabs-side', 'fa-light fa-table-columns', 'field-samples' );
+		$options_menu->add_section( __( 'Field samples', 'topten-simple-theme-options' ), 'field-samples', 'fa-light fa-layer-group' );
+		$options_menu->add_sub_section( __( 'Navigation & lists', 'topten-simple-theme-options' ), 'layout-nav', 'fa-light fa-list', 'field-samples' );
+		$options_menu->add_sub_section( __( 'Typography & frames', 'topten-simple-theme-options' ), 'layout-type', 'fa-light fa-font', 'field-samples' );
+		$options_menu->add_sub_section( __( 'Inputs & buttons', 'topten-simple-theme-options' ), 'layout-inputs', 'fa-light fa-keyboard', 'field-samples' );
+		$options_menu->add_sub_section( __( 'Measure, code & borders', 'topten-simple-theme-options' ), 'layout-code-borders', 'fa-light fa-brackets-curly', 'field-samples' );
+		$options_menu->add_sub_section( __( 'Tabs & sidebar', 'topten-simple-theme-options' ), 'layout-tabs-side', 'fa-light fa-table-columns', 'field-samples' );
 
-		$options_menu->add_section( __( 'Colors & surfaces', 'simple-theme-options' ), 'colors-surfaces', 'fa-light fa-palette' );
-		$options_menu->add_sub_section( __( 'Solid colors', 'simple-theme-options' ), 'appearance-color', 'fa-light fa-droplet', 'colors-surfaces' );
-		$options_menu->add_sub_section( __( 'Gradient colors', 'simple-theme-options' ), 'appearance-gradient', 'fa-light fa-fill-drip', 'colors-surfaces' );
-		$options_menu->add_sub_section( __( 'Surfaces & media', 'simple-theme-options' ), 'appearance-surfaces', 'fa-light fa-image', 'colors-surfaces' );
-		$options_menu->add_sub_section( __( 'Link colors', 'simple-theme-options' ), 'appearance-links', 'fa-light fa-link', 'colors-surfaces' );
+		$options_menu->add_section( __( 'Colors & surfaces', 'topten-simple-theme-options' ), 'colors-surfaces', 'fa-light fa-palette' );
+		$options_menu->add_sub_section( __( 'Solid colors', 'topten-simple-theme-options' ), 'appearance-color', 'fa-light fa-droplet', 'colors-surfaces' );
+		$options_menu->add_sub_section( __( 'Gradient colors', 'topten-simple-theme-options' ), 'appearance-gradient', 'fa-light fa-fill-drip', 'colors-surfaces' );
+		$options_menu->add_sub_section( __( 'Surfaces & media', 'topten-simple-theme-options' ), 'appearance-surfaces', 'fa-light fa-image', 'colors-surfaces' );
+		$options_menu->add_sub_section( __( 'Link colors', 'topten-simple-theme-options' ), 'appearance-links', 'fa-light fa-link', 'colors-surfaces' );
 
-		$options_menu->add_section( __( 'Accordion', 'simple-theme-options' ), 'accordion', 'fa-light fa-square-caret-down' );
+		$options_menu->add_section( __( 'Groups & panels', 'topten-simple-theme-options' ), 'groups-panels', 'fa-light fa-object-group' );
+
+		$options_menu->add_section( __( 'Responsive', 'topten-simple-theme-options' ), 'responsive', 'fa-light fa-mobile-screen-button' );
 	}
 
 	/**
@@ -67,7 +69,8 @@ final class Sections {
 			'appearance-gradient',
 			'appearance-surfaces',
 			'appearance-links',
-			'accordion',
+			'groups-panels',
+			'responsive',
 		);
 		$options_menu = OptionsMenu::instance();
 		$advance_leaf = ThemeSettingsImportExport::get_advance_section_slug_for_menu_page( $options_menu, $options_menu->get_parent_menu_slug() );
@@ -90,14 +93,19 @@ final class Sections {
 		 * @param string $section_slug   Leaf section slug.
 		 * @param array  $section        Section meta from Menu.
 		 */
-		if ( apply_filters( 'sto_section_skip_generic_placeholder', false, $section_slug, $section ) ) {
+		if ( apply_filters( 'sto_section_skip_generic_placeholder', false, $section_slug, $section ) ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 			return;
 		}
 
-		/* translators: %s: section name */
 		printf(
 			'<p>%s</p>',
-			esc_html( sprintf( __( 'Settings for %s will appear here.', 'simple-theme-options' ), $section['name'] ?? $section_slug ) )
+			esc_html(
+				sprintf(
+					/* translators: %s: section name */
+					__( 'Settings for %s will appear here.', 'topten-simple-theme-options' ),
+					$section['name'] ?? $section_slug
+				)
+			)
 		);
 	}
 }

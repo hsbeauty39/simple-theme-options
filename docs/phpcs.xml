@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ruleset name="Topten Simple Theme Options">
+	<description>PHPCS rules for Topten Simple Theme Options (local dev). Run from plugin root: vendor/bin/phpcs --standard=docs/phpcs.xml</description>
+
+	<file>..</file>
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+	<exclude-pattern>/tools/*</exclude-pattern>
+	<exclude-pattern>/.git/*</exclude-pattern>
+
+	<rule ref="WordPress">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="topten-simple-theme-options"/>
+			</property>
+			<property name="prefixes" type="array">
+				<element value="sto"/>
+				<element value="STO"/>
+				<element value="topten_sto"/>
+				<element value="SimpleThemeOptions"/>
+			</property>
+		</properties>
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound"/>
+	</rule>
+</ruleset>

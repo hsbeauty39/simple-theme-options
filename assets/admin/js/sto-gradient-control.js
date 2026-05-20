@@ -23,6 +23,69 @@
     var PIN_PRE_HOLD_CANCEL_PX = 10;
     var PIN_DRAG_ARM_PX = 4;
 
+    /**
+     * Cached dock node (moved to document.body while open).
+     *
+     * @param {jQuery} $wrap
+     * @return {jQuery}
+     */
+    function getColorDock($wrap) {
+        var $cached = $wrap.data('stoGradColorDock');
+        if ($cached && $cached.length) {
+            return $cached;
+        }
+        var $dock = $wrap.find('[data-sto-gradient-color-dock]').first();
+        if ($dock.length) {
+            $wrap.data('stoGradColorDock', $dock);
+            if (!$dock.data('stoGradDockHome')) {
+                $dock.data('stoGradDockHome', $dock.parent());
+            }
+        }
+        return $dock;
+    }
+
+    function portalColorDockToBody($wrap) {
+        var $dock = getColorDock($wrap);
+        if (!$dock.length) {
+            return;
+        }
+        if (!$dock.data('stoGradDockHome')) {
+            $dock.data('stoGradDockHome', $dock.parent());
+        }
+        if ($dock.parent()[0] !== document.body) {
+            $(document.body).append($dock);
+        }
+    }
+
+    function restoreColorDockPortal($wrap) {
+        var $dock = getColorDock($wrap);
+        var $home = $dock.data('stoGradDockHome');
+        if (!$dock.length || !$home || !$home.length) {
+            return;
+        }
+        if ($dock.parent()[0] !== document.body) {
+            return;
+        }
+        $home.append($dock);
+    }
+
+    /**
+     * Active stop color input (lives in the dock, which may be on document.body).
+     *
+     * @param {jQuery} $wrap
+     * @return {jQuery}
+     */
+    function getActiveColorInput($wrap) {
+        var $dock = getColorDock($wrap);
+        if ($dock.length) {
+            var $inDock = $dock.find('[data-sto-gradient-active-color]').first();
+            if ($inDock.length) {
+                return $inDock;
+            }
+        }
+        return $wrap.find('[data-sto-gradient-active-color]').first();
+    }
+
     function parseHidden($hidden) {
         var raw = String($hidden.val() || '').trim();
         if (!raw) {
@@ -280,31 +343,47 @@
         return Math.round(Math.max(0, Math.min(100, pct)) * 100) / 100;
     }
 
+    function isCustomizerContext() {
+        return $('body').hasClass('wp-customizer');
+    }
+
     function showColorDock($wrap) {
-        var $dock = $wrap.find('[data-sto-gradient-color-dock]');
+        var $dock = getColorDock($wrap);
         if (!$dock.length) {
             return;
         }
         $dock.removeClass('sto-gradient-color-dock--idle').attr('aria-hidden', 'false');
+        $wrap.attr('data-sto-gradient-dock-open', '1');
+        $wrap.closest('.sto-field-row-gradient').addClass('sto-field-row-gradient--dock-open');
+        $dock.data('stoGradControlWrap', $wrap);
+        portalColorDockToBody($wrap);
         positionColorDock($wrap);
+        ensureColorPicker($wrap);
+        refreshDockPalette($wrap);
+        var $input = getActiveColorInput($wrap);
+        if (typeof window.stoOpenGradientDockPicker === 'function') {
+            window.stoOpenGradientDockPicker($input);
+        }
     }
 
     function hideColorDock($wrap) {
-        var $dock = $wrap.find('[data-sto-gradient-color-dock]');
+        var $dock = getColorDock($wrap);
         if (!$dock.length) {
             return;
         }
-        var $input = $wrap.find('[data-sto-gradient-active-color]');
-        var $c = $input.closest('.wp-picker-container');
-        if ($c.length && $c.hasClass('wp-picker-active')) {
-            $c.find('.wp-color-result').first().trigger('click');
+        var $input = getActiveColorInput($wrap);
+        if (typeof window.stoCloseGradientDockPicker === 'function') {
+            window.stoCloseGradientDockPicker($input);
         }
         $dock.addClass('sto-gradient-color-dock--idle').attr('aria-hidden', 'true');
         $dock.css({ left: '', top: '', right: '' });
+        $wrap.removeAttr('data-sto-gradient-dock-open');
+        $wrap.closest('.sto-field-row-gradient').removeClass('sto-field-row-gradient--dock-open');
+        restoreColorDockPortal($wrap);
     }
 
     function positionColorDock($wrap) {
-        var $dock = $wrap.find('[data-sto-gradient-color-dock]');
+        var $dock = getColorDock($wrap);
         if (!$dock.length || $dock.hasClass('sto-gradient-color-dock--idle')) {
             return;
         }
@@ -315,7 +394,7 @@
         var pr = $pin[0].getBoundingClientRect();
         var gap = 10;
         var vh = window.innerHeight || document.documentElement.clientHeight || 800;
-        var est = 240;
+        var est = 320;
         var placeBelow = pr.top < est + 72;
         var cx = pr.left + pr.width / 2;
         var top = placeBelow ? pr.bottom + gap : pr.top - gap;
@@ -326,14 +405,19 @@
             $dock.addClass('sto-gradient-color-dock--above');
         }
         $dock.css({ left: cx + 'px', top: top + 'px', right: 'auto' });
+        if (isCustomizerContext()) {
+            $dock.css('z-index', '500110');
+        } else {
+            $dock.css('z-index', '');
+        }
     }
 
     function refreshDockPalette($wrap) {
-        var $pal = $wrap.find('[data-sto-gradient-dock-palette]');
+        var $pal = getColorDock($wrap).find('[data-sto-gradient-dock-palette]');
         if (!$pal.length) {
             return;
         }
-        var $cw = $wrap.find('.sto-gradient-active-color-wrap');
+        var $cw = getColorDock($wrap).find('.sto-gradient-active-color-wrap');
         var raw = $cw.attr('data-sto-palettes') || '';
         var list = [];
         if (raw) {
@@ -369,16 +453,24 @@
     }
 
     function bindDockPalette($wrap) {
-        $wrap.off('click.stoGradPal', '[data-sto-gradient-dock-swatch]');
-        $wrap.on('click.stoGradPal', '[data-sto-gradient-dock-swatch]', function(e) {
+        var $dock = getColorDock($wrap);
+        $dock.off('click.stoGradPal', '[data-sto-gradient-dock-swatch]');
+        $dock.on('click.stoGradPal', '[data-sto-gradient-dock-swatch]', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             var $b = $(this);
             var $w = $b.closest('[data-sto-gradient-control]');
+            if (!$w.length) {
+                $w = $b.closest('[data-sto-gradient-color-dock]').data('stoGradControlWrap');
+            }
+            if (!$w || !$w.length) {
+                return;
+            }
             var hex = String($b.attr('data-sto-gradient-swatch-color') || '').trim();
             if (!hex) {
                 return;
             }
-            var $input = $w.find('[data-sto-gradient-active-color]');
+            var $input = getActiveColorInput($w);
             $input.val(hex).trigger('change');
             if ($input.wpColorPicker && typeof $input.wpColorPicker === 'function' && $input.closest('.wp-picker-container').length) {
                 try {
@@ -398,63 +490,69 @@
         });
     }
 
+    /** Clicks inside the portaled dock must not bubble to `click.stoGradOutside`. */
+    function bindDockOutsideGuard($wrap) {
+        var $dock = getColorDock($wrap);
+        $dock.off('mousedown.stoGradDockGuard click.stoGradDockGuard');
+        $dock.on('mousedown.stoGradDockGuard click.stoGradDockGuard', function(e) {
+            e.stopPropagation();
+        });
+    }
+
     function ensureColorPicker($wrap) {
-        if (typeof window.stoInitColorPickers !== 'function') {
+        var $input = getActiveColorInput($wrap);
+        if (!$input.length) {
             return;
         }
-        var $input = $wrap.find('[data-sto-gradient-active-color]');
-        var $scope;
-        if (isPopupMode($wrap)) {
-            $scope = $wrap.find('> .sto-gradient-popover');
-        } else {
-            $scope = $wrap.find('.sto-gradient-ui');
-        }
+
+        var $existingContainer = $input.closest('.wp-picker-container');
         var needsRebuild =
-            $wrap.data('stoGradColorReady') &&
-            $input.closest('.wp-picker-container').length &&
+            $existingContainer.length &&
             typeof window.stoIrisSquareTooSmall === 'function' &&
             window.stoIrisSquareTooSmall($input);
         if (needsRebuild && typeof window.stoDestroyColorPicker === 'function') {
             window.stoDestroyColorPicker($input);
             $wrap.removeData('stoGradColorReady');
         }
-        if ($wrap.data('stoGradColorReady')) {
+
+        if (!$input.closest('.wp-picker-container').length) {
+            if (typeof window.stoInitGradientDockColorPicker === 'function') {
+                window.stoInitGradientDockColorPicker($input);
+            } else if (typeof window.stoInitColorPickers === 'function') {
+                var $dock = getColorDock($wrap);
+                window.stoInitColorPickers($dock.length ? $dock : $wrap);
+            }
+        }
+
+        if ($input.closest('.wp-picker-container').length) {
+            $wrap.data('stoGradColorReady', 1);
             if (typeof window.stoScheduleIrisReflow === 'function') {
                 window.stoScheduleIrisReflow($input);
             }
-            return;
-        }
-        if ($scope.length) {
-            window.stoInitColorPickers($scope);
-        } else {
-            window.stoInitColorPickers($wrap);
-        }
-        if ($input.closest('.wp-picker-container').length) {
-            $wrap.data('stoGradColorReady', 1);
         }
     }
 
     function openColorPicker($wrap) {
         showColorDock($wrap);
-        ensureColorPicker($wrap);
         refreshDockPalette($wrap);
-        window.setTimeout(function() {
+        ensureColorPicker($wrap);
+
+        window.requestAnimationFrame(function() {
             positionColorDock($wrap);
-            var $input = $wrap.find('[data-sto-gradient-active-color]');
-            var $c = $input.closest('.wp-picker-container');
-            var $btn = $c.find('.wp-color-result').first();
-            if ($btn.length) {
-                $btn.trigger('click');
-            } else {
-                $input.trigger('focus');
+
+            var $input = getActiveColorInput($wrap);
+            if (!$input.closest('.wp-picker-container').length) {
+                ensureColorPicker($wrap);
             }
-            if (typeof window.stoScheduleIrisReflow === 'function') {
-                window.stoScheduleIrisReflow($input);
+
+            if (typeof window.stoOpenGradientDockPicker === 'function') {
+                window.stoOpenGradientDockPicker($input);
             }
+
             window.setTimeout(function() {
                 positionColorDock($wrap);
-            }, 60);
-        }, 10);
+            }, 80);
+        });
     }
 
     function readFormIntoState($wrap) {
@@ -464,7 +562,7 @@
         if (sel >= cur.stops.length) {
             sel = cur.stops.length - 1;
         }
-        var $c = $wrap.find('[data-sto-gradient-active-color]');
+        var $c = getActiveColorInput($wrap);
         var $p = $wrap.find('[data-sto-gradient-active-position]');
         if (cur.stops[sel]) {
             cur.stops[sel] = {
@@ -494,7 +592,7 @@
         readFormIntoState($wrap);
         updatePreview($wrap);
         refreshPins($wrap);
-        if (!$wrap.find('[data-sto-gradient-color-dock]').hasClass('sto-gradient-color-dock--idle')) {
+        if (!getColorDock($wrap).hasClass('sto-gradient-color-dock--idle')) {
             positionColorDock($wrap);
         }
 
@@ -568,7 +666,7 @@
         var col = st && st.color != null ? String(st.color) : '#2271b1';
         var pos = st && st.position != null ? String(st.position) : '0';
 
-        var $c = $wrap.find('[data-sto-gradient-active-color]');
+        var $c = getActiveColorInput($wrap);
         $c.attr('data-default-color', col);
         $c.attr('data-sto-default', col);
         if ($c.wpColorPicker && typeof $c.wpColorPicker === 'function' && $c.closest('.wp-picker-container').length) {
@@ -874,13 +972,22 @@
     }
 
     function bindActiveEditors($wrap) {
+        var $dock = getColorDock($wrap);
+        $dock.data('stoGradControlWrap', $wrap);
+
         $wrap
-            .off('input.stoGradAct change.stoGradAct', '[data-sto-gradient-active-color], [data-sto-gradient-active-position]')
-            .on('input.stoGradAct change.stoGradAct', '[data-sto-gradient-active-color], [data-sto-gradient-active-position]', function() {
+            .off('input.stoGradAct change.stoGradAct', '[data-sto-gradient-active-position]')
+            .on('input.stoGradAct change.stoGradAct', '[data-sto-gradient-active-position]', function() {
                 syncFromInputs($wrap);
             });
-        $wrap.off('click.stoGradActReset', '.sto-gradient-active-color-wrap .sto-color-reset');
-        $wrap.on('click.stoGradActReset', '.sto-gradient-active-color-wrap .sto-color-reset', function() {
+
+        $dock
+            .off('input.stoGradAct change.stoGradAct', '[data-sto-gradient-active-color]')
+            .on('input.stoGradAct change.stoGradAct', '[data-sto-gradient-active-color]', function() {
+                syncFromInputs($wrap);
+            });
+        $dock.off('click.stoGradActReset', '.sto-color-reset');
+        $dock.on('click.stoGradActReset', '.sto-color-reset', function() {
             window.setTimeout(function() {
                 syncFromInputs($wrap);
             }, 0);
@@ -938,7 +1045,7 @@
 
         if (!$wrap.data('stoGradColorReady') && typeof window.stoInitColorPickers === 'function') {
             window.stoInitColorPickers($pop);
-            if ($wrap.find('[data-sto-gradient-active-color]').closest('.wp-picker-container').length) {
+            if (getActiveColorInput($wrap).closest('.wp-picker-container').length) {
                 $wrap.data('stoGradColorReady', 1);
             }
         }
@@ -1047,6 +1154,7 @@
         }
         $wrap.data('stoGradInit', 1);
         $wrap.attr('data-sto-gradient-selected', $wrap.attr('data-sto-gradient-selected') || '0');
+        getColorDock($wrap);
 
         bindPinsAndRail($wrap);
         bindFlip($wrap);
@@ -1055,12 +1163,13 @@
         bindRemoveStop($wrap);
         bindDockPalette($wrap);
         bindDockDismissals($wrap);
+        bindDockOutsideGuard($wrap);
 
         if (isPopupMode($wrap)) {
             bindToggle($wrap);
         } else if (typeof window.stoInitColorPickers === 'function') {
             window.stoInitColorPickers($wrap.find('.sto-gradient-ui'));
-            if ($wrap.find('[data-sto-gradient-active-color]').closest('.wp-picker-container').length) {
+            if (getActiveColorInput($wrap).closest('.wp-picker-container').length) {
                 $wrap.data('stoGradColorReady', 1);
             }
         }
@@ -1088,12 +1197,16 @@
 
     $(document).on('click.stoGradOutside', function(e) {
         var $tgt = $(e.target);
+        if ($tgt.closest('.sto-gradient-color-dock:not(.sto-gradient-color-dock--idle)').length) {
+            return;
+        }
         if ($tgt.closest('.wp-picker-container, .iris-picker, .wp-color-result').length) {
             return;
         }
         $('[data-sto-gradient-control]').each(function() {
             var $w = $(this);
-            if (!$tgt.closest($w).length) {
+            var $dock = getColorDock($w);
+            if (!$tgt.closest($w).length && (!$dock.length || !$tgt.closest($dock).length)) {
                 hideColorDock($w);
             }
         });
@@ -1126,17 +1239,28 @@
     $(function() {
         initStoGradientControls();
         var dockResizeTimer;
-        $(window).on('resize.stoGradDock scroll.stoGradDock', function() {
+        function scheduleDockReposition() {
             window.clearTimeout(dockResizeTimer);
             dockResizeTimer = window.setTimeout(function() {
                 $('[data-sto-gradient-control]').each(function() {
                     var $w = $(this);
-                    if (!$w.find('[data-sto-gradient-color-dock]').hasClass('sto-gradient-color-dock--idle')) {
+                    if (!getColorDock($w).hasClass('sto-gradient-color-dock--idle')) {
                         positionColorDock($w);
                     }
                 });
             }, 80);
-        });
+        }
+
+        $(window).on('resize.stoGradDock scroll.stoGradDock', scheduleDockReposition);
+
+        /* Customizer sidebar scroll does not bubble to window. */
+        if ($('body').hasClass('wp-customizer')) {
+            $('#customize-theme-controls').on(
+                'scroll.stoGradDock',
+                '.wp-full-overlay-sidebar-content, .customize-pane-child',
+                scheduleDockReposition
+            );
+        }
     });
 
     window.stoInitGradientControls = initStoGradientControls;

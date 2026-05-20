@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\ShadowControl;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
@@ -106,6 +107,8 @@ final class ShadowControl {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -471,7 +474,10 @@ final class ShadowControl {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -569,10 +575,10 @@ final class ShadowControl {
 						aria-haspopup="dialog"
 					>
 						<i class="fa-light fa-pencil" aria-hidden="true"></i>
-						<span class="sto-shadow-edit__label"><?php esc_html_e( 'Edit shadow', 'simple-theme-options' ); ?></span>
+						<span class="sto-shadow-edit__label"><?php esc_html_e( 'Edit shadow', 'topten-simple-theme-options' ); ?></span>
 					</button>
 				</div>
-				<div class="sto-shadow-popover" role="dialog" aria-label="<?php esc_attr_e( 'Shadow settings', 'simple-theme-options' ); ?>" hidden>
+				<div class="sto-shadow-popover" role="dialog" aria-label="<?php esc_attr_e( 'Shadow settings', 'topten-simple-theme-options' ); ?>" hidden>
 					<?php $this->render_shadow_controls_body( $cur, $default_color, $use_alpha, $palettes_json, $min_h, $max_h, $min_v, $max_v, $min_b, $max_b, $min_s, $max_s ); ?>
 				</div>
 			<?php else : ?>
@@ -597,7 +603,7 @@ final class ShadowControl {
 	private function render_shadow_controls_body( array $cur, $default_color, $use_alpha, $palettes_json, $min_h, $max_h, $min_v, $max_v, $min_b, $max_b, $min_s, $max_s ) {
 		?>
 		<div class="sto-shadow-popover__row" data-sto-shadow-section="color">
-			<div class="sto-shadow-popover__label"><?php esc_html_e( 'Color', 'simple-theme-options' ); ?></div>
+			<div class="sto-shadow-popover__label"><?php esc_html_e( 'Color', 'topten-simple-theme-options' ); ?></div>
 			<div
 				class="sto-color-wrap<?php echo $use_alpha ? ' sto-color--alpha' : ''; ?> sto-shadow-color-wrap"
 				<?php if ( $palettes_json ) : ?>
@@ -622,8 +628,8 @@ final class ShadowControl {
 				<button
 					type="button"
 					class="sto-color-reset"
-					aria-label="<?php esc_attr_e( 'Reset shadow color', 'simple-theme-options' ); ?>"
-					title="<?php esc_attr_e( 'Reset to default', 'simple-theme-options' ); ?>"
+					aria-label="<?php esc_attr_e( 'Reset shadow color', 'topten-simple-theme-options' ); ?>"
+					title="<?php esc_attr_e( 'Reset to default', 'topten-simple-theme-options' ); ?>"
 				>
 					<i class="fa-light fa-arrow-rotate-left" aria-hidden="true"></i>
 				</button>
@@ -631,17 +637,17 @@ final class ShadowControl {
 		</div>
 
 		<?php
-		$this->render_slider_pair( __( 'Horizontal', 'simple-theme-options' ), 'horizontal', (int) $cur['horizontal'], $min_h, $max_h );
-		$this->render_slider_pair( __( 'Vertical', 'simple-theme-options' ), 'vertical', (int) $cur['vertical'], $min_v, $max_v );
-		$this->render_slider_pair( __( 'Blur', 'simple-theme-options' ), 'blur', (int) $cur['blur'], $min_b, $max_b );
-		$this->render_slider_pair( __( 'Spread', 'simple-theme-options' ), 'spread', (int) $cur['spread'], $min_s, $max_s );
+		$this->render_slider_pair( __( 'Horizontal', 'topten-simple-theme-options' ), 'horizontal', (int) $cur['horizontal'], $min_h, $max_h );
+		$this->render_slider_pair( __( 'Vertical', 'topten-simple-theme-options' ), 'vertical', (int) $cur['vertical'], $min_v, $max_v );
+		$this->render_slider_pair( __( 'Blur', 'topten-simple-theme-options' ), 'blur', (int) $cur['blur'], $min_b, $max_b );
+		$this->render_slider_pair( __( 'Spread', 'topten-simple-theme-options' ), 'spread', (int) $cur['spread'], $min_s, $max_s );
 		?>
 
 		<div class="sto-shadow-popover__row" data-sto-shadow-section="position">
-			<div class="sto-shadow-popover__label"><?php esc_html_e( 'Position', 'simple-theme-options' ); ?></div>
-			<select class="sto-shadow-popover__select" data-sto-shadow-input="position" aria-label="<?php esc_attr_e( 'Shadow position', 'simple-theme-options' ); ?>">
-				<option value="outline" <?php selected( (string) $cur['position'], 'outline' ); ?>><?php esc_html_e( 'Outline', 'simple-theme-options' ); ?></option>
-				<option value="inset" <?php selected( (string) $cur['position'], 'inset' ); ?>><?php esc_html_e( 'Inset', 'simple-theme-options' ); ?></option>
+			<div class="sto-shadow-popover__label"><?php esc_html_e( 'Position', 'topten-simple-theme-options' ); ?></div>
+			<select class="sto-shadow-popover__select" data-sto-shadow-input="position" aria-label="<?php esc_attr_e( 'Shadow position', 'topten-simple-theme-options' ); ?>">
+				<option value="outline" <?php selected( (string) $cur['position'], 'outline' ); ?>><?php esc_html_e( 'Outline', 'topten-simple-theme-options' ); ?></option>
+				<option value="inset" <?php selected( (string) $cur['position'], 'inset' ); ?>><?php esc_html_e( 'Inset', 'topten-simple-theme-options' ); ?></option>
 			</select>
 		</div>
 		<?php
@@ -690,8 +696,8 @@ final class ShadowControl {
 		return sprintf(
 			'<button type="button" class="sto-shadow-row-reset" data-sto-shadow-row-reset data-sto-shadow-defaults="%s" aria-label="%s" title="%s"><i class="fa-light fa-arrow-rotate-left" aria-hidden="true"></i></button>',
 			esc_attr( $defaults_json ),
-			esc_attr__( 'Reset shadow to default', 'simple-theme-options' ),
-			esc_attr__( 'Reset to default', 'simple-theme-options' )
+			esc_attr__( 'Reset shadow to default', 'topten-simple-theme-options' ),
+			esc_attr__( 'Reset to default', 'topten-simple-theme-options' )
 		);
 	}
 

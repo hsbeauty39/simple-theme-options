@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\Input;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -51,6 +52,7 @@ final class Input {
 		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::INPUT, 2 );
 		add_filter( 'mce_buttons', array( $this, 'filter_mce_buttons_append_toolbar_end' ), 99, 2 );
 		add_filter( 'tiny_mce_before_init', array( $this, 'filter_tiny_mce_before_init_toolbar_end' ), 20, 2 );
+		add_filter( 'tiny_mce_before_init', array( $this, 'filter_tinymce_preserve_html_for_repeater_editor' ), 25, 2 );
 	}
 
 	/**
@@ -105,6 +107,8 @@ final class Input {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -273,7 +277,7 @@ final class Input {
 
 			$messages[] = sprintf(
 				/* translators: %s: field label */
-				__( '“%s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+				__( '“%s” must be filled in before this section can be saved.', 'topten-simple-theme-options' ),
 				$label
 			);
 		}
@@ -453,7 +457,7 @@ final class Input {
 				return sanitize_textarea_field( $str );
 
 			case 'editor':
-				return wp_kses_post( $str );
+				return $this->sanitize_editor_html( $str );
 
 			case 'email':
 				$e = sanitize_email( $str );
@@ -627,6 +631,9 @@ final class Input {
 		$tabs_pane_bp = ResponsiveConfig::parent_responsive_pane_bp( $field );
 
 		$row_classes = array( 'sto-field-row', 'sto-field-row-input', 'sto-field-row-input--' . sanitize_html_class( $input_type ) );
+		if ( $input_type === 'editor' ) {
+			$row_classes[] = 'sto-classic-editor-field';
+		}
 		if ( $wrapper_class ) {
 			$row_classes[] = $wrapper_class;
 		}
@@ -648,7 +655,10 @@ final class Input {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			data-sto-input-type="<?php echo esc_attr( $input_type ); ?>"
 			<?php if ( $required_json ) : ?>
@@ -736,6 +746,222 @@ final class Input {
 	}
 
 	/**
+	 * Classic editor for embedded contexts (e.g. advanced repeater rows).
+	 *
+	 * @param array<string, mixed> $field          Field config (`editor_height`, `media_buttons`, `teeny`, …).
+	 * @param string               $textarea_name  `name` on the underlying textarea.
+	 * @param string               $value          Stored HTML.
+	 * @param string               $editor_dom_id  Unique DOM id for the editor instance (no `sto_wp_editor_` prefix).
+	 */
+	public function render_embedded_wp_editor( array $field, string $textarea_name, string $value, string $editor_dom_id ): void {
+		$field_embed                  = $field;
+		$field_embed['editor_dom_id'] = preg_replace( '/[^a-zA-Z0-9_-]/', '_', $editor_dom_id );
+		$field_embed['input_type']    = 'editor';
+		$field_embed['editor_preserve_html'] = true;
+		if ( ! array_key_exists( 'media_buttons', $field_embed ) ) {
+			$field_embed['media_buttons'] = true;
+		}
+		if ( ! array_key_exists( 'teeny', $field_embed ) ) {
+			$field_embed['teeny'] = false;
+		}
+		$value = self::repair_editor_rn_corruption( $value );
+		$value = self::normalize_editor_html_for_visual( $value );
+		$this->render_wp_editor( $field_embed, $textarea_name, $value );
+	}
+
+	/**
+	 * Sanitize HTML from a classic `wp_editor` leaf.
+	 *
+	 * @param string $raw               Markup (already unslashed from json_decode or leaf bucket; never wp_unslash twice).
+	 * @param bool   $repair_rn_legacy  Repair literal `rn` / `rnrn` from older double-unslash saves.
+	 */
+	public function sanitize_editor_html( string $raw, bool $repair_rn_legacy = true ): string {
+		$raw = $repair_rn_legacy ? self::repair_editor_rn_corruption( $raw ) : $raw;
+		$raw = self::normalize_editor_html_for_visual( $raw );
+
+		if ( current_user_can( 'unfiltered_html' ) ) {
+			return (string) $raw;
+		}
+
+		return (string) wp_kses( $raw, self::get_classic_editor_allowed_html() );
+	}
+
+	/**
+	 * Allowed HTML for classic `wp_editor` fields (tables, rowspan/colspan, class, etc.).
+	 *
+	 * @return array<string, array<string, bool>>
+	 */
+	public static function get_classic_editor_allowed_html(): array {
+		static $cached = null;
+
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$allowed     = wp_kses_allowed_html( 'post' );
+		$extra_attrs = array(
+			'class'       => true,
+			'id'          => true,
+			'role'        => true,
+			'aria-label'  => true,
+			'aria-hidden' => true,
+			'data-*'      => true,
+		);
+
+		foreach ( $allowed as $tag => $attrs ) {
+			if ( ! is_array( $attrs ) ) {
+				continue;
+			}
+			$allowed[ $tag ] = array_merge( $attrs, $extra_attrs );
+		}
+
+		$extra_tags = array(
+			'span'   => $extra_attrs,
+			'section' => $extra_attrs,
+			'article' => $extra_attrs,
+			'header' => $extra_attrs,
+			'footer' => $extra_attrs,
+			'main'   => array_merge( $allowed['main'] ?? array(), $extra_attrs ),
+			'colgroup' => array(
+				'span'  => true,
+				'class' => true,
+				'id'    => true,
+			),
+			'col'    => array(
+				'span'  => true,
+				'class' => true,
+				'id'    => true,
+				'width' => true,
+			),
+		);
+
+		foreach ( $extra_tags as $tag => $attrs ) {
+			if ( isset( $allowed[ $tag ] ) && is_array( $allowed[ $tag ] ) ) {
+				$allowed[ $tag ] = array_merge( $allowed[ $tag ], $attrs );
+			} else {
+				$allowed[ $tag ] = $attrs;
+			}
+		}
+
+		/**
+		 * Filter classic editor KSES allowlist (advanced repeater + Theme Settings `editor` fields).
+		 *
+		 * @param array<string, array<string, bool>> $allowed Tag => attribute allowlist.
+		 */
+		$cached = apply_filters( 'sto_classic_editor_kses_allowed_html', $allowed ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
+
+		return is_array( $cached ) ? $cached : $allowed;
+	}
+
+	/**
+	 * Fix table rows without `<td>`/`<th>` so TinyMCE Visual mode keeps structure (not plain concatenated text).
+	 */
+	public static function normalize_editor_html_for_visual( string $html ): string {
+		if ( $html === '' || stripos( $html, '<table' ) === false ) {
+			return $html;
+		}
+
+		$normalized = (string) preg_replace_callback(
+			'/<tr\b([^>]*)>(.*?)<\/tr>/is',
+			static function ( array $match ): string {
+				$attrs = $match[1];
+				$inner = $match[2];
+				if ( preg_match( '/<t[dh]\b/i', $inner ) ) {
+					return $match[0];
+				}
+				$inner = trim( $inner );
+				if ( $inner === '' ) {
+					return '<tr' . $attrs . '></tr>';
+				}
+
+				return '<tr' . $attrs . '><td>' . $inner . '</td></tr>';
+			},
+			$html
+		);
+
+		return $normalized;
+	}
+
+	/**
+	 * Repeater row editors use ids like `bbd_ptab_custom_tabs_0_tab_content` (not `sto_wp_editor_*`).
+	 *
+	 * @param array<string, mixed> $init      TinyMCE init.
+	 * @param string               $editor_id Editor DOM id.
+	 * @return array<string, mixed>
+	 */
+	public function filter_tinymce_preserve_html_for_repeater_editor( $init, $editor_id ) {
+		if ( ! is_array( $init ) || ! is_string( $editor_id ) || $editor_id === '' ) {
+			return is_array( $init ) ? $init : array();
+		}
+		if ( strpos( $editor_id, 'sto_wp_editor_' ) === 0 ) {
+			return $init;
+		}
+		if ( ! preg_match( '/_\d+_[a-z0-9_]+$/i', $editor_id ) ) {
+			return $init;
+		}
+
+		// Do not add TinyMCE `table` — it is not bundled in WordPress core and breaks the editor when missing.
+		return array_merge(
+			$init,
+			array(
+				'verify_html'       => false,
+				'cleanup'           => false,
+				'remove_linebreaks' => false,
+				'convert_urls'      => false,
+				'entity_encoding'   => 'raw',
+				'valid_children'    => '+table[thead|tbody|tfoot|caption|colgroup|col|tr],+thead[tr],+tbody[tr],+tfoot[tr],+tr[td|th]',
+			)
+		);
+	}
+
+	/**
+	 * Fix literal "rn" / "rnrn" where "\\r\\n" lost backslashes (extra wp_unslash on editor HTML).
+	 */
+	/**
+	 * Whether classic editor HTML has visible text or embedded media (img-only rows must still save).
+	 *
+	 * @param string $html Stored or posted editor markup.
+	 */
+	public static function classic_editor_html_has_meaningful_content( string $html ): bool {
+		$html = trim( $html );
+		if ( $html === '' ) {
+			return false;
+		}
+
+		if ( preg_match( '/<(img|picture|video|audio|iframe|embed|object|figure|svg)\b/i', $html ) ) {
+			return true;
+		}
+
+		return trim( wp_strip_all_tags( $html ) ) !== '';
+	}
+
+	public static function repair_editor_rn_corruption( string $markup ): string {
+		if ( $markup === '' || str_contains( $markup, '<!-- wp:' ) ) {
+			return $markup;
+		}
+
+		if ( ! preg_match( '/rn/i', $markup ) ) {
+			return $markup;
+		}
+
+		// Blocks that are only corrupted newline tokens.
+		$markup = (string) preg_replace( '/<p>\s*(?:rn\s*)+<\/p>/iu', '', $markup );
+		$markup = (string) preg_replace( '/<div>\s*(?:rn\s*)+<\/div>/iu', '', $markup );
+
+		while ( str_contains( $markup, 'rnrn' ) ) {
+			$markup = str_replace( 'rnrn', "\n\n", $markup );
+		}
+
+		$markup = (string) preg_replace( '/,rn(?=[a-zA-Z<])/u', ",\n", $markup );
+		$markup = (string) preg_replace( '/rn(?=[a-zA-Z<])/u', "\n", $markup );
+		$markup = (string) preg_replace( '/rn(?=\s*<\/?)/u', "\n", $markup );
+		$markup = (string) preg_replace( '/rn(?=\s*$)/u', "\n", $markup );
+		$markup = (string) preg_replace( '/(?:^|>|\s)(?:rn\s*){2,}(?=<|\s|$)/iu', "\n\n", $markup );
+
+		return is_string( $markup ) ? $markup : '';
+	}
+
+	/**
 	 * @param array<string, mixed> $field
 	 * @param string               $name
 	 * @param string               $value
@@ -743,8 +969,10 @@ final class Input {
 	private function render_wp_editor( $field, $name, $value ) {
 		$this->enqueue_editor_assets_once();
 
-		$field_id = (string) $field['id'];
-		$editor_id = 'sto_wp_editor_' . $field_id;
+		$field_id = (string) ( $field['id'] ?? '' );
+		$editor_id = isset( $field['editor_dom_id'] ) && (string) $field['editor_dom_id'] !== ''
+			? (string) $field['editor_dom_id']
+			: 'sto_wp_editor_' . $field_id;
 		$height    = isset( $field['editor_height'] ) ? (int) $field['editor_height'] : 160;
 
 		// Match core post editor: full TinyMCE + Quicktags (Visual / Code), Add Media, kitchen sink.
@@ -759,6 +987,7 @@ final class Input {
 			'textarea_rows'    => $textarea_rows,
 			'editor_height'    => $height,
 			'drag_drop_upload' => ! empty( $field['drag_drop_upload'] ),
+			'wpautop'          => ! empty( $field['editor_preserve_html'] ) ? false : true,
 			'tinymce'          => array(
 				'resize'             => 'vertical',
 				'height'             => $height,
@@ -768,6 +997,19 @@ final class Input {
 			),
 			'quicktags'        => true,
 		);
+
+		if ( ! empty( $field['editor_preserve_html'] ) ) {
+			$settings['tinymce'] = array_merge(
+				$settings['tinymce'],
+				array(
+					'verify_html'       => false,
+					'cleanup'           => false,
+					'remove_linebreaks' => false,
+					'convert_urls'      => false,
+					'entity_encoding'   => 'raw',
+				)
+			);
+		}
 
 		$html_required = ! empty( $field['html_required'] );
 		$placeholder    = isset( $field['placeholder'] ) ? (string) $field['placeholder'] : '';
@@ -998,7 +1240,7 @@ final class Input {
 		echo ' />';
 
 		if ( $input_type === 'password' ) {
-			echo '<button type="button" class="sto-input-password-toggle" data-sto-password-toggle="1" aria-pressed="false" aria-label="' . esc_attr__( 'Show password', 'simple-theme-options' ) . '">';
+			echo '<button type="button" class="sto-input-password-toggle" data-sto-password-toggle="1" aria-pressed="false" aria-label="' . esc_attr__( 'Show password', 'topten-simple-theme-options' ) . '">';
 			echo '<span class="dashicons dashicons-visibility" aria-hidden="true"></span>';
 			echo '</button>';
 		}

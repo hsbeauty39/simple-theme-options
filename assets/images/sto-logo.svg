@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Topten Simple Theme Options">
+	<defs>
+		<linearGradient id="sto-brand" x1="18%" y1="12%" x2="88%" y2="92%">
+			<stop offset="0%" stop-color="#6d28d9"/>
+			<stop offset="52%" stop-color="#be185d"/>
+			<stop offset="100%" stop-color="#ea580c"/>
+		</linearGradient>
+		<filter id="sto-soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+			<feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#6d28d9" flood-opacity="0.22"/>
+		</filter>
+	</defs>
+	<rect width="512" height="512" rx="112" fill="#ffffff"/>
+	<rect x="24" y="24" width="464" height="464" rx="96" fill="#fafafa" stroke="rgba(109,40,217,0.14)" stroke-width="2"/>
+	<g filter="url(#sto-soft-shadow)" transform="translate(256 256)">
+		<path fill="url(#sto-brand)" d="M-18-98 L42 10 L8 10 L28 98 L-42-14 L-8-14 Z"/>
+		<rect x="-92" y="34" width="184" height="16" rx="8" fill="url(#sto-brand)" opacity="0.92"/>
+		<rect x="-72" y="66" width="144" height="16" rx="8" fill="url(#sto-brand)" opacity="0.78"/>
+		<rect x="-52" y="98" width="104" height="16" rx="8" fill="url(#sto-brand)" opacity="0.64"/>
+	</g>
+</svg>

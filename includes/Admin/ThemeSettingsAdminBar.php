@@ -17,7 +17,7 @@ final class ThemeSettingsAdminBar {
 	use SingletonTrait;
 
 	protected function init() {
-		add_action( 'admin_bar_menu', array( $this, 'register_nodes' ), 100 );
+		add_action( 'admin_bar_menu', array( $this, 'register_nodes' ), 999 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_styles' ), 20 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ), 20 );
 	}
@@ -27,8 +27,15 @@ final class ThemeSettingsAdminBar {
 			return;
 		}
 
-		$slug = OptionsMenu::instance()->get_parent_menu_slug();
-		if ( $slug === '' ) {
+		$menu    = OptionsMenu::instance();
+		$has_any = false;
+		foreach ( $menu->get_registered_menu_slugs() as $menu_page_slug ) {
+			if ( $this->menu_page_has_visible_nav( $menu, $menu_page_slug ) ) {
+				$has_any = true;
+				break;
+			}
+		}
+		if ( ! $has_any ) {
 			return;
 		}
 
@@ -99,6 +106,12 @@ final class ThemeSettingsAdminBar {
 			'analytics'         => 'dashicons-chart-bar',
 			'custom-code'       => 'dashicons-editor-code',
 			'header-banner'     => 'dashicons-welcome-view-site',
+			'uaebattery-root'   => 'dashicons-admin-home',
+			'uaebattery-header' => 'dashicons-welcome-view-site',
+			'uaebattery-header-live-search' => 'dashicons-search',
+			'uaebattery-header-navigation'  => 'dashicons-menu-alt',
+			'uaebattery-footer' => 'dashicons-admin-page',
+			'uaebattery-shop'   => 'dashicons-cart',
 		);
 
 		$d = '';
@@ -117,7 +130,7 @@ final class ThemeSettingsAdminBar {
 		 * @param string $section_slug Section or subsection slug, or `_root`.
 		 * @param string $fa_icon      Normalized FA-style class string from Menu.
 		 */
-		$d = (string) apply_filters( 'sto_admin_bar_dashicon', $d, $slug, $fa );
+		$d = (string) apply_filters( 'sto_admin_bar_dashicon', $d, $slug, $fa ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 
 		if ( ! preg_match( '/^dashicons-[a-z0-9-]+$/', $d ) ) {
 			$d = 'dashicons-admin-generic';
@@ -142,6 +155,82 @@ final class ThemeSettingsAdminBar {
 	}
 
 	/**
+	 * Whether a registered options menu has navigable panels for the admin bar.
+	 *
+	 * @param OptionsMenu $menu
+	 * @param string      $menu_page_slug
+	 */
+	private function menu_page_has_visible_nav( OptionsMenu $menu, $menu_page_slug ) {
+		$menu_page_slug = sanitize_key( (string) $menu_page_slug );
+		if ( $menu_page_slug === '' ) {
+			return false;
+		}
+
+		return $menu->get_leaf_sections_for_navigation_for_menu_page( $menu_page_slug ) !== array();
+	}
+
+	/**
+	 * First registered menu slug that still has visible sections (theme menus when demo is off).
+	 *
+	 * @param OptionsMenu        $menu
+	 * @param array<int, string> $menu_slugs
+	 */
+	private function resolve_admin_bar_root_menu_page( OptionsMenu $menu, array $menu_slugs ) {
+		foreach ( $menu_slugs as $menu_page_slug ) {
+			if ( $this->menu_page_has_visible_nav( $menu, $menu_page_slug ) ) {
+				return (string) $menu_page_slug;
+			}
+		}
+
+		return $menu->get_parent_menu_slug();
+	}
+
+	/**
+	 * Register every navigable leaf for one STO menu as a single-level admin bar list (no nested flyouts).
+	 *
+	 * @param \WP_Admin_Bar $wp_admin_bar
+	 * @param OptionsMenu   $menu
+	 * @param string        $menu_page_slug
+	 * @param string        $admin_bar_parent_id
+	 * @return int Number of nodes added.
+	 */
+	private function register_leaf_links_for_menu_page( $wp_admin_bar, OptionsMenu $menu, $menu_page_slug, $admin_bar_parent_id ) {
+		$menu_page_slug = sanitize_key( (string) $menu_page_slug );
+		if ( $menu_page_slug === '' ) {
+			return 0;
+		}
+
+		$added = 0;
+		foreach ( $menu->get_leaf_sections_for_navigation_for_menu_page( $menu_page_slug ) as $leaf ) {
+			if ( empty( $leaf['slug'] ) ) {
+				continue;
+			}
+
+			$leaf_slug = (string) $leaf['slug'];
+			$label     = $menu->get_leaf_breadcrumb_label( $leaf_slug );
+			if ( $label === '' && ! empty( $leaf['name'] ) ) {
+				$label = (string) $leaf['name'];
+			}
+			$leaf_icon = isset( $leaf['icon'] ) ? (string) $leaf['icon'] : '';
+
+			$wp_admin_bar->add_node(
+				array(
+					'parent' => $admin_bar_parent_id,
+					'id'     => 'sto-ts-' . sanitize_key( $menu_page_slug . '-' . $leaf_slug ),
+					'title'  => $this->format_node_title( $label, $leaf_icon, $leaf_slug ),
+					'href'   => $menu->get_theme_settings_url( $leaf_slug, $menu_page_slug ),
+					'meta'   => array(
+						'class' => 'sto-ab-leaf-link',
+					),
+				)
+			);
+			++$added;
+		}
+
+		return $added;
+	}
+
+	/**
 	 * @param \WP_Admin_Bar $wp_admin_bar
 	 */
 	public function register_nodes( $wp_admin_bar ) {
@@ -149,99 +238,66 @@ final class ThemeSettingsAdminBar {
 			return;
 		}
 
-		$menu = OptionsMenu::instance();
-		$page = $menu->get_parent_menu_slug();
-		if ( $page === '' ) {
+		$menu       = OptionsMenu::instance();
+		$menu_slugs = $menu->get_registered_menu_slugs();
+		if ( $menu_slugs === array() ) {
 			return;
 		}
 
-		if ( $menu->is_packaged_demo_menu() && ! $menu->is_demo_mode_enabled() ) {
+		$visible_menu_slugs = array();
+		foreach ( $menu_slugs as $menu_page_slug ) {
+			if ( ! $menu->is_menu_root_visible_in_admin( $menu_page_slug ) ) {
+				continue;
+			}
+			if ( $this->menu_page_has_visible_nav( $menu, $menu_page_slug ) ) {
+				$visible_menu_slugs[] = $menu_page_slug;
+			}
+		}
+
+		if ( $visible_menu_slugs === array() ) {
 			return;
 		}
 
-		$def       = $menu->get_default_leaf_section_slug_for_menu_page( $page );
-		$root_href = $def !== '' ? $menu->get_theme_settings_url( $def, $page ) : $menu->get_theme_settings_url( '', $page );
+		$root_page = $this->resolve_admin_bar_root_menu_page( $menu, $visible_menu_slugs );
+		$def       = $menu->get_default_leaf_section_slug_for_menu_page( $root_page );
+		$root_href = $def !== '' ? $menu->get_theme_settings_url( $def, $root_page ) : $menu->get_theme_settings_url( '', $root_page );
 
 		$wp_admin_bar->add_node(
 			array(
 				'id'    => 'sto-theme-settings',
-				'title' => $this->format_node_title( __( 'Theme Settings', 'simple-theme-options' ), 'fa-light fa-sliders', '_root' ),
+				'title' => $this->format_node_title( __( 'Theme Settings', 'topten-simple-theme-options' ), 'fa-light fa-sliders', '_root' ),
 				'href'  => $root_href,
 				'meta'  => array(
 					'class' => 'menupop sto-ab-root',
-					'title' => esc_attr__( 'Jump to a Theme Settings section', 'simple-theme-options' ),
+					'title' => esc_attr__( 'Jump to a Theme Settings section', 'topten-simple-theme-options' ),
 				),
 			)
 		);
 
-		foreach ( $menu->get_sections_for_navigation() as $sec ) {
-			if ( empty( $sec['slug'] ) || empty( $sec['name'] ) ) {
-				continue;
-			}
-			if ( $menu->get_section_row_menu_page( $sec ) !== $page ) {
-				continue;
-			}
+		if ( count( $visible_menu_slugs ) === 1 ) {
+			$this->register_leaf_links_for_menu_page( $wp_admin_bar, $menu, $visible_menu_slugs[0], 'sto-theme-settings' );
+		} else {
+			foreach ( $visible_menu_slugs as $menu_page_slug ) {
+				$menu_group_id = 'sto-ts-menu-' . sanitize_key( $menu_page_slug );
+				$menu_label    = $menu->get_registered_menu_page_title( $menu_page_slug );
+				$menu_def      = $menu->get_default_leaf_section_slug_for_menu_page( $menu_page_slug );
+				$menu_href     = $menu_def !== ''
+					? $menu->get_theme_settings_url( $menu_def, $menu_page_slug )
+					: $menu->get_theme_settings_url( '', $menu_page_slug );
 
-			$parent_slug = (string) $sec['slug'];
-			$subs        = $menu->get_sub_sections_for_parent( $parent_slug );
-
-			$sec_icon = isset( $sec['icon'] ) ? (string) $sec['icon'] : '';
-
-			if ( empty( $subs ) ) {
 				$wp_admin_bar->add_node(
 					array(
 						'parent' => 'sto-theme-settings',
-						'id'     => 'sto-ts-' . sanitize_key( $parent_slug ),
-						'title'  => $this->format_node_title( (string) $sec['name'], $sec_icon, $parent_slug ),
-						'href'   => $menu->get_theme_settings_url( $parent_slug, $page ),
+						'id'     => $menu_group_id,
+						'title'  => $this->format_node_title( $menu_label, '', sanitize_key( $menu_page_slug ) ),
+						'href'   => $menu_href,
 						'meta'   => array(
-							'class' => 'sto-ab-leaf-link',
+							'class' => 'menupop sto-ab-menu-group',
 						),
 					)
 				);
-				continue;
-			}
 
-			$group_id   = 'sto-ts-grp-' . sanitize_key( $parent_slug );
-			$first_sub  = $subs[0];
-			$group_href = ! empty( $first_sub['slug'] )
-				? $menu->get_theme_settings_url( (string) $first_sub['slug'], $page )
-				: $menu->get_theme_settings_url( $parent_slug, $page );
-
-			$wp_admin_bar->add_node(
-				array(
-					'parent' => 'sto-theme-settings',
-					'id'     => $group_id,
-					'title'  => $this->format_node_title( (string) $sec['name'], $sec_icon, $parent_slug ),
-					'href'   => $group_href,
-					'meta'   => array(
-						'class' => 'menupop sto-ab-megapop',
-					),
-				)
-			);
-
-			foreach ( $subs as $sub ) {
-				if ( empty( $sub['slug'] ) || empty( $sub['name'] ) ) {
-					continue;
-				}
-				if ( $menu->get_section_row_menu_page( $sub ) !== $page ) {
-					continue;
-				}
-
-				$sub_slug = (string) $sub['slug'];
-				$sub_icon = isset( $sub['icon'] ) ? (string) $sub['icon'] : '';
-
-				$wp_admin_bar->add_node(
-					array(
-						'parent' => $group_id,
-						'id'     => 'sto-ts-' . sanitize_key( $sub_slug ),
-						'title'  => $this->format_node_title( (string) $sub['name'], $sub_icon, $sub_slug ),
-						'href'   => $menu->get_theme_settings_url( $sub_slug, $page ),
-						'meta'   => array(
-							'class' => 'sto-ab-sublink',
-						),
-					)
-				);
+				$this->register_leaf_links_for_menu_page( $wp_admin_bar, $menu, $menu_page_slug, $menu_group_id );
 			}
 		}
 
@@ -251,6 +307,6 @@ final class ThemeSettingsAdminBar {
 		 * @param \WP_Admin_Bar $wp_admin_bar
 		 * @param OptionsMenu   $menu
 		 */
-		do_action( 'sto_admin_bar_theme_settings_registered', $wp_admin_bar, $menu );
+		do_action( 'sto_admin_bar_theme_settings_registered', $wp_admin_bar, $menu ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 	}
 }

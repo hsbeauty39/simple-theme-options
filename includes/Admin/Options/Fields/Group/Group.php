@@ -6,7 +6,6 @@ use SimpleThemeOptions\Admin\Options\Fields\BorderControl\BorderControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\GradientControl\GradientControl;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
-use SimpleThemeOptions\Admin\Options\Fields\RichModernEditor\RichModernEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\LinkColor\LinkColor;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
@@ -315,21 +314,6 @@ final class Group {
 				if ( $fid && CodeEditor::get_field( $section_slug, $fid ) ) {
 					$nodes[] = array(
 						'kind' => 'code_editor',
-						'id'   => $fid,
-						'span' => $span,
-					);
-				}
-				continue;
-			}
-
-			if ( $this->is_rich_modern_editor_item( $item ) ) {
-				$item['section_slug'] = $section_slug;
-				$item['group']        = $parent_group_id;
-				RichModernEditor::register( $item );
-				$fid = isset( $item['id'] ) ? sanitize_key( (string) $item['id'] ) : '';
-				if ( $fid && RichModernEditor::get_field( $section_slug, $fid ) ) {
-					$nodes[] = array(
-						'kind' => 'rich_modern_editor',
 						'id'   => $fid,
 						'span' => $span,
 					);
@@ -704,15 +688,6 @@ final class Group {
 		$type = isset( $item['type'] ) ? sanitize_key( (string) $item['type'] ) : '';
 
 		return in_array( $type, array( 'code_editor', 'codeeditor', 'code' ), true );
-	}
-
-	private function is_rich_modern_editor_item( $item ) {
-		if ( ! is_array( $item ) || empty( $item['id'] ) ) {
-			return false;
-		}
-		$type = isset( $item['type'] ) ? sanitize_key( (string) $item['type'] ) : '';
-
-		return in_array( $type, array( 'rich_modern_editor', 'richmoderneditor', 'block_editor', 'gutenberg' ), true );
 	}
 
 	private function is_link_color_item( $item ) {
@@ -1116,11 +1091,6 @@ final class Group {
 							$cefield = CodeEditor::get_field( $section_slug, (string) $node['id'] );
 							if ( $cefield ) {
 								CodeEditor::instance()->render_field_markup( $cefield, 'group_inner' );
-							}
-						} elseif ( $node['kind'] === 'rich_modern_editor' && ! empty( $node['id'] ) ) {
-							$rmfield = RichModernEditor::get_field( $section_slug, (string) $node['id'] );
-							if ( $rmfield ) {
-								RichModernEditor::instance()->render_field_markup( $rmfield, 'group_inner' );
 							}
 						} elseif ( $node['kind'] === 'link_color' && ! empty( $node['id'] ) ) {
 							$lcfield = LinkColor::get_field( $section_slug, (string) $node['id'] );

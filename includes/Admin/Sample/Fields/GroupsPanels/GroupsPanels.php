@@ -8,7 +8,6 @@ use SimpleThemeOptions\Admin\Options\Fields\BackgroundControl\BackgroundControl;
 use SimpleThemeOptions\Admin\Options\Fields\BorderControl\BorderControl;
 use SimpleThemeOptions\Admin\Options\Fields\ButtonGroup\ButtonGroup;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
-use SimpleThemeOptions\Admin\Options\Fields\RichModernEditor\RichModernEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\DynamicObject\DynamicObject;
 use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
@@ -50,7 +49,6 @@ final class GroupsPanels {
 		ImageSelect::instance();
 		ButtonGroup::instance();
 		CodeEditor::instance();
-		RichModernEditor::instance();
 		DynamicObject::instance();
 		Select::instance();
 		Input::instance();
@@ -745,14 +743,6 @@ final class GroupsPanels {
 						'height'      => 160,
 						'placeholder' => '<!-- -->',
 						'width'       => '1-1',
-					),
-					array(
-						'type'          => 'rich_modern_editor',
-						'id'            => 'cf_rich_modern',
-						'title'         => __( 'Rich modern editor', 'topten-simple-theme-options' ),
-						'description'   => __( 'Gutenberg block editor inside a group panel.', 'topten-simple-theme-options' ),
-						'editor_height' => 280,
-						'width'         => '1-1',
 					),
 					array(
 						'type'        => 'dynamic_object',

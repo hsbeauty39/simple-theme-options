@@ -1,0 +1,17 @@
+.DS_Store
+**/.DS_Store
+.git
+.gitignore
+.gitattributes
+.github
+.cursor
+.distignore
+includes/FreemiusBootstrap.php
+vendor/freemius
+tools
+scripts
+node_modules
+docs
+*.md
+!readme.txt
+instructions.html

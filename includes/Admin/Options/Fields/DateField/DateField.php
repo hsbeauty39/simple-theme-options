@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\DateField;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -82,6 +83,8 @@ final class DateField {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -245,7 +248,7 @@ final class DateField {
 			$label = $title !== '' ? $title : $fid;
 			$messages[] = sprintf(
 				/* translators: %s: field label */
-				__( '“%s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+				__( '“%s” must be filled in before this section can be saved.', 'topten-simple-theme-options' ),
 				$label
 			);
 		}
@@ -392,7 +395,10 @@ final class DateField {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -487,9 +493,9 @@ final class DateField {
 						<?php if ( $placeholder !== '' ) : ?>
 							placeholder="<?php echo esc_attr( $placeholder ); ?>"
 						<?php endif; ?>
-						aria-label="<?php echo esc_attr__( 'Open calendar', 'simple-theme-options' ); ?>"
+						aria-label="<?php echo esc_attr__( 'Open calendar', 'topten-simple-theme-options' ); ?>"
 					/>
-					<button type="button" class="sto-date-field__clear" aria-label="<?php esc_attr_e( 'Clear date', 'simple-theme-options' ); ?>">
+					<button type="button" class="sto-date-field__clear" aria-label="<?php esc_attr_e( 'Clear date', 'topten-simple-theme-options' ); ?>">
 						<span class="sto-date-field__clear-x" aria-hidden="true">&times;</span>
 					</button>
 				</div>

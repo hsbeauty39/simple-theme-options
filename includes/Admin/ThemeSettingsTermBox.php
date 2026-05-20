@@ -208,12 +208,12 @@ final class ThemeSettingsTermBox {
 			return;
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Term add flag; wp_validate_boolean().
 		if ( ! isset( $_POST['sto_ts_term_add'] ) || ! wp_validate_boolean( wp_unslash( (string) $_POST['sto_ts_term_add'] ) ) ) {
 			return;
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( ! isset( $_POST['sto_options'] ) || ! is_array( $_POST['sto_options'] ) ) {
 			return;
 		}

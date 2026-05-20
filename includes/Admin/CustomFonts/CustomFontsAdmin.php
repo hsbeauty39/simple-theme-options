@@ -44,7 +44,7 @@ final class CustomFontsAdmin {
 		<div class="sto-advance-card sto-advance-card--custom-fonts" data-sto-custom-fonts-panel="1">
 			<?php
 			FieldTitle::render_heading(
-				__( 'Custom fonts', 'simple-theme-options' ),
+				__( 'Custom fonts', 'topten-simple-theme-options' ),
 				'default',
 				null,
 				'sto-advance-custom-fonts' . $idsuf,
@@ -54,7 +54,7 @@ final class CustomFontsAdmin {
 			);
 			?>
 			<p class="sto-advance-card__desc">
-				<?php esc_html_e( 'Drag and drop a font file or ZIP here, or use the buttons below. ZIP archives are scanned for font files in any folder; family name, weight, style, and category are detected automatically.', 'simple-theme-options' ); ?>
+				<?php esc_html_e( 'Drag and drop a font file or ZIP here, or use the buttons below. ZIP archives are scanned for font files in any folder; family name, weight, style, and category are detected automatically.', 'topten-simple-theme-options' ); ?>
 			</p>
 
 			<form class="sto-custom-fonts-form" data-sto-custom-fonts-form onsubmit="return false;">
@@ -69,19 +69,19 @@ final class CustomFontsAdmin {
 					/>
 					<span class="sto-advance-dropzone__inner">
 						<i class="fa-light fa-file-arrow-up sto-advance-dropzone__icon" aria-hidden="true"></i>
-						<span class="sto-advance-dropzone__title"><?php esc_html_e( 'Drop a font or ZIP file here', 'simple-theme-options' ); ?></span>
-						<span class="sto-advance-dropzone__hint"><?php esc_html_e( 'or click to browse — WOFF2, WOFF, TTF, OTF, EOT, or ZIP', 'simple-theme-options' ); ?></span>
+						<span class="sto-advance-dropzone__title"><?php esc_html_e( 'Drop a font or ZIP file here', 'topten-simple-theme-options' ); ?></span>
+						<span class="sto-advance-dropzone__hint"><?php esc_html_e( 'or click to browse — WOFF2, WOFF, TTF, OTF, EOT, or ZIP', 'topten-simple-theme-options' ); ?></span>
 					</span>
 				</label>
 
 				<div class="sto-advance-card__actions sto-custom-fonts-form__actions">
 					<button type="button" class="button sto-advance-btn" data-sto-custom-font-pick>
 						<i class="fa-light fa-file-arrow-up" aria-hidden="true"></i>
-						<?php esc_html_e( 'Choose font or ZIP', 'simple-theme-options' ); ?>
+						<?php esc_html_e( 'Choose font or ZIP', 'topten-simple-theme-options' ); ?>
 					</button>
 					<button type="button" class="button button-primary sto-advance-btn" data-sto-custom-font-add disabled>
 						<i class="fa-light fa-plus" aria-hidden="true"></i>
-						<span data-sto-custom-font-add-label><?php esc_html_e( 'Add font', 'simple-theme-options' ); ?></span>
+						<span data-sto-custom-font-add-label><?php esc_html_e( 'Add font', 'topten-simple-theme-options' ); ?></span>
 					</button>
 				</div>
 
@@ -89,26 +89,26 @@ final class CustomFontsAdmin {
 
 				<div class="sto-custom-fonts-preview" data-sto-custom-fonts-preview hidden>
 					<div class="sto-custom-fonts-preview__row">
-						<span class="sto-custom-fonts-preview__label"><?php esc_html_e( 'Source', 'simple-theme-options' ); ?></span>
+						<span class="sto-custom-fonts-preview__label"><?php esc_html_e( 'Source', 'topten-simple-theme-options' ); ?></span>
 						<span class="sto-custom-fonts-preview__value" data-sto-preview-file></span>
 					</div>
 
 					<div class="sto-custom-fonts-preview__single" data-sto-preview-single>
 						<div class="sto-custom-fonts-preview__row">
-							<span class="sto-custom-fonts-preview__label"><?php esc_html_e( 'Detected family', 'simple-theme-options' ); ?></span>
+							<span class="sto-custom-fonts-preview__label"><?php esc_html_e( 'Detected family', 'topten-simple-theme-options' ); ?></span>
 							<span class="sto-custom-fonts-preview__value" data-sto-preview-family></span>
 						</div>
 						<div class="sto-custom-fonts-preview__row sto-custom-fonts-preview__row--cols">
 							<span>
-								<span class="sto-custom-fonts-preview__label"><?php esc_html_e( 'Weight', 'simple-theme-options' ); ?></span>
+								<span class="sto-custom-fonts-preview__label"><?php esc_html_e( 'Weight', 'topten-simple-theme-options' ); ?></span>
 								<span class="sto-custom-fonts-preview__value" data-sto-preview-weight></span>
 							</span>
 							<span>
-								<span class="sto-custom-fonts-preview__label"><?php esc_html_e( 'Style', 'simple-theme-options' ); ?></span>
+								<span class="sto-custom-fonts-preview__label"><?php esc_html_e( 'Style', 'topten-simple-theme-options' ); ?></span>
 								<span class="sto-custom-fonts-preview__value" data-sto-preview-style></span>
 							</span>
 							<span>
-								<span class="sto-custom-fonts-preview__label"><?php esc_html_e( 'Category', 'simple-theme-options' ); ?></span>
+								<span class="sto-custom-fonts-preview__label"><?php esc_html_e( 'Category', 'topten-simple-theme-options' ); ?></span>
 								<span class="sto-custom-fonts-preview__value" data-sto-preview-category></span>
 							</span>
 						</div>
@@ -122,11 +122,11 @@ final class CustomFontsAdmin {
 							<table class="sto-custom-fonts-preview__zip-table widefat">
 								<thead>
 									<tr>
-										<th scope="col"><?php esc_html_e( 'File', 'simple-theme-options' ); ?></th>
-										<th scope="col"><?php esc_html_e( 'Family', 'simple-theme-options' ); ?></th>
-										<th scope="col"><?php esc_html_e( 'Weight', 'simple-theme-options' ); ?></th>
-										<th scope="col"><?php esc_html_e( 'Style', 'simple-theme-options' ); ?></th>
-										<th scope="col"><?php esc_html_e( 'Category', 'simple-theme-options' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'File', 'topten-simple-theme-options' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Family', 'topten-simple-theme-options' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Weight', 'topten-simple-theme-options' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Style', 'topten-simple-theme-options' ); ?></th>
+										<th scope="col"><?php esc_html_e( 'Category', 'topten-simple-theme-options' ); ?></th>
 									</tr>
 								</thead>
 								<tbody data-sto-preview-zip-tbody></tbody>
@@ -156,25 +156,25 @@ final class CustomFontsAdmin {
 			data-sto-custom-fonts-live
 			<?php echo $has_imported ? '' : ' hidden'; ?>
 		>
-			<h4 class="sto-custom-fonts-live__title"><?php esc_html_e( 'Live preview', 'simple-theme-options' ); ?></h4>
+			<h4 class="sto-custom-fonts-live__title"><?php esc_html_e( 'Live preview', 'topten-simple-theme-options' ); ?></h4>
 			<p class="sto-custom-fonts-live__desc">
-				<?php esc_html_e( 'Choose a font family and style to preview type before using it in Typography fields.', 'simple-theme-options' ); ?>
+				<?php esc_html_e( 'Choose a font family and style to preview type before using it in Typography fields.', 'topten-simple-theme-options' ); ?>
 			</p>
 			<p class="sto-custom-fonts-live__mode" data-sto-live-mode-label hidden></p>
 			<div class="sto-custom-fonts-live__controls">
 				<div class="sto-custom-fonts-live__field">
-					<label class="sto-custom-fonts-live__label" for="sto-custom-font-live-family"><?php esc_html_e( 'Font family', 'simple-theme-options' ); ?></label>
+					<label class="sto-custom-fonts-live__label" for="sto-custom-font-live-family"><?php esc_html_e( 'Font family', 'topten-simple-theme-options' ); ?></label>
 					<select id="sto-custom-font-live-family" class="sto-input-select" data-sto-live-family></select>
 				</div>
 				<div class="sto-custom-fonts-live__field">
-					<label class="sto-custom-fonts-live__label" for="sto-custom-font-live-variant"><?php esc_html_e( 'Font style', 'simple-theme-options' ); ?></label>
+					<label class="sto-custom-fonts-live__label" for="sto-custom-font-live-variant"><?php esc_html_e( 'Font style', 'topten-simple-theme-options' ); ?></label>
 					<select id="sto-custom-font-live-variant" class="sto-input-select" data-sto-live-variant></select>
 				</div>
 			</div>
 			<div class="sto-custom-fonts-live__sample" data-sto-custom-fonts-live-sample>
 				<p class="sto-custom-fonts-live__glyphs"><?php echo esc_html( '1 2 3 4 5 6 7 8 9 0 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b c d e f g h i j k l m n o p q r s t u v w x y z' ); ?></p>
-				<p class="sto-custom-fonts-live__heading" data-sto-live-heading><?php esc_html_e( 'The quick brown fox jumps over the lazy dog', 'simple-theme-options' ); ?></p>
-				<p class="sto-custom-fonts-live__body" data-sto-live-body><?php esc_html_e( 'Typography is the art and technique of arranging type to make written language legible, readable, and appealing.', 'simple-theme-options' ); ?></p>
+				<p class="sto-custom-fonts-live__heading" data-sto-live-heading><?php esc_html_e( 'The quick brown fox jumps over the lazy dog', 'topten-simple-theme-options' ); ?></p>
+				<p class="sto-custom-fonts-live__body" data-sto-live-body><?php esc_html_e( 'Typography is the art and technique of arranging type to make written language legible, readable, and appealing.', 'topten-simple-theme-options' ); ?></p>
 			</div>
 		</div>
 		<?php
@@ -188,7 +188,7 @@ final class CustomFontsAdmin {
 		<div class="sto-custom-fonts-table-wrap" data-sto-custom-fonts-table-wrap>
 			<?php if ( $faces === array() ) : ?>
 				<p class="sto-custom-fonts-empty" data-sto-custom-fonts-empty>
-					<?php esc_html_e( 'No custom fonts yet. Upload a font file or ZIP above to add your first font.', 'simple-theme-options' ); ?>
+					<?php esc_html_e( 'No custom fonts yet. Upload a font file or ZIP above to add your first font.', 'topten-simple-theme-options' ); ?>
 				</p>
 			<?php else : ?>
 				<div class="sto-custom-fonts-table-toolbar">
@@ -198,7 +198,7 @@ final class CustomFontsAdmin {
 						data-sto-custom-fonts-bulk-delete
 						disabled
 					>
-						<?php esc_html_e( 'Delete selected', 'simple-theme-options' ); ?>
+						<?php esc_html_e( 'Delete selected', 'topten-simple-theme-options' ); ?>
 					</button>
 				</div>
 				<table class="sto-custom-fonts-table widefat striped">
@@ -209,15 +209,15 @@ final class CustomFontsAdmin {
 									type="checkbox"
 									id="sto-custom-font-select-all"
 									data-sto-custom-font-select-all
-									aria-label="<?php esc_attr_e( 'Select all fonts', 'simple-theme-options' ); ?>"
+									aria-label="<?php esc_attr_e( 'Select all fonts', 'topten-simple-theme-options' ); ?>"
 								/>
 							</td>
-							<th scope="col"><?php esc_html_e( 'Family', 'simple-theme-options' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Weight', 'simple-theme-options' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Style', 'simple-theme-options' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Variant', 'simple-theme-options' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'File', 'simple-theme-options' ); ?></th>
-							<th scope="col" class="sto-custom-fonts-table__actions-col"><?php esc_html_e( 'Actions', 'simple-theme-options' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Family', 'topten-simple-theme-options' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Weight', 'topten-simple-theme-options' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Style', 'topten-simple-theme-options' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Variant', 'topten-simple-theme-options' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'File', 'topten-simple-theme-options' ); ?></th>
+							<th scope="col" class="sto-custom-fonts-table__actions-col"><?php esc_html_e( 'Actions', 'topten-simple-theme-options' ); ?></th>
 						</tr>
 					</thead>
 					<tbody data-sto-custom-fonts-tbody>
@@ -259,7 +259,7 @@ final class CustomFontsAdmin {
 					name="sto_custom_font_ids[]"
 					value="<?php echo esc_attr( $id ); ?>"
 					data-sto-custom-font-select
-					aria-label="<?php echo esc_attr( sprintf( /* translators: %s: font family name */ __( 'Select %s', 'simple-theme-options' ), $family ) ); ?>"
+					aria-label="<?php echo esc_attr( sprintf( /* translators: %s: font family name */ __( 'Select %s', 'topten-simple-theme-options' ), $family ) ); ?>"
 				/>
 			</th>
 			<td><strong><?php echo esc_html( $family ); ?></strong></td>
@@ -269,7 +269,7 @@ final class CustomFontsAdmin {
 			<td class="sto-custom-fonts-table__file"><?php echo esc_html( $file_label ); ?></td>
 			<td class="sto-custom-fonts-table__actions-col">
 				<button type="button" class="button-link-delete" data-sto-custom-font-delete data-face-id="<?php echo esc_attr( $id ); ?>">
-					<?php esc_html_e( 'Delete', 'simple-theme-options' ); ?>
+					<?php esc_html_e( 'Delete', 'topten-simple-theme-options' ); ?>
 				</button>
 			</td>
 		</tr>
@@ -329,15 +329,16 @@ final class CustomFontsAdmin {
 	public function ajax_upload(): void {
 		check_ajax_referer( self::AJAX_NONCE_ACTION, 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Forbidden', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Forbidden', 'topten-simple-theme-options' ) ), 403 );
 		}
 
 		if ( empty( $_FILES['file'] ) || ! is_array( $_FILES['file'] ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'No file was uploaded.', 'simple-theme-options' ) )
+				array( 'message' => __( 'No file was uploaded.', 'topten-simple-theme-options' ) )
 			);
 		}
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Validated in CustomFontsRegistry::upload_font_file().
 		$result = CustomFontsRegistry::upload_font_file( $_FILES['file'] );
 		if ( ! $result['ok'] ) {
 			wp_send_json_error(
@@ -356,7 +357,7 @@ final class CustomFontsAdmin {
 	public function ajax_preview(): void {
 		check_ajax_referer( self::AJAX_NONCE_ACTION, 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Forbidden', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Forbidden', 'topten-simple-theme-options' ) ), 403 );
 		}
 
 		$attachment_id = isset( $_POST['attachment_id'] ) ? (int) $_POST['attachment_id'] : 0;
@@ -393,7 +394,7 @@ final class CustomFontsAdmin {
 	public function ajax_add(): void {
 		check_ajax_referer( self::AJAX_NONCE_ACTION, 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Forbidden', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Forbidden', 'topten-simple-theme-options' ) ), 403 );
 		}
 
 		$attachment_id       = isset( $_POST['attachment_id'] ) ? (int) $_POST['attachment_id'] : 0;
@@ -427,24 +428,10 @@ final class CustomFontsAdmin {
 	}
 
 	/**
+	 * @param array<int, string|int> $raw_ids Unslashed face id(s) from the verified AJAX request.
 	 * @return array<int, string>
 	 */
-	private function collect_delete_face_ids_from_request(): array {
-		$raw_ids = array();
-
-		if ( isset( $_POST['face_ids'] ) ) {
-			$raw = wp_unslash( $_POST['face_ids'] );
-			if ( is_array( $raw ) ) {
-				$raw_ids = $raw;
-			} elseif ( is_string( $raw ) && $raw !== '' ) {
-				$raw_ids = array( $raw );
-			}
-		}
-
-		if ( $raw_ids === array() && isset( $_POST['face_id'] ) ) {
-			$raw_ids = array( wp_unslash( (string) $_POST['face_id'] ) );
-		}
-
+	private function normalize_delete_face_ids( array $raw_ids ): array {
 		$face_ids = array();
 		foreach ( $raw_ids as $raw_id ) {
 			$id = CustomFontsRegistry::sanitize_face_id( (string) $raw_id );
@@ -459,15 +446,30 @@ final class CustomFontsAdmin {
 	public function ajax_delete(): void {
 		check_ajax_referer( self::AJAX_NONCE_ACTION, 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Forbidden', 'simple-theme-options' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Forbidden', 'topten-simple-theme-options' ) ), 403 );
 		}
 
-		$face_ids = $this->collect_delete_face_ids_from_request();
+		$raw_ids = array();
+		if ( isset( $_POST['face_ids'] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array or string; each id passed through sanitize_face_id() below.
+			$raw = wp_unslash( $_POST['face_ids'] );
+			if ( is_array( $raw ) ) {
+				$raw_ids = $raw;
+			} elseif ( is_string( $raw ) && $raw !== '' ) {
+				$raw_ids = array( $raw );
+			}
+		}
+		if ( $raw_ids === array() && isset( $_POST['face_id'] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_face_id() below.
+			$raw_ids = array( wp_unslash( (string) $_POST['face_id'] ) );
+		}
+
+		$face_ids = $this->normalize_delete_face_ids( $raw_ids );
 
 		$deleted = CustomFontsRegistry::delete_faces( $face_ids );
 		if ( $deleted <= 0 ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Could not delete the selected font(s).', 'simple-theme-options' ) )
+				array( 'message' => __( 'Could not delete the selected font(s).', 'topten-simple-theme-options' ) )
 			);
 		}
 
@@ -478,10 +480,10 @@ final class CustomFontsAdmin {
 		$message = $deleted > 1
 			? sprintf(
 				/* translators: %d: number of fonts deleted */
-				__( '%d custom fonts removed from the typography list.', 'simple-theme-options' ),
+				__( '%d custom fonts removed from the typography list.', 'topten-simple-theme-options' ),
 				$deleted
 			)
-			: __( 'Custom font removed from the typography list.', 'simple-theme-options' );
+			: __( 'Custom font removed from the typography list.', 'topten-simple-theme-options' );
 
 		wp_send_json_success(
 			array(

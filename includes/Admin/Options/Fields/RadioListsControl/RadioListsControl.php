@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\RadioListsControl;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -85,6 +86,8 @@ final class RadioListsControl {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -458,19 +461,22 @@ final class RadioListsControl {
 		}
 
 		$i18n = array(
-			'addMore'   => __( 'Add list', 'simple-theme-options' ),
-			'remove'    => __( 'Remove list', 'simple-theme-options' ),
-			'drag'      => __( 'Drag to reorder', 'simple-theme-options' ),
-			'rowTitlePh'=> __( 'List label (optional)', 'simple-theme-options' ),
-			'rowTitleLbl'=> __( 'List label', 'simple-theme-options' ),
-			'chooseLbl' => __( 'Choose one option', 'simple-theme-options' ),
+			'addMore'   => __( 'Add list', 'topten-simple-theme-options' ),
+			'remove'    => __( 'Remove list', 'topten-simple-theme-options' ),
+			'drag'      => __( 'Drag to reorder', 'topten-simple-theme-options' ),
+			'rowTitlePh'=> __( 'List label (optional)', 'topten-simple-theme-options' ),
+			'rowTitleLbl'=> __( 'List label', 'topten-simple-theme-options' ),
+			'chooseLbl' => __( 'Choose one option', 'topten-simple-theme-options' ),
 		);
 
 		$input_name = 'sto_options[' . $field_id . ']';
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -634,7 +640,7 @@ final class RadioListsControl {
 			$label  = $titles !== '' ? $titles : $fid;
 			$messages[] = sprintf(
 				/* translators: %s: field label */
-				__( '“%s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+				__( '“%s” must be filled in before this section can be saved.', 'topten-simple-theme-options' ),
 				$label
 			);
 		}

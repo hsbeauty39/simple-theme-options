@@ -7,9 +7,11 @@
 
 defined( 'ABSPATH' ) || exit;
 
+// Public theme API (`sto_*` helpers) intentionally uses the `sto_` prefix rather than the bootstrap filename prefix.
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+
 use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Common\ResponsiveConfig;
-use SimpleThemeOptions\Admin\Options\Fields\AlignmentControl\AlignmentControl;
 use SimpleThemeOptions\Admin\Options\Fields\Dimension\Dimension;
 use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\GalleryControl\GalleryControl;
@@ -224,6 +226,24 @@ function sto_color_field_background_css( $field_id, $fallback_hex = '#ffffff' ) 
 }
 
 /**
+ * One STO field value saved on a post (metabox), without merging global `sto_options`.
+ *
+ * @param string   $field_id Registered field `id`.
+ * @param int|null $post_id  Post ID or null for the current post in the loop.
+ * @param mixed    $default  When the key is absent on this post.
+ * @return mixed
+ */
+function sto_get_post_option( $field_id, $post_id = null, $default = null ) {
+	$field_id = sanitize_key( (string) $field_id );
+	if ( $field_id === '' ) {
+		return $default;
+	}
+	$overrides = sto_get_post_theme_setting_overrides( $post_id );
+
+	return array_key_exists( $field_id, $overrides ) ? $overrides[ $field_id ] : $default;
+}
+
+/**
  * Option keys saved from the Theme Settings post editor metabox for one post (merged over global `sto_options` when reading with {@see sto_get_effective_options_for_post()}).
  *
  * @param int|null $post_id Post ID or null for current post in the loop.
@@ -323,7 +343,7 @@ function sto_get_responsive_option( $id, $viewport_width = null, $default = null
 	$stored = $opts[ $id ];
 
 	if ( null === $viewport_width ) {
-		$viewport_width = (int) apply_filters( 'sto_default_viewport_width_for_read', 0 );
+		$viewport_width = (int) apply_filters( 'sto_default_viewport_width_for_read', 0 ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 	}
 	if ( $viewport_width < 1 ) {
 		if ( is_array( $stored ) && ResponsiveConfig::is_breakpoint_value_map( $stored ) ) {
@@ -493,22 +513,6 @@ function sto_get_icon_select_field( $field_id, $scalar_or_null = null ) {
 }
 
 /**
- * CSS fragment from a registered **Alignment** field’s **`css_map`** for the current (or overridden) stored key.
- *
- * @param string      $field_id       Option key in `sto_options`.
- * @param string|null $json_or_scalar When non-null, use this scalar key instead of reading `sto_options` (preview / import).
- * @return string e.g. `center` for `justify-content` — whatever you registered per option key.
- */
-function sto_get_alignment_css_fragment( $field_id, $json_or_scalar = null ) {
-	$field_id = sanitize_key( (string) $field_id );
-	if ( $field_id === '' ) {
-		return '';
-	}
-
-	return AlignmentControl::instance()->get_css_fragment_for_value( $field_id, $json_or_scalar );
-}
-
-/**
  * Ordered list of **image attachment IDs** from a registered **Gallery** field (`sto_options[id]` JSON or per-breakpoint map).
  *
  * @param string      $field_id       Option key in `sto_options`.
@@ -600,3 +604,5 @@ function sto_get_google_map_field( $field_id, $json_or_scalar = null ) {
 
 	return GoogleMapControl::instance()->get_map_payload_for_field( $field_id, $json_or_scalar );
 }
+
+// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound

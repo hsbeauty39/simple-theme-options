@@ -131,7 +131,7 @@
             $suffix.val(cOut);
         }
 
-        var json = JSON.stringify({ v: vOut, u: u, c: cOut });
+        var json = JSON.stringify({ value: vOut, unit: u, custom_suffix: cOut });
         $hidden.val(json);
 
         if (vOut === '') {
@@ -159,13 +159,15 @@
         var $suffix = $wrap.find('.sto-range__custom-suffix');
         var allowed = readAllowedUnits($wrap);
         var u0 = allowed[0] || 'px';
-        var o = parseJsonObject(($hidden.val() || '').trim()) || { v: '', u: u0, c: '' };
-        var u = String(o.u || u0).toLowerCase();
+        var o = parseJsonObject(($hidden.val() || '').trim()) || { value: '', unit: u0, custom_suffix: '' };
+        var u = String(o.unit != null ? o.unit : (o.u != null ? o.u : u0)).toLowerCase();
         if (allowed.indexOf(u) === -1) {
             u = allowed[0];
         }
         applyUnitUi($wrap, u);
-        var vStr = o.v === undefined || o.v === null ? '' : String(o.v).trim();
+        var vStr = o.value === undefined || o.value === null
+            ? (o.v === undefined || o.v === null ? '' : String(o.v).trim())
+            : String(o.value).trim();
         if (vStr !== '' && !isNaN(parseFloat(vStr))) {
             var n = clamp(roundStep(parseFloat(vStr), meta.step), meta.min, meta.max);
             var vs = formatNum(n, meta.step);
@@ -180,7 +182,7 @@
             setSliderFill($slider, meta.min, meta.max, meta.min);
         }
         if (u === 'custom' && customSuffixUiEnabled($wrap)) {
-            $suffix.val(String(o.c || ''));
+            $suffix.val(String(o.custom_suffix != null ? o.custom_suffix : (o.c || '')));
         }
     }
 
@@ -206,7 +208,7 @@
             var u = activeUnit($wrap);
             var suffixUi = customSuffixUiEnabled($wrap);
             var cOut = (u === 'custom' && suffixUi) ? String($suffix.val() || '').replace(/[^a-zA-Z0-9%]/g, '').slice(0, 12) : '';
-            $hidden.val(JSON.stringify({ v: vs, u: u, c: cOut }));
+            $hidden.val(JSON.stringify({ value: vs, unit: u, custom_suffix: cOut }));
             window.setTimeout(function() {
                 $hidden.trigger('change');
             }, 0);

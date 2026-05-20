@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\DynamicObject;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -77,6 +78,8 @@ final class DynamicObject {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -156,7 +159,7 @@ final class DynamicObject {
 		} else {
 			$field['placeholder'] = sprintf(
 				/* translators: %d: minimum number of characters before AJAX search runs */
-				__( 'Type at least %d characters to search…', 'simple-theme-options' ),
+				__( 'Type at least %d characters to search…', 'topten-simple-theme-options' ),
 				$min_search
 			);
 		}
@@ -481,7 +484,7 @@ final class DynamicObject {
 		 * @param bool   $allowed
 		 * @param string $post_type
 		 */
-		return (bool) apply_filters( 'sto_dynamic_object_is_post_type_allowed', $allowed, $post_type );
+		return (bool) apply_filters( 'sto_dynamic_object_is_post_type_allowed', $allowed, $post_type ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 	}
 
 	public function ajax_search() {
@@ -563,7 +566,7 @@ final class DynamicObject {
 		 * @param array<string, mixed> $args
 		 * @param string               $field_id
 		 */
-		$args = apply_filters( 'sto_dynamic_object_query_args', $args, $field_id );
+		$args = apply_filters( 'sto_dynamic_object_query_args', $args, $field_id ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 
 		$query = new \WP_Query( $args );
 		$results = array();
@@ -731,7 +734,10 @@ final class DynamicObject {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"

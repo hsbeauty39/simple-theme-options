@@ -82,15 +82,23 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0.55rem 1.15rem;
+	padding: 0.6rem 1.25rem;
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: 700;
 	line-height: 1.2;
 	text-decoration: none;
 	color: #fff;
-	border-radius: 8px;
-	background: linear-gradient(135deg, #7c3aed 0%, #db2777 52%, #ea580c 100%);
-	box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+	border-radius: 10px;
+	background: linear-gradient(
+		90deg,
+		#6d28d9 0%,
+		#a21caf 38%,
+		#db2777 62%,
+		#ea580c 100%
+	);
+	box-shadow:
+		0 4px 16px rgba(109, 40, 217, 0.38),
+		0 1px 0 rgba(255, 255, 255, 0.2) inset;
 	transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
@@ -110,4 +118,182 @@
 
 .sto-field-row--in-group .sto-premium-locked__card {
 	padding: 1rem 1.1rem 1.1rem;
+}
+
+/* Full-width upgrade banner above Theme Settings panel (non-Pro sites). */
+.sto-premium-panel-banner {
+	position: relative;
+	overflow: hidden;
+	max-width: min(1350px, 100%);
+	margin: 0 0 14px;
+	border-radius: 12px;
+	border: 1px solid rgba(99, 102, 241, 0.28);
+	background: linear-gradient(
+		118deg,
+		#eef2ff 0%,
+		#e0e7ff 22%,
+		#fae8ff 48%,
+		#ffedd5 78%,
+		#fef3c7 100%
+	);
+	box-shadow:
+		0 10px 28px rgba(79, 70, 229, 0.12),
+		0 1px 0 rgba(255, 255, 255, 0.75) inset;
+}
+
+.sto-premium-panel-banner__glow {
+	position: absolute;
+	inset: -30% auto auto -8%;
+	width: 42%;
+	height: 160%;
+	background: radial-gradient(
+		ellipse at center,
+		rgba(124, 58, 237, 0.22) 0%,
+		transparent 70%
+	);
+	pointer-events: none;
+}
+
+.sto-premium-panel-banner__inner {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.25rem 1.75rem;
+	padding: 1.35rem 1.5rem 1.45rem;
+}
+
+.sto-premium-panel-banner__copy {
+	flex: 1 1 280px;
+	min-width: 0;
+}
+
+.sto-premium-panel-banner__eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0 0 0.5rem;
+	padding: 0.22rem 0.65rem;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #5b21b6;
+	background: rgba(255, 255, 255, 0.78);
+	border: 1px solid rgba(139, 92, 246, 0.35);
+	border-radius: 999px;
+}
+
+.sto-premium-panel-banner__eyebrow-icon {
+	font-size: 12px;
+}
+
+.sto-premium-panel-banner__title {
+	margin: 0 0 0.45rem;
+	font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+	font-weight: 700;
+	line-height: 1.25;
+	color: #1e1b4b;
+}
+
+.sto-premium-panel-banner__lead {
+	margin: 0 0 0.75rem;
+	max-width: 46rem;
+	font-size: 13px;
+	line-height: 1.55;
+	color: #334155;
+}
+
+.sto-premium-panel-banner__features {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.45rem 1rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.sto-premium-panel-banner__features li {
+	position: relative;
+	margin: 0;
+	padding-left: 1.1rem;
+	font-size: 12px;
+	font-weight: 600;
+	color: #4c1d95;
+}
+
+.sto-premium-panel-banner__features li::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0.45em;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #7c3aed, #db2777);
+	box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.18);
+}
+
+.sto-premium-panel-banner__actions {
+	flex: 0 0 auto;
+}
+
+.sto-premium-panel-banner__cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.45rem;
+	padding: 0.75rem 1.4rem;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.2;
+	text-decoration: none;
+	color: #fff;
+	white-space: nowrap;
+	border-radius: 10px;
+	background: linear-gradient(
+		90deg,
+		#6d28d9 0%,
+		#a21caf 38%,
+		#db2777 62%,
+		#ea580c 100%
+	);
+	box-shadow:
+		0 6px 20px rgba(109, 40, 217, 0.38),
+		0 1px 0 rgba(255, 255, 255, 0.25) inset;
+	transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.sto-premium-panel-banner__cta:hover,
+.sto-premium-panel-banner__cta:focus {
+	color: #fff;
+	text-decoration: none;
+	transform: translateY(-2px);
+	box-shadow: 0 10px 26px rgba(109, 40, 217, 0.45);
+	filter: brightness(1.05);
+}
+
+.sto-premium-panel-banner__cta:focus-visible {
+	outline: 2px solid #7c3aed;
+	outline-offset: 3px;
+}
+
+.sto-premium-panel-banner__cta-icon {
+	font-size: 12px;
+	opacity: 0.92;
+}
+
+@media (max-width: 782px) {
+	.sto-premium-panel-banner__inner {
+		padding: 1.15rem 1.1rem 1.2rem;
+	}
+
+	.sto-premium-panel-banner__actions {
+		width: 100%;
+	}
+
+	.sto-premium-panel-banner__cta {
+		width: 100%;
+	}
 }

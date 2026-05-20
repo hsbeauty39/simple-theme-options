@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\IconSelect;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -110,7 +111,7 @@ final class IconSelect {
 			$clean[] = array( 'c' => $c, 'n' => $n, 'g' => $g );
 		}
 
-		$clean = apply_filters( 'sto_icon_select_manifest', $clean );
+		$clean = apply_filters( 'sto_icon_select_manifest', $clean ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 		if ( ! is_array( $clean ) ) {
 			$clean = array();
 		}
@@ -186,7 +187,7 @@ final class IconSelect {
 			return self::$dashicons_validated_cache;
 		}
 		$out       = array();
-		$dash_rows = apply_filters( 'sto_icon_select_dashicons', self::get_dashicon_rows_from_core() );
+		$dash_rows = apply_filters( 'sto_icon_select_dashicons', self::get_dashicon_rows_from_core() ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 		if ( is_array( $dash_rows ) ) {
 			foreach ( $dash_rows as $row ) {
 				if ( ! is_array( $row ) ) {
@@ -324,13 +325,13 @@ final class IconSelect {
 								<i class="<?php echo esc_attr( $current ); ?>" aria-hidden="true"></i>
 							<?php endif; ?>
 						<?php else : ?>
-							<span class="sto-icon-select__placeholder"><?php esc_html_e( 'No icon', 'simple-theme-options' ); ?></span>
+							<span class="sto-icon-select__placeholder"><?php esc_html_e( 'No icon', 'topten-simple-theme-options' ); ?></span>
 						<?php endif; ?>
 					</span>
-					<span class="sto-icon-select__preview-hint"><?php esc_html_e( 'Click to choose', 'simple-theme-options' ); ?></span>
+					<span class="sto-icon-select__preview-hint"><?php esc_html_e( 'Click to choose', 'topten-simple-theme-options' ); ?></span>
 				</button>
 				<?php if ( $allow_clear ) : ?>
-					<button type="button" class="sto-icon-select__clear" data-sto-icon-select-clear aria-label="<?php esc_attr_e( 'Clear icon', 'simple-theme-options' ); ?>">
+					<button type="button" class="sto-icon-select__clear" data-sto-icon-select-clear aria-label="<?php esc_attr_e( 'Clear icon', 'topten-simple-theme-options' ); ?>">
 						<i class="fa-light fa-xmark" aria-hidden="true"></i>
 					</button>
 				<?php endif; ?>
@@ -355,24 +356,24 @@ final class IconSelect {
 				<div class="sto-icon-select__backdrop" data-sto-icon-select-close tabindex="-1" aria-hidden="true"></div>
 				<div class="sto-icon-select__panel" role="document">
 					<header class="sto-icon-select__head">
-						<h2 class="sto-icon-select__title" id="<?php echo esc_attr( $wid . '_title' ); ?>"><?php esc_html_e( 'Icon library', 'simple-theme-options' ); ?></h2>
-						<button type="button" class="sto-icon-select__close" data-sto-icon-select-close aria-label="<?php esc_attr_e( 'Close', 'simple-theme-options' ); ?>">
+						<h2 class="sto-icon-select__title" id="<?php echo esc_attr( $wid . '_title' ); ?>"><?php esc_html_e( 'Icon library', 'topten-simple-theme-options' ); ?></h2>
+						<button type="button" class="sto-icon-select__close" data-sto-icon-select-close aria-label="<?php esc_attr_e( 'Close', 'topten-simple-theme-options' ); ?>">
 							<i class="fa-light fa-xmark" aria-hidden="true"></i>
 						</button>
 					</header>
 					<div class="sto-icon-select__layout">
-						<nav class="sto-icon-select__nav" aria-label="<?php esc_attr_e( 'Icon library filters', 'simple-theme-options' ); ?>">
-							<button type="button" class="sto-icon-select__nav-btn sto-is-active" data-sto-icon-filter="all"><?php esc_html_e( 'All icons', 'simple-theme-options' ); ?></button>
-							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="solid"><?php esc_html_e( 'Solid', 'simple-theme-options' ); ?></button>
-							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="regular"><?php esc_html_e( 'Regular', 'simple-theme-options' ); ?></button>
-							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="light"><?php esc_html_e( 'Light', 'simple-theme-options' ); ?></button>
-							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="brands"><?php esc_html_e( 'Brands', 'simple-theme-options' ); ?></button>
-							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="wordpress"><?php esc_html_e( 'WordPress', 'simple-theme-options' ); ?></button>
+						<nav class="sto-icon-select__nav" aria-label="<?php esc_attr_e( 'Icon library filters', 'topten-simple-theme-options' ); ?>">
+							<button type="button" class="sto-icon-select__nav-btn sto-is-active" data-sto-icon-filter="all"><?php esc_html_e( 'All icons', 'topten-simple-theme-options' ); ?></button>
+							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="solid"><?php esc_html_e( 'Solid', 'topten-simple-theme-options' ); ?></button>
+							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="regular"><?php esc_html_e( 'Regular', 'topten-simple-theme-options' ); ?></button>
+							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="light"><?php esc_html_e( 'Light', 'topten-simple-theme-options' ); ?></button>
+							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="brands"><?php esc_html_e( 'Brands', 'topten-simple-theme-options' ); ?></button>
+							<button type="button" class="sto-icon-select__nav-btn" data-sto-icon-filter="wordpress"><?php esc_html_e( 'WordPress', 'topten-simple-theme-options' ); ?></button>
 						</nav>
 						<div class="sto-icon-select__main">
 							<div class="sto-icon-select__search-wrap">
-								<label class="screen-reader-text" for="<?php echo esc_attr( $wid . '_q' ); ?>"><?php esc_html_e( 'Filter by name', 'simple-theme-options' ); ?></label>
-								<input type="search" class="sto-icon-select__search sto-input-text" id="<?php echo esc_attr( $wid . '_q' ); ?>" data-sto-icon-select-q placeholder="<?php esc_attr_e( 'Filter by name…', 'simple-theme-options' ); ?>" autocomplete="off" />
+								<label class="screen-reader-text" for="<?php echo esc_attr( $wid . '_q' ); ?>"><?php esc_html_e( 'Filter by name', 'topten-simple-theme-options' ); ?></label>
+								<input type="search" class="sto-icon-select__search sto-input-text" id="<?php echo esc_attr( $wid . '_q' ); ?>" data-sto-icon-select-q placeholder="<?php esc_attr_e( 'Filter by name…', 'topten-simple-theme-options' ); ?>" autocomplete="off" />
 								<span class="sto-icon-select__search-icon" aria-hidden="true"><i class="fa-light fa-magnifying-glass"></i></span>
 							</div>
 							<div class="sto-icon-select__grid-wrap">
@@ -381,8 +382,8 @@ final class IconSelect {
 						</div>
 					</div>
 					<footer class="sto-icon-select__foot">
-						<button type="button" class="button sto-icon-select__btn-secondary" data-sto-icon-select-close><?php esc_html_e( 'Cancel', 'simple-theme-options' ); ?></button>
-						<button type="button" class="button button-primary sto-icon-select__insert" data-sto-icon-select-insert disabled><?php esc_html_e( 'Insert', 'simple-theme-options' ); ?></button>
+						<button type="button" class="button sto-icon-select__btn-secondary" data-sto-icon-select-close><?php esc_html_e( 'Cancel', 'topten-simple-theme-options' ); ?></button>
+						<button type="button" class="button button-primary sto-icon-select__insert" data-sto-icon-select-insert disabled><?php esc_html_e( 'Insert', 'topten-simple-theme-options' ); ?></button>
 					</footer>
 				</div>
 			</div>
@@ -426,6 +427,8 @@ final class IconSelect {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -665,7 +668,10 @@ final class IconSelect {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -824,7 +830,7 @@ final class IconSelect {
 			$label = $title !== '' ? $title : $fid;
 			$messages[] = sprintf(
 				/* translators: %s: field label */
-				__( '“%s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+				__( '“%s” must be filled in before this section can be saved.', 'topten-simple-theme-options' ),
 				$label
 			);
 		}

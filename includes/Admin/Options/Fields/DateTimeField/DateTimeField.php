@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\DateTimeField;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\RenderSectionContentPriority;
@@ -82,6 +83,8 @@ final class DateTimeField {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -296,7 +299,7 @@ final class DateTimeField {
 			$label = $title !== '' ? $title : $fid;
 			$messages[] = sprintf(
 				/* translators: %s: field label */
-				__( '“%s” must be filled in before this section can be saved.', 'simple-theme-options' ),
+				__( '“%s” must be filled in before this section can be saved.', 'topten-simple-theme-options' ),
 				$label
 			);
 		}
@@ -444,7 +447,10 @@ final class DateTimeField {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -554,7 +560,7 @@ final class DateTimeField {
 						<?php if ( $placeholder !== '' ) : ?>
 							placeholder="<?php echo esc_attr( $placeholder ); ?>"
 						<?php endif; ?>
-						aria-label="<?php echo esc_attr__( 'Pick date', 'simple-theme-options' ); ?>"
+						aria-label="<?php echo esc_attr__( 'Pick date', 'topten-simple-theme-options' ); ?>"
 					/>
 					<input
 						type="time"
@@ -562,9 +568,9 @@ final class DateTimeField {
 						id="<?php echo esc_attr( $time_id ); ?>"
 						step="<?php echo esc_attr( (string) $step ); ?>"
 						value="<?php echo esc_attr( $time_val ); ?>"
-						aria-label="<?php echo esc_attr__( 'Pick time', 'simple-theme-options' ); ?>"
+						aria-label="<?php echo esc_attr__( 'Pick time', 'topten-simple-theme-options' ); ?>"
 					/>
-					<button type="button" class="sto-datetime-field__clear" aria-label="<?php esc_attr_e( 'Clear date and time', 'simple-theme-options' ); ?>">
+					<button type="button" class="sto-datetime-field__clear" aria-label="<?php esc_attr_e( 'Clear date and time', 'topten-simple-theme-options' ); ?>">
 						<span class="sto-datetime-field__clear-x" aria-hidden="true">&times;</span>
 					</button>
 				</div>

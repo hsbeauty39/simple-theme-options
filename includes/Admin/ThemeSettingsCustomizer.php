@@ -2,12 +2,17 @@
 /**
  * Exposes Theme Settings in the WordPress Customizer when enabled.
  *
+ * Uses one Customizer section that embeds the full STO panel (sidebar + fields),
+ * matching the wp-admin Theme Settings experience.
+ *
  * @package SimpleThemeOptions
  */
 
 namespace SimpleThemeOptions\Admin;
 
+use SimpleThemeOptions\Admin\Customizer\STO_Embed_Control;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
+use SimpleThemeOptions\Assets;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
@@ -16,7 +21,16 @@ final class ThemeSettingsCustomizer {
 	use SingletonTrait;
 
 	protected function init(): void {
-		add_action( 'customize_register', array( $this, 'on_customize_register' ), 20 );
+		add_action( 'customize_register', array( $this, 'on_customize_register' ), 25 );
+		add_action( 'customize_controls_enqueue_scripts', array( $this, 'enqueue_controls_assets' ), 20 );
+	}
+
+	public function enqueue_controls_assets(): void {
+		if ( ! current_user_can( 'manage_options' ) || ! ThemeSettingsDisplayLocations::instance()->is_customizer_enabled() ) {
+			return;
+		}
+
+		Assets::instance()->enqueue_customizer_controls_assets();
 	}
 
 	public function on_customize_register( \WP_Customize_Manager $wp_customize ): void {
@@ -24,57 +38,68 @@ final class ThemeSettingsCustomizer {
 			return;
 		}
 
-		$menu_slug = OptionsMenu::instance()->get_request_options_menu_slug();
-		if ( $menu_slug === '' ) {
-			$slugs = OptionsMenu::instance()->get_registered_menu_slugs();
-			$menu_slug = ! empty( $slugs[0] ) ? (string) $slugs[0] : 'theme-settings';
+		$options_menu = OptionsMenu::instance();
+		$menu_slug    = $this->resolve_customizer_menu_slug( $options_menu );
+		$menu_label   = $options_menu->get_registered_menu_page_title( $menu_slug );
+		if ( $menu_label === '' ) {
+			$menu_label = __( 'Theme Settings', 'topten-simple-theme-options' );
 		}
-
-		$url = add_query_arg( 'page', sanitize_key( $menu_slug ), admin_url( 'admin.php' ) );
 
 		$wp_customize->add_panel(
 			'sto_theme_settings',
 			array(
-				'title'       => __( 'Theme Settings', 'simple-theme-options' ),
-				'description' => __( 'Open the full Theme Settings screen to edit all options. Changes made there apply site-wide unless overridden on a post or term.', 'simple-theme-options' ),
+				'title'       => __( 'Theme Settings', 'topten-simple-theme-options' ),
+				'description' => __( 'Edit theme options with the same section sidebar and fields as wp-admin Theme Settings.', 'topten-simple-theme-options' ),
 				'priority'    => 160,
 			)
 		);
 
 		$wp_customize->add_section(
-			'sto_theme_settings_link',
+			'sto_theme_settings_embed',
 			array(
-				'title'    => __( 'All options', 'simple-theme-options' ),
+				'title'    => $menu_label,
 				'panel'    => 'sto_theme_settings',
 				'priority' => 10,
 			)
 		);
 
 		$wp_customize->add_setting(
-			'sto_theme_settings_admin_link',
+			'sto_theme_settings_embed_app',
 			array(
 				'type'              => 'option',
 				'capability'        => 'manage_options',
 				'default'           => '',
-				'sanitize_callback' => 'esc_url_raw',
+				'sanitize_callback' => static function ( $value ) {
+					return is_string( $value ) ? $value : '';
+				},
 			)
 		);
 
 		$wp_customize->add_control(
-			new \WP_Customize_Control(
+			new STO_Embed_Control(
 				$wp_customize,
-				'sto_theme_settings_admin_link_control',
+				'sto_theme_settings_embed_control',
 				array(
-					'section'     => 'sto_theme_settings_link',
-					'settings'    => 'sto_theme_settings_admin_link',
-					'type'        => 'hidden',
-					'description' => sprintf(
-						/* translators: %s: admin URL to Theme Settings */
-						__( '<a href="%s" class="button button-primary" target="_blank" rel="noopener noreferrer">Open Theme Settings</a>', 'simple-theme-options' ),
-						esc_url( $url )
-					),
+					'section'        => 'sto_theme_settings_embed',
+					'settings'       => 'sto_theme_settings_embed_app',
+					'menu_page_slug' => $menu_slug,
 				)
 			)
 		);
+	}
+
+	/**
+	 * Prefer a menu root that has visible sidebar sections.
+	 */
+	private function resolve_customizer_menu_slug( OptionsMenu $options_menu ): string {
+		foreach ( $options_menu->get_registered_menu_slugs() as $slug ) {
+			if ( $options_menu->get_sections_for_navigation_for_menu_page( (string) $slug ) !== array() ) {
+				return (string) $slug;
+			}
+		}
+
+		$slugs = $options_menu->get_registered_menu_slugs();
+
+		return ! empty( $slugs[0] ) ? (string) $slugs[0] : OptionsMenu::PACKAGED_DEMO_MENU_SLUG;
 	}
 }

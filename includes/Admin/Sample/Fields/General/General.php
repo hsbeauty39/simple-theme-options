@@ -4,7 +4,6 @@ namespace SimpleThemeOptions\Admin\Sample\Fields\General;
 use SimpleThemeOptions\Admin\Options\Fields\BorderControl\BorderControl;
 use SimpleThemeOptions\Admin\Options\Fields\ShadowControl\ShadowControl;
 use SimpleThemeOptions\Admin\Options\Fields\CodeEditor\CodeEditor;
-use SimpleThemeOptions\Admin\Options\Fields\RichModernEditor\RichModernEditor;
 use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Fields\DateField\DateField;
@@ -61,7 +60,6 @@ final class General {
 		BorderControl::instance();
 		ShadowControl::instance();
 		CodeEditor::instance();
-		RichModernEditor::instance();
 		$this->register_select_fields();
 	}
 
@@ -410,16 +408,6 @@ final class General {
 						),
 					),
 					array(
-						'type'          => 'rich_modern_editor',
-						'id'            => 'layout_rich_modern_inputs',
-						'title'         => __( 'Rich modern editor (Gutenberg)', 'topten-simple-theme-options' ),
-						'description'   => __( 'Block editor; stores serialized block markup. A standalone copy also lives under Measure, code & borders.', 'topten-simple-theme-options' ),
-						'editor_height' => 320,
-						'media_upload'  => true,
-						'width'         => '1-1',
-						'default'       => "<!-- wp:paragraph -->\n<p>" . esc_html__( 'Start writing with blocks…', 'topten-simple-theme-options' ) . "</p>\n<!-- /wp:paragraph -->",
-					),
-					array(
 						'type'            => 'phone',
 						'id'              => 'layout_phone',
 						'space'           => '20px',
@@ -606,18 +594,6 @@ final class General {
 				'height'       => 220,
 				'placeholder'  => "// Custom analytics / chat-widget bootstrap",
 				'default'      => '',
-			)
-		);
-
-		RichModernEditor::register(
-			array(
-				'section_slug'  => 'layout-code-borders',
-				'id'            => 'layout_rich_modern_content',
-				'title'         => __( 'Rich modern editor (Gutenberg)', 'topten-simple-theme-options' ),
-				'description'   => __( 'Block editor for rich product or page copy; stores serialized block markup.', 'topten-simple-theme-options' ),
-				'editor_height' => 360,
-				'media_upload'  => true,
-				'default'       => "<!-- wp:paragraph -->\n<p>" . esc_html__( 'Start writing…', 'topten-simple-theme-options' ) . "</p>\n<!-- /wp:paragraph -->",
 			)
 		);
 

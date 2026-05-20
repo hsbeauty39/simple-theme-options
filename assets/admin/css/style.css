@@ -1536,3 +1536,66 @@ body.block-editor-page .interface-interface-skeleton__footer .sto-theme-settings
     min-width: 0;
     box-sizing: border-box;
 }
+
+.sto-packaged-demo-off-notice {
+    margin: 0.5rem 0 1rem;
+    padding: 1.25rem 1.35rem;
+    max-width: 42rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.sto-packaged-demo-off-notice__title {
+    margin: 0 0 0.45rem;
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.sto-packaged-demo-off-notice__lead {
+    margin: 0 0 0.85rem;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #475569;
+}
+
+/* Customizer embed: flex stack search → section nav → fields (see sto-customizer.css). */
+body.wp-customizer #customize-theme-controls .sto-customizer-embed-root .sto-option-panel-wrapper,
+body.wp-customizer #customize-theme-controls .sto-option-panel-wrapper--customizer-embed {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+}
+
+body.wp-customizer #customize-theme-controls .sto-option-panel-wrapper--customizer-embed > .sto-option-panel-head {
+    order: 1 !important;
+}
+
+body.wp-customizer #customize-theme-controls .sto-customizer-embed-root .sto-option-panel-sidebar-wrap,
+body.wp-customizer #customize-theme-controls .sto-option-panel-wrapper--customizer-embed > .sto-option-panel-sidebar-wrap {
+    order: 2 !important;
+    position: static !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+}
+
+/* Fallback when flex order cannot run (main panel reserves space above the nav). Refined by sto-customizer.js. */
+body.wp-customizer #customize-theme-controls .sto-customizer-embed-root .sto-option-panel-sidebar-wrap {
+    margin-top: -488px !important;
+}
+
+body.wp-customizer #customize-theme-controls .sto-option-panel-wrapper--customizer-embed > .sto-option-panel-main {
+    order: 3 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+}
+
+/* Legacy markup: body/nav-layout shell before flattening (JS may still hoist). */
+body.wp-customizer #customize-theme-controls .sto-option-panel-body--customizer-embed,
+body.wp-customizer #customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-body {
+    display: contents !important;
+}

@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\Fields\BorderControl;
 
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRenderGate;
+use SimpleThemeOptions\Admin\Options\Fields\Common\FieldSpacing;
 
 use SimpleThemeOptions\Admin\Options\Fields\Color\Color;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
@@ -117,6 +118,8 @@ final class BorderControl {
 		if ( ! is_array( $field ) ) {
 			return;
 		}
+		FieldSpacing::normalize_config( $field );
+
 
 		$section_slug = isset( $field['section_slug'] ) ? sanitize_key( (string) $field['section_slug'] ) : '';
 		$field_id     = isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : '';
@@ -442,7 +445,10 @@ final class BorderControl {
 		?>
 		<div
 			id="<?php echo esc_attr( 'sto-field-' . $field_id ); ?>"
-			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"
+			class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string from FieldSpacing::row_margin_style_attr().
+			echo FieldSpacing::row_margin_style_attr( $field, $context );
+			?>
 			data-sto-field-id="<?php echo esc_attr( $field_id ); ?>"
 			<?php if ( $required_json ) : ?>
 				data-sto-required="<?php echo esc_attr( $required_json ); ?>"
@@ -525,15 +531,15 @@ final class BorderControl {
 		$id_fragment   = sanitize_key( $id_fragment );
 
 		$style_labels = array(
-			'none'   => __( 'None', 'simple-theme-options' ),
-			'solid'  => __( 'Solid', 'simple-theme-options' ),
-			'dashed' => __( 'Dashed', 'simple-theme-options' ),
-			'dotted' => __( 'Dotted', 'simple-theme-options' ),
-			'double' => __( 'Double', 'simple-theme-options' ),
-			'groove' => __( 'Groove', 'simple-theme-options' ),
-			'ridge'  => __( 'Ridge', 'simple-theme-options' ),
-			'inset'  => __( 'Inset', 'simple-theme-options' ),
-			'outset' => __( 'Outset', 'simple-theme-options' ),
+			'none'   => __( 'None', 'topten-simple-theme-options' ),
+			'solid'  => __( 'Solid', 'topten-simple-theme-options' ),
+			'dashed' => __( 'Dashed', 'topten-simple-theme-options' ),
+			'dotted' => __( 'Dotted', 'topten-simple-theme-options' ),
+			'double' => __( 'Double', 'topten-simple-theme-options' ),
+			'groove' => __( 'Groove', 'topten-simple-theme-options' ),
+			'ridge'  => __( 'Ridge', 'topten-simple-theme-options' ),
+			'inset'  => __( 'Inset', 'topten-simple-theme-options' ),
+			'outset' => __( 'Outset', 'topten-simple-theme-options' ),
 		);
 		?>
 		<div
@@ -550,13 +556,13 @@ final class BorderControl {
 				aria-haspopup="dialog"
 			>
 				<i class="fa-light fa-gear" aria-hidden="true"></i>
-				<span class="sto-border-edit__label"><?php esc_html_e( 'Edit settings', 'simple-theme-options' ); ?></span>
+				<span class="sto-border-edit__label"><?php esc_html_e( 'Edit settings', 'topten-simple-theme-options' ); ?></span>
 			</button>
 
-			<div class="sto-border-popover" role="dialog" aria-label="<?php esc_attr_e( 'Border settings', 'simple-theme-options' ); ?>" hidden>
+			<div class="sto-border-popover" role="dialog" aria-label="<?php esc_attr_e( 'Border settings', 'topten-simple-theme-options' ); ?>" hidden>
 				<?php if ( in_array( 'radius', $features, true ) ) : ?>
 					<div class="sto-border-popover__row" data-sto-border-section="radius">
-						<div class="sto-border-popover__label"><?php esc_html_e( 'Border radius', 'simple-theme-options' ); ?></div>
+						<div class="sto-border-popover__label"><?php esc_html_e( 'Border radius', 'topten-simple-theme-options' ); ?></div>
 						<div class="sto-border-popover__inputs">
 							<input
 								type="range"
@@ -566,7 +572,7 @@ final class BorderControl {
 								max="<?php echo esc_attr( (string) $max_r ); ?>"
 								step="1"
 								value="<?php echo esc_attr( $this->clamp_number( (string) $cur['radius'], $min_r, $max_r, (string) $defaults['radius'] ) ); ?>"
-								aria-label="<?php esc_attr_e( 'Border radius slider', 'simple-theme-options' ); ?>"
+								aria-label="<?php esc_attr_e( 'Border radius slider', 'topten-simple-theme-options' ); ?>"
 							/>
 							<input
 								type="number"
@@ -576,7 +582,7 @@ final class BorderControl {
 								max="<?php echo esc_attr( (string) $max_r ); ?>"
 								step="1"
 								value="<?php echo esc_attr( $this->clamp_number( (string) $cur['radius'], $min_r, $max_r, (string) $defaults['radius'] ) ); ?>"
-								aria-label="<?php esc_attr_e( 'Border radius number', 'simple-theme-options' ); ?>"
+								aria-label="<?php esc_attr_e( 'Border radius number', 'topten-simple-theme-options' ); ?>"
 							/>
 							<?php $this->render_unit_chip( 'radius', $cur['radius_unit'], $radius_units ); ?>
 						</div>
@@ -585,11 +591,11 @@ final class BorderControl {
 
 				<?php if ( in_array( 'style', $features, true ) ) : ?>
 					<div class="sto-border-popover__row" data-sto-border-section="style">
-						<div class="sto-border-popover__label"><?php esc_html_e( 'Border style', 'simple-theme-options' ); ?></div>
+						<div class="sto-border-popover__label"><?php esc_html_e( 'Border style', 'topten-simple-theme-options' ); ?></div>
 						<select
 							class="sto-border-popover__select"
 							data-sto-border-input="style"
-							aria-label="<?php esc_attr_e( 'Border style', 'simple-theme-options' ); ?>"
+							aria-label="<?php esc_attr_e( 'Border style', 'topten-simple-theme-options' ); ?>"
 						>
 							<?php foreach ( self::ALLOWED_STYLES as $sk ) : ?>
 								<option value="<?php echo esc_attr( $sk ); ?>" <?php selected( (string) $cur['style'], $sk ); ?>>
@@ -602,7 +608,7 @@ final class BorderControl {
 
 				<?php if ( in_array( 'width', $features, true ) ) : ?>
 					<div class="sto-border-popover__row" data-sto-border-section="width">
-						<div class="sto-border-popover__label"><?php esc_html_e( 'Border width', 'simple-theme-options' ); ?></div>
+						<div class="sto-border-popover__label"><?php esc_html_e( 'Border width', 'topten-simple-theme-options' ); ?></div>
 						<div class="sto-border-popover__inputs">
 							<input
 								type="range"
@@ -612,7 +618,7 @@ final class BorderControl {
 								max="<?php echo esc_attr( (string) $max_w ); ?>"
 								step="1"
 								value="<?php echo esc_attr( $this->clamp_number( (string) $cur['width'], $min_w, $max_w, (string) $defaults['width'] ) ); ?>"
-								aria-label="<?php esc_attr_e( 'Border width slider', 'simple-theme-options' ); ?>"
+								aria-label="<?php esc_attr_e( 'Border width slider', 'topten-simple-theme-options' ); ?>"
 							/>
 							<input
 								type="number"
@@ -622,7 +628,7 @@ final class BorderControl {
 								max="<?php echo esc_attr( (string) $max_w ); ?>"
 								step="1"
 								value="<?php echo esc_attr( $this->clamp_number( (string) $cur['width'], $min_w, $max_w, (string) $defaults['width'] ) ); ?>"
-								aria-label="<?php esc_attr_e( 'Border width number', 'simple-theme-options' ); ?>"
+								aria-label="<?php esc_attr_e( 'Border width number', 'topten-simple-theme-options' ); ?>"
 							/>
 							<?php $this->render_unit_chip( 'width', $cur['width_unit'], $width_units ); ?>
 						</div>
@@ -631,7 +637,7 @@ final class BorderControl {
 
 				<?php if ( in_array( 'color', $features, true ) ) : ?>
 					<div class="sto-border-popover__row" data-sto-border-section="color">
-						<div class="sto-border-popover__label"><?php esc_html_e( 'Border color', 'simple-theme-options' ); ?></div>
+						<div class="sto-border-popover__label"><?php esc_html_e( 'Border color', 'topten-simple-theme-options' ); ?></div>
 						<div
 							class="sto-color-wrap<?php echo $use_alpha ? ' sto-color--alpha' : ''; ?>"
 							<?php if ( $palettes_json ) : ?>
@@ -656,8 +662,8 @@ final class BorderControl {
 							<button
 								type="button"
 								class="sto-color-reset"
-								aria-label="<?php esc_attr_e( 'Reset border color', 'simple-theme-options' ); ?>"
-								title="<?php esc_attr_e( 'Reset to default', 'simple-theme-options' ); ?>"
+								aria-label="<?php esc_attr_e( 'Reset border color', 'topten-simple-theme-options' ); ?>"
+								title="<?php esc_attr_e( 'Reset to default', 'topten-simple-theme-options' ); ?>"
 							>
 								<i class="fa-light fa-arrow-rotate-left" aria-hidden="true"></i>
 							</button>
@@ -722,8 +728,8 @@ final class BorderControl {
 		return sprintf(
 			'<button type="button" class="sto-border-row-reset" data-sto-border-row-reset data-sto-border-defaults="%s" aria-label="%s" title="%s"><i class="fa-light fa-arrow-rotate-left" aria-hidden="true"></i></button>',
 			esc_attr( $defaults_json ),
-			esc_attr__( 'Reset border to default', 'simple-theme-options' ),
-			esc_attr__( 'Reset to default', 'simple-theme-options' )
+			esc_attr__( 'Reset border to default', 'topten-simple-theme-options' ),
+			esc_attr__( 'Reset to default', 'topten-simple-theme-options' )
 		);
 	}
 

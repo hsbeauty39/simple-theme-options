@@ -50,7 +50,7 @@ final class ShammiStoreFallback {
 		}
 		self::$attempted = true;
 
-		if ( ! apply_filters( 'sto_shammi_store_fallback_enabled', true ) ) {
+		if ( ! apply_filters( 'sto_shammi_store_fallback_enabled', true ) ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Public sto_ filter/action API.
 			return;
 		}
 
@@ -96,7 +96,7 @@ final class ShammiStoreFallback {
 
 		echo '<div class="notice notice-info"><p>';
 		echo esc_html(
-			__( 'The Shammi Testing plugin is inactive. These Theme Settings screens are provided by Simple Theme Options so values you imported (shm_*) stay editable. Activate Shammi Testing again to load its own copy of this menu.', 'simple-theme-options' )
+			__( 'The Shammi Testing plugin is inactive. These Theme Settings screens are provided by Topten Simple Theme Options so values you imported (shm_*) stay editable. Activate Shammi Testing again to load its own copy of this menu.', 'topten-simple-theme-options' )
 		);
 		echo '</p></div>';
 	}
@@ -130,18 +130,14 @@ final class ShammiStoreFallback {
 		$menu = OptionsMenu::instance();
 
 		$menu->register(
-			__( 'Shammi Store', 'simple-theme-options' ),
+			__( 'Shammi Store', 'topten-simple-theme-options' ),
 			'shammi-store',
-			'dashicons-cart',
-			array(
-				'demo'          => false,
-				'packaged_demo' => false,
-			)
+			'dashicons-cart'
 		);
 
-		$menu->add_section( __( 'Store', 'simple-theme-options' ), 'shm-x-store', 'fa-light fa-store' );
-		$menu->add_sub_section( __( 'General', 'simple-theme-options' ), 'shm-x-store-general', 'fa-light fa-gear', 'shm-x-store' );
-		$menu->add_sub_section( __( 'Checkout', 'simple-theme-options' ), 'shm-x-store-checkout', 'fa-light fa-credit-card', 'shm-x-store' );
+		$menu->add_section( __( 'Store', 'topten-simple-theme-options' ), 'shm-x-store', 'fa-light fa-store' );
+		$menu->add_sub_section( __( 'General', 'topten-simple-theme-options' ), 'shm-x-store-general', 'fa-light fa-gear', 'shm-x-store' );
+		$menu->add_sub_section( __( 'Checkout', 'topten-simple-theme-options' ), 'shm-x-store-checkout', 'fa-light fa-credit-card', 'shm-x-store' );
 
 		$s = 'shm-x-store-general';
 		$c = 'shm-x-store-checkout';
@@ -150,7 +146,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_site_title',
-				'title'        => __( 'Site title (text)', 'simple-theme-options' ),
+				'title'        => __( 'Site title (text)', 'topten-simple-theme-options' ),
 				'input_type'   => 'text',
 				'default'      => '',
 			)
@@ -160,7 +156,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_units',
-				'title'        => __( 'Units in stock (number)', 'simple-theme-options' ),
+				'title'        => __( 'Units in stock (number)', 'topten-simple-theme-options' ),
 				'input_type'   => 'number',
 				'default'      => '0',
 				'min'          => 0,
@@ -172,7 +168,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_notes',
-				'title'        => __( 'Notes (textarea)', 'simple-theme-options' ),
+				'title'        => __( 'Notes (textarea)', 'topten-simple-theme-options' ),
 				'input_type'   => 'textarea',
 				'rows'         => 4,
 			)
@@ -182,12 +178,12 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_currency',
-				'title'        => __( 'Currency (select)', 'simple-theme-options' ),
+				'title'        => __( 'Currency (select)', 'topten-simple-theme-options' ),
 				'default'      => 'usd',
 				'options'      => array(
-					'usd' => __( 'USD', 'simple-theme-options' ),
-					'eur' => __( 'EUR', 'simple-theme-options' ),
-					'gbp' => __( 'GBP', 'simple-theme-options' ),
+					'usd' => __( 'USD', 'topten-simple-theme-options' ),
+					'eur' => __( 'EUR', 'topten-simple-theme-options' ),
+					'gbp' => __( 'GBP', 'topten-simple-theme-options' ),
 				),
 			)
 		);
@@ -196,11 +192,11 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_catalog_mode',
-				'title'        => __( 'Catalog mode (button group)', 'simple-theme-options' ),
+				'title'        => __( 'Catalog mode (button group)', 'topten-simple-theme-options' ),
 				'default'      => 'shop',
 				'options'      => array(
-					'shop' => __( 'Shop', 'simple-theme-options' ),
-					'cat'  => __( 'Catalog', 'simple-theme-options' ),
+					'shop' => __( 'Shop', 'topten-simple-theme-options' ),
+					'cat'  => __( 'Catalog', 'topten-simple-theme-options' ),
 				),
 			)
 		);
@@ -209,7 +205,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_guest_checkout',
-				'title'        => __( 'Guest checkout (switcher)', 'simple-theme-options' ),
+				'title'        => __( 'Guest checkout (switcher)', 'topten-simple-theme-options' ),
 				'default'      => '1',
 			)
 		);
@@ -218,7 +214,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_tax_inclusive',
-				'title'        => __( 'Prices include tax (checkbox)', 'simple-theme-options' ),
+				'title'        => __( 'Prices include tax (checkbox)', 'topten-simple-theme-options' ),
 				'multiple'     => false,
 				'default'      => '0',
 			)
@@ -228,12 +224,12 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_badges',
-				'title'        => __( 'Product badges (multi checkbox)', 'simple-theme-options' ),
+				'title'        => __( 'Product badges (multi checkbox)', 'topten-simple-theme-options' ),
 				'multiple'     => true,
 				'options'      => array(
-					'sale' => __( 'Sale', 'simple-theme-options' ),
-					'new'  => __( 'New', 'simple-theme-options' ),
-					'hot'  => __( 'Hot', 'simple-theme-options' ),
+					'sale' => __( 'Sale', 'topten-simple-theme-options' ),
+					'new'  => __( 'New', 'topten-simple-theme-options' ),
+					'hot'  => __( 'Hot', 'topten-simple-theme-options' ),
 				),
 				'default'      => array( 'sale' ),
 			)
@@ -243,7 +239,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_brand_color',
-				'title'        => __( 'Brand colour', 'simple-theme-options' ),
+				'title'        => __( 'Brand colour', 'topten-simple-theme-options' ),
 				'default'      => '#2271b1',
 			)
 		);
@@ -252,7 +248,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_footer_links',
-				'title'        => __( 'Footer link colours', 'simple-theme-options' ),
+				'title'        => __( 'Footer link colours', 'topten-simple-theme-options' ),
 				'default'      => array(
 					'regular' => '#2271b1',
 					'hover'   => '#135e96',
@@ -265,7 +261,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_hero_bg',
-				'title'        => __( 'Hero background', 'simple-theme-options' ),
+				'title'        => __( 'Hero background', 'topten-simple-theme-options' ),
 				'default'      => array(
 					'color'    => '#f0f0f1',
 					'image_id' => '',
@@ -277,7 +273,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_card_border',
-				'title'        => __( 'Card border', 'simple-theme-options' ),
+				'title'        => __( 'Card border', 'topten-simple-theme-options' ),
 				'default'      => array(
 					'radius'      => '8',
 					'radius_unit' => 'px',
@@ -294,7 +290,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_card_shadow',
-				'title'        => __( 'Card shadow', 'simple-theme-options' ),
+				'title'        => __( 'Card shadow', 'topten-simple-theme-options' ),
 				'selector'     => '.shm-demo-card',
 				'default'      => array(
 					'offset_x' => '0',
@@ -311,7 +307,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_sale_strip',
-				'title'        => __( 'Sale strip gradient', 'simple-theme-options' ),
+				'title'        => __( 'Sale strip gradient', 'topten-simple-theme-options' ),
 				'default'      => array(
 					'type'   => 'linear',
 					'angle'  => '90',
@@ -327,7 +323,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_sidebar_width',
-				'title'        => __( 'Sidebar width', 'simple-theme-options' ),
+				'title'        => __( 'Sidebar width', 'topten-simple-theme-options' ),
 				'default'      => '280',
 				'min'          => 200,
 				'max'          => 400,
@@ -340,10 +336,16 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_grid_gap',
-				'title'        => __( 'Grid gap (dimension)', 'simple-theme-options' ),
+				'title'        => __( 'Grid gap (dimension)', 'topten-simple-theme-options' ),
 				'default'      => array(
-					't' => '16', 'r' => '16', 'b' => '16', 'l' => '16',
-					'u' => 'px', 'link' => '1',
+					'unit'   => 'px',
+					'linked' => true,
+					'values' => array(
+						'top'    => '16',
+						'right'  => '16',
+						'bottom' => '16',
+						'left'   => '16',
+					),
 				),
 			)
 		);
@@ -352,7 +354,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_title_align',
-				'title'        => __( 'Title alignment', 'simple-theme-options' ),
+				'title'        => __( 'Title alignment', 'topten-simple-theme-options' ),
 				'default'      => 'left',
 			)
 		);
@@ -361,7 +363,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_launch_date',
-				'title'        => __( 'Launch date', 'simple-theme-options' ),
+				'title'        => __( 'Launch date', 'topten-simple-theme-options' ),
 			)
 		);
 
@@ -369,7 +371,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_flash_end',
-				'title'        => __( 'Flash sale end', 'simple-theme-options' ),
+				'title'        => __( 'Flash sale end', 'topten-simple-theme-options' ),
 			)
 		);
 
@@ -377,7 +379,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_custom_css',
-				'title'        => __( 'Extra CSS (code editor)', 'simple-theme-options' ),
+				'title'        => __( 'Extra CSS (code editor)', 'topten-simple-theme-options' ),
 				'language'     => 'css',
 				'height'       => 200,
 			)
@@ -387,7 +389,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_body_type',
-				'title'        => __( 'Body typography', 'simple-theme-options' ),
+				'title'        => __( 'Body typography', 'topten-simple-theme-options' ),
 				'default'      => array(
 					'family'    => 'Inter',
 					'variant'   => 'regular',
@@ -401,9 +403,9 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_shop_page',
-				'title'        => __( 'Shop page (dynamic object)', 'simple-theme-options' ),
+				'title'        => __( 'Shop page (dynamic object)', 'topten-simple-theme-options' ),
 				'post_type'    => 'page',
-				'placeholder'  => __( 'Search pages…', 'simple-theme-options' ),
+				'placeholder'  => __( 'Search pages…', 'topten-simple-theme-options' ),
 			)
 		);
 
@@ -411,15 +413,15 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_grid_style',
-				'title'        => __( 'Product grid (image select)', 'simple-theme-options' ),
+				'title'        => __( 'Product grid (image select)', 'topten-simple-theme-options' ),
 				'default'      => 'two',
 				'options'      => array(
 					'one' => array(
-						'label' => __( 'One column', 'simple-theme-options' ),
+						'label' => __( 'One column', 'topten-simple-theme-options' ),
 						'image' => 'https://picsum.photos/seed/shm-grid-1/120/80',
 					),
 					'two' => array(
-						'label' => __( 'Two columns', 'simple-theme-options' ),
+						'label' => __( 'Two columns', 'topten-simple-theme-options' ),
 						'image' => 'https://picsum.photos/seed/shm-grid-2/120/80',
 					),
 				),
@@ -430,7 +432,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_cart_icon',
-				'title'        => __( 'Cart icon', 'simple-theme-options' ),
+				'title'        => __( 'Cart icon', 'topten-simple-theme-options' ),
 				'default'      => 'fa-light fa-cart-shopping',
 			)
 		);
@@ -439,7 +441,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_lookbook',
-				'title'        => __( 'Lookbook images (gallery)', 'simple-theme-options' ),
+				'title'        => __( 'Lookbook images (gallery)', 'topten-simple-theme-options' ),
 				'max'          => 12,
 			)
 		);
@@ -448,7 +450,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $s,
 				'id'           => 'shm_x_warehouse',
-				'title'        => __( 'Warehouse map', 'simple-theme-options' ),
+				'title'        => __( 'Warehouse map', 'topten-simple-theme-options' ),
 				'default'      => array(
 					'address'   => '',
 					'lat'       => '',
@@ -463,7 +465,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $c,
 				'id'           => 'shm_x_checkout_heading',
-				'title'        => __( 'Checkout heading', 'simple-theme-options' ),
+				'title'        => __( 'Checkout heading', 'topten-simple-theme-options' ),
 				'input_type'   => 'text',
 			)
 		);
@@ -472,7 +474,7 @@ final class ShammiStoreFallback {
 			array(
 				'section_slug' => $c,
 				'id'           => 'shm_x_terms_required',
-				'title'        => __( 'Require terms at checkout', 'simple-theme-options' ),
+				'title'        => __( 'Require terms at checkout', 'topten-simple-theme-options' ),
 				'default'      => '1',
 			)
 		);

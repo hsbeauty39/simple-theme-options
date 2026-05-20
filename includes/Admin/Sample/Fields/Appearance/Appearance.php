@@ -28,8 +28,8 @@ final class Appearance {
 			array(
 				'section_slug' => 'appearance-color',
 				'id'           => 'appearance_buttons_bg',
-				'title'        => __( 'Primary button color', 'simple-theme-options' ),
-				'description'  => __( 'Classic color with alpha and swatches.', 'simple-theme-options' ),
+				'title'        => __( 'Primary button color', 'topten-simple-theme-options' ),
+				'description'  => __( 'Classic color with alpha and swatches.', 'topten-simple-theme-options' ),
 				'default'      => '#f7f7f7',
 				'palettes'     => array(
 					'#000000',
@@ -48,8 +48,8 @@ final class Appearance {
 			array(
 				'section_slug' => 'appearance-color',
 				'id'           => 'appearance_advanced_palette',
-				'title'        => __( 'Advanced palette (grid)', 'simple-theme-options' ),
-				'description'  => __( 'Advanced preset grid popover.', 'simple-theme-options' ),
+				'title'        => __( 'Advanced palette (grid)', 'topten-simple-theme-options' ),
+				'description'  => __( 'Advanced preset grid popover.', 'topten-simple-theme-options' ),
 				'default'      => '#2271b1',
 				'palette_ui'   => 'advanced',
 				'alpha'        => true,
@@ -60,8 +60,8 @@ final class Appearance {
 			array(
 				'section_slug' => 'appearance-color',
 				'id'           => 'appearance_advanced_palette_circles',
-				'title'        => __( 'Advanced palette (circular swatches)', 'simple-theme-options' ),
-				'description'  => __( 'Circular preset swatches.', 'simple-theme-options' ),
+				'title'        => __( 'Advanced palette (circular swatches)', 'topten-simple-theme-options' ),
+				'description'  => __( 'Circular preset swatches.', 'topten-simple-theme-options' ),
 				'default'      => '#f8bbd0',
 				'palette_ui'   => 'advanced-circles',
 				'alpha'        => false,
@@ -89,8 +89,8 @@ final class Appearance {
 			array(
 				'section_slug' => 'appearance-color',
 				'id'           => 'appearance_advanced_palette_dense',
-				'title'        => __( 'Advanced palette (dense)', 'simple-theme-options' ),
-				'description'  => __( 'Dense preset swatch grid.', 'simple-theme-options' ),
+				'title'        => __( 'Advanced palette (dense)', 'topten-simple-theme-options' ),
+				'description'  => __( 'Dense preset swatch grid.', 'topten-simple-theme-options' ),
 				'default'      => '#00acc1',
 				'palette_ui'   => 'advanced-dense',
 				'alpha'        => true,
@@ -101,8 +101,8 @@ final class Appearance {
 			array(
 				'section_slug' => 'appearance-gradient',
 				'id'           => 'appearance_hero_overlay_gradient',
-				'title'        => __( 'Hero overlay gradient (popover)', 'simple-theme-options' ),
-				'description'  => __( 'Gradient editor in a popover.', 'simple-theme-options' ),
+				'title'        => __( 'Hero overlay gradient (popover)', 'topten-simple-theme-options' ),
+				'description'  => __( 'Gradient editor in a popover.', 'topten-simple-theme-options' ),
 				'popup'        => true,
 				'max_stops'    => 24,
 				'alpha'        => true,
@@ -122,7 +122,7 @@ final class Appearance {
 			array(
 				'section_slug' => 'appearance-gradient',
 				'id'           => 'appearance_section_divider_gradient',
-				'title'        => __( 'Section divider gradient (inline)', 'simple-theme-options' ),
+				'title'        => __( 'Section divider gradient (inline)', 'topten-simple-theme-options' ),
 				'popup'        => false,
 				'max_stops'    => 24,
 				'palettes'     => array( '#2271b1', '#72aee6', '#00d084', '#f6b93b', '#eb5a46', '#ffffff' ),
@@ -142,8 +142,8 @@ final class Appearance {
 			array(
 				'section_slug' => 'appearance-surfaces',
 				'id'           => 'appearance_popup_background',
-				'title'        => __( 'Surface & image background', 'simple-theme-options' ),
-				'description'  => __( 'Color plus image background layers.', 'simple-theme-options' ),
+				'title'        => __( 'Surface & image background', 'topten-simple-theme-options' ),
+				'description'  => __( 'Color plus image background layers.', 'topten-simple-theme-options' ),
 				'default'      => array(
 					'color'    => '#000000',
 					'image_id' => '',
@@ -156,15 +156,15 @@ final class Appearance {
 			array(
 				'section_slug' => 'appearance-links',
 				'id'           => 'appearance_links_color',
-				'title'        => __( 'Link colors (regular & hover)', 'simple-theme-options' ),
-				'description'  => __( 'Paired pickers for default and hover states in content areas.', 'simple-theme-options' ),
+				'title'        => __( 'Link colors (regular & hover)', 'topten-simple-theme-options' ),
+				'description'  => __( 'Paired pickers for default and hover states in content areas.', 'topten-simple-theme-options' ),
 				'default'      => array(
 					'regular' => '#333333',
 					'hover'   => '#222222',
 				),
 				'labels'       => array(
-					'regular' => __( 'Regular', 'simple-theme-options' ),
-					'hover'   => __( 'Hover', 'simple-theme-options' ),
+					'regular' => __( 'Regular', 'topten-simple-theme-options' ),
+					'hover'   => __( 'Hover', 'topten-simple-theme-options' ),
 				),
 				'alpha'        => true,
 				'tooltip'      => array(
