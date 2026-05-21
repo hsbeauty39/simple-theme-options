@@ -153,7 +153,8 @@
     left: 0;
     right: 0;
     top: 100%;
-    z-index: 50;
+    z-index: 100050;
+    pointer-events: auto;
     max-height: 340px;
     overflow-y: auto;
     margin: -1px 0 0;

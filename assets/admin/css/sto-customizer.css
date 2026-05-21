@@ -101,6 +101,11 @@
 	width: 100%;
 	max-width: none;
 	margin: 0;
+	z-index: 20;
+}
+
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-quick-search-results {
+	z-index: 100060;
 }
 
 #customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-quick-search-input {

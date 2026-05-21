@@ -2169,6 +2169,8 @@
             }
 
             var maxRes = cfg.max_results && cfg.max_results > 0 ? cfg.max_results : 50;
+            var wrapStates = [];
+            var outsideBound = false;
 
             $wraps.each(function() {
             var $wrap = $(this);
@@ -2180,6 +2182,7 @@
             // re-query `$items` after every render so it always reflects the live DOM.
             var $items = $();
             var activeIdx = -1;
+            var activating = false;
 
             function escapeHtml(str) {
                 return String(str == null ? '' : str)
@@ -2282,9 +2285,10 @@
              * @param {jQuery} $btn The clicked / Enter-activated `.sto-quick-search-item`.
              */
             function activateItem($btn) {
-                if (!$btn || !$btn.length) {
+                if (!$btn || !$btn.length || activating) {
                     return;
                 }
+                activating = true;
                 var section = $btn.attr('data-section') || '';
                 var focus = $btn.attr('data-focus') || '';
                 var itemPage = ($btn.attr('data-menu-page') || '').trim();
@@ -2304,6 +2308,7 @@
                 }
 
                 if (!stoCanUseSpaNavForHref(url)) {
+                    activating = false;
                     window.location.href = url;
                     return;
                 }
@@ -2330,6 +2335,7 @@
                         $target = $('#sto-group-' + gid);
                     }
                     if (!$target.length) {
+                        activating = false;
                         return;
                     }
                     var node = $target[0];
@@ -2337,6 +2343,7 @@
                         node.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                     stoFlashFieldTarget($target);
+                    activating = false;
                 }, 250);
             }
 
@@ -2355,7 +2362,11 @@
                 }
             });
 
-            $panel.on('click', '.sto-quick-search-item', function() {
+            // `mousedown` (not `click`) so activation runs before blur / outside-close handlers
+            // swallow the interaction — same pattern as instructions.html quick search.
+            $panel.on('mousedown', '.sto-quick-search-item', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 activateItem($(this));
             });
 
@@ -2369,10 +2380,9 @@
                 }
             });
 
-            $(document).on('click.stoQuickSearch', function(e) {
-                if (!$wrap.is(e.target) && $wrap.has(e.target).length === 0) {
-                    closePanel();
-                }
+            wrapStates.push({
+                $wrap: $wrap,
+                closePanel: closePanel
             });
 
             $input.on('keydown', function(e) {
@@ -2407,6 +2417,25 @@
                 }
             });
             });
+
+            if (!outsideBound && wrapStates.length) {
+                outsideBound = true;
+                $(document).on('mousedown.stoQuickSearchOutside', function(e) {
+                    if ($(e.target).closest('.sto-quick-search-item').length) {
+                        return;
+                    }
+                    wrapStates.forEach(function(state) {
+                        var wrapNode = state.$wrap[0];
+                        if (!wrapNode) {
+                            return;
+                        }
+                        if (wrapNode === e.target || wrapNode.contains(e.target)) {
+                            return;
+                        }
+                        state.closePanel();
+                    });
+                });
+            }
         })();
 
         (function initStoAccordionDemoJumpCards() {
