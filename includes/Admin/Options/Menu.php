@@ -1816,6 +1816,16 @@ final class Menu {
             $redirect_url = add_query_arg( 'section', $leaf, $redirect_url );
         }
         $redirect_url = add_query_arg( 'sto_saved', '1', $redirect_url );
+
+        /**
+         * Fires after Theme Settings options were saved successfully on the main admin screen.
+         *
+         * @param string $page          Menu page slug.
+         * @param string $section_slug  Canonical leaf section slug.
+         * @param int    $user_id       User who saved.
+         */
+        do_action( 'sto_theme_settings_saved', $page, $leaf ? $leaf : $section_slug, get_current_user_id() ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+
         wp_safe_redirect( $redirect_url );
         exit;
     }
