@@ -296,7 +296,11 @@ final class Assets {
 		if ( $this->is_sto_woocommerce_product_data_screen( $hook_suffix ) ) {
 			$src     = STO_URL . 'assets/admin/css/sto-wc-product-data-panels.css';
 			$version = $this->bust_cache_version( $src, STO_VERSION );
-			wp_enqueue_style( 'sto-wc-product-data-panels', $src, array( 'sto-style', 'sto-input', 'woocommerce_admin_styles' ), $version );
+			$wc_panel_style_deps = array( 'sto-style', 'sto-input' );
+			if ( wp_style_is( 'woocommerce_admin_styles', 'registered' ) ) {
+				$wc_panel_style_deps[] = 'woocommerce_admin_styles';
+			}
+			wp_enqueue_style( 'sto-wc-product-data-panels', $src, $wc_panel_style_deps, $version );
 		}
 	}
 

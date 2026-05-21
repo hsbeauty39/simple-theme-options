@@ -13,6 +13,7 @@ use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\IconSelect\IconSelect;
 use SimpleThemeOptions\Admin\Options\Fields\Input\Input;
 use SimpleThemeOptions\Admin\Options\Menu as OptionsMenu;
+use SimpleThemeOptions\Admin\WooCommerceIntegration;
 use SimpleThemeOptions\Admin\Options\RequiredVisibility;
 use SimpleThemeOptions\Traits\SingletonTrait;
 
@@ -66,7 +67,12 @@ final class AdvancedRepeaterControl {
 
 	protected function init() {
 		add_action( 'sto_render_section_content', array( $this, 'render_section_fields' ), RenderSectionContentPriority::ADVANCED_REPEATER, 2 );
-		add_action( 'woocommerce_admin_process_product_object', array( $this, 'inject_repeater_leaf_bucket_into_sto_options_post' ), 5 );
+		WooCommerceIntegration::add_action(
+			'woocommerce_admin_process_product_object',
+			array( $this, 'inject_repeater_leaf_bucket_into_sto_options_post' ),
+			5,
+			1
+		);
 	}
 
 	/**

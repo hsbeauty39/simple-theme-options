@@ -55,6 +55,16 @@ spl_autoload_register(
 );
 
 require_once STO_INCLUDES . 'functions.php';
+require_once STO_INCLUDES . 'InstallationTracker.php';
+
+register_activation_hook(
+	STO_FILE,
+	static function () {
+		\SimpleThemeOptions\InstallationTracker::on_activation();
+	}
+);
+
+\SimpleThemeOptions\InstallationTracker::register_hooks();
 
 /**
  * Main plugin accessor (bootstrap entry point).

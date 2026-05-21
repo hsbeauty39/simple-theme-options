@@ -1,6 +1,7 @@
 <?php
 namespace SimpleThemeOptions\Admin\Options;
 
+use SimpleThemeOptions\Admin\WooCommerceIntegration;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\PremiumFieldGate;
 use SimpleThemeOptions\Admin\Options\Fields\Group\Group;
@@ -936,7 +937,12 @@ final class Menu {
 			add_action( 'admin_init', array( $this, 'redirect_theme_settings_to_canonical_leaf' ), 1 );
 			add_action( 'admin_notices', array( $this, 'render_woocommerce_product_data_validation_admin_notice' ) );
 			add_filter( 'redirect_post_location', array( $this, 'filter_redirect_post_location_preserve_wc_sto_context' ), 10, 2 );
-			add_action( 'woocommerce_admin_process_product_object', array( $this, 'persist_all_woocommerce_product_data_panels_from_request' ), 15, 1 );
+			WooCommerceIntegration::add_action(
+				'woocommerce_admin_process_product_object',
+				array( $this, 'persist_all_woocommerce_product_data_panels_from_request' ),
+				15,
+				1
+			);
 		}
 
 		if ( $show_in_admin_menu ) {
