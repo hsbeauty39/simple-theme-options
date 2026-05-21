@@ -97,15 +97,31 @@
 	width: 100%;
 }
 
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-option-panel-head {
+	overflow: visible;
+	position: relative;
+	z-index: 30;
+}
+
 #customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-quick-search {
 	width: 100%;
 	max-width: none;
 	margin: 0;
-	z-index: 20;
+	position: relative;
+	z-index: 100070;
 }
 
 #customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-quick-search-results {
-	z-index: 100060;
+	z-index: 100080;
+}
+
+/* Portaled below the field via main.js (fixed coords) — avoids flex / negative-margin layout pushing the list to the pane bottom. */
+#customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-quick-search-results.sto-quick-search-results--fixed {
+	position: fixed;
+	top: auto;
+	left: auto;
+	right: auto;
+	margin: 0;
 }
 
 #customize-theme-controls .sto-option-panel-wrapper--customizer-embed .sto-quick-search-input {

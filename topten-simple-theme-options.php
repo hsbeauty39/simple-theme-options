@@ -64,6 +64,14 @@ register_activation_hook(
 	}
 );
 
+register_deactivation_hook(
+	STO_FILE,
+	static function () {
+		require_once STO_INCLUDES . 'InstallationTracker.php';
+		\SimpleThemeOptions\InstallationTracker::on_deactivation();
+	}
+);
+
 \SimpleThemeOptions\InstallationTracker::register_hooks();
 
 /**

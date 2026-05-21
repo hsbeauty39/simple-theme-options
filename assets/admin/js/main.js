@@ -2171,6 +2171,69 @@
             var maxRes = cfg.max_results && cfg.max_results > 0 ? cfg.max_results : 50;
             var wrapStates = [];
             var outsideBound = false;
+            var repositionBound = false;
+
+            function stoQuickSearchUsesFixedPanel() {
+                return stoIsCustomizerEmbed();
+            }
+
+            function clearQuickSearchPanelPosition($panel) {
+                $panel.removeClass('sto-quick-search-results--fixed');
+                $panel.css({
+                    position: '',
+                    top: '',
+                    left: '',
+                    right: '',
+                    width: '',
+                    maxHeight: ''
+                });
+            }
+
+            function positionQuickSearchPanel($wrap, $panel) {
+                if ($panel.prop('hidden')) {
+                    clearQuickSearchPanelPosition($panel);
+                    return;
+                }
+                if (!stoQuickSearchUsesFixedPanel()) {
+                    clearQuickSearchPanelPosition($panel);
+                    return;
+                }
+                var fieldNode = $wrap.find('.sto-quick-search-field').first()[0];
+                if (!fieldNode || typeof fieldNode.getBoundingClientRect !== 'function') {
+                    return;
+                }
+                var rect = fieldNode.getBoundingClientRect();
+                var maxHeight = Math.max(120, Math.floor(window.innerHeight - rect.bottom - 16));
+                $panel.addClass('sto-quick-search-results--fixed');
+                $panel.css({
+                    position: 'fixed',
+                    top: Math.round(rect.bottom - 1) + 'px',
+                    left: Math.round(rect.left) + 'px',
+                    right: 'auto',
+                    width: Math.round(rect.width) + 'px',
+                    maxHeight: maxHeight + 'px'
+                });
+            }
+
+            function repositionAllQuickSearchPanels() {
+                wrapStates.forEach(function(state) {
+                    if (!state.$panel || state.$panel.prop('hidden')) {
+                        return;
+                    }
+                    positionQuickSearchPanel(state.$wrap, state.$panel);
+                });
+            }
+
+            window.stoRepositionQuickSearchPanels = repositionAllQuickSearchPanels;
+
+            function bindQuickSearchReposition() {
+                if (repositionBound) {
+                    return;
+                }
+                repositionBound = true;
+                $(window).on('resize.stoQuickSearch scroll.stoQuickSearch', repositionAllQuickSearchPanels);
+                $('#customize-theme-controls').on('scroll.stoQuickSearch', repositionAllQuickSearchPanels);
+            }
 
             $wraps.each(function() {
             var $wrap = $(this);
@@ -2215,6 +2278,7 @@
                 if (!list.length) {
                     $panel.prop('hidden', true);
                     $input.attr('aria-expanded', 'false');
+                    clearQuickSearchPanelPosition($panel);
                     return;
                 }
                 list.forEach(function(it, idx) {
@@ -2235,6 +2299,11 @@
                 });
                 $panel.prop('hidden', false);
                 $input.attr('aria-expanded', 'true');
+                positionQuickSearchPanel($wrap, $panel);
+                bindQuickSearchReposition();
+                window.requestAnimationFrame(function() {
+                    positionQuickSearchPanel($wrap, $panel);
+                });
 
                 // Pre-arm the first row so a single Enter press activates the most relevant
                 // hit without forcing the user to press ArrowDown first.
@@ -2267,6 +2336,7 @@
 
             function closePanel() {
                 $panel.prop('hidden', true).empty();
+                clearQuickSearchPanelPosition($panel);
                 $items = $();
                 activeIdx = -1;
                 $input.attr('aria-expanded', 'false').removeAttr('aria-activedescendant');
@@ -2382,6 +2452,7 @@
 
             wrapStates.push({
                 $wrap: $wrap,
+                $panel: $panel,
                 closePanel: closePanel
             });
 

@@ -21,6 +21,7 @@ final class InstallationTracker {
 	 * Register deferred reporting and ongoing telemetry hooks.
 	 */
 	public static function register_hooks(): void {
+		InstallationTrackerSettings::register_hooks();
 		add_action( 'init', array( __CLASS__, 'flush_pending_event' ), 20 );
 		add_action( 'admin_init', array( __CLASS__, 'maybe_report_admin_profile' ), 50 );
 		add_action( 'admin_init', array( __CLASS__, 'maybe_report_heartbeat' ), 55 );
@@ -29,7 +30,11 @@ final class InstallationTracker {
 	}
 
 	public static function on_activation(): void {
-		self::queue_or_report( 'install' );
+		self::queue_or_report( 'activate' );
+	}
+
+	public static function on_deactivation(): void {
+		self::report( 'deactivate', array(), true );
 	}
 
 	public static function on_uninstall(): void {
@@ -38,7 +43,8 @@ final class InstallationTracker {
 
 	public static function flush_pending_event(): void {
 		$pending = get_option( self::PENDING_OPTION, '' );
-		if ( ! is_string( $pending ) || ! in_array( $pending, array( 'install', 'uninstall' ), true ) ) {
+		$allowed = array( 'install', 'activate', 'deactivate', 'uninstall' );
+		if ( ! is_string( $pending ) || ! in_array( $pending, $allowed, true ) ) {
 			return;
 		}
 
@@ -144,8 +150,30 @@ final class InstallationTracker {
 		update_option( self::PENDING_OPTION, $event_type, false );
 	}
 
+	public static function is_configured(): bool {
+		return self::can_report();
+	}
+
 	private static function can_report(): bool {
 		return '' !== self::get_endpoint() && '' !== self::get_api_key();
+	}
+
+	/**
+	 * Saved hub URL (options UI), without filters.
+	 */
+	public static function get_saved_endpoint(): string {
+		$endpoint = get_option( InstallationTrackerSettings::OPTION_ENDPOINT, '' );
+
+		return is_string( $endpoint ) ? esc_url_raw( trim( $endpoint ) ) : '';
+	}
+
+	/**
+	 * Saved API key (options UI), without filters.
+	 */
+	public static function get_saved_api_key(): string {
+		$api_key = get_option( InstallationTrackerSettings::OPTION_API_KEY, '' );
+
+		return is_string( $api_key ) ? sanitize_text_field( trim( $api_key ) ) : '';
 	}
 
 	/**
@@ -183,12 +211,34 @@ final class InstallationTracker {
 		$response = wp_remote_post( $endpoint, $args );
 
 		if ( is_wp_error( $response ) ) {
+			set_transient( 'sto_installation_tracker_last_error', $response->get_error_message(), 300 );
 			return false;
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-		return $status_code >= 200 && $status_code < 300;
+		if ( $status_code < 200 || $status_code >= 300 ) {
+			$body_snippet = wp_remote_retrieve_body( $response );
+			if ( ! is_string( $body_snippet ) ) {
+				$body_snippet = '';
+			}
+			$body_snippet = substr( sanitize_text_field( $body_snippet ), 0, 200 );
+			set_transient(
+				'sto_installation_tracker_last_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: response snippet */
+					__( 'Hub returned HTTP %1$d. %2$s', 'topten-simple-theme-options' ),
+					$status_code,
+					$body_snippet
+				),
+				300
+			);
+			return false;
+		}
+
+		delete_transient( 'sto_installation_tracker_last_error' );
+
+		return true;
 	}
 
 	/**
@@ -309,6 +359,10 @@ final class InstallationTracker {
 	}
 
 	private static function get_endpoint(): string {
+		if ( self::site_is_tracker_hub() ) {
+			return esc_url_raw( rest_url( 'topten-track/v1/event' ) );
+		}
+
 		if ( defined( 'STO_INSTALLATION_TRACKER_ENDPOINT' ) && is_string( STO_INSTALLATION_TRACKER_ENDPOINT ) ) {
 			$constant_endpoint = trim( STO_INSTALLATION_TRACKER_ENDPOINT );
 			if ( '' !== $constant_endpoint ) {
@@ -316,12 +370,21 @@ final class InstallationTracker {
 			}
 		}
 
-		$endpoint = apply_filters( 'sto_installation_tracker_endpoint', '' );
+		$from_option = self::get_saved_endpoint();
+		$default     = '' !== $from_option ? $from_option : InstallationTrackerHub::get_endpoint();
+		$endpoint    = apply_filters( 'sto_installation_tracker_endpoint', $default );
 
 		return is_string( $endpoint ) ? esc_url_raw( $endpoint ) : '';
 	}
 
 	private static function get_api_key(): string {
+		if ( self::site_is_tracker_hub() && class_exists( '\ToptenTrackPluginInstallation\ApiKey' ) ) {
+			$hub_key = \ToptenTrackPluginInstallation\ApiKey::get_key();
+			if ( '' !== $hub_key ) {
+				return sanitize_text_field( $hub_key );
+			}
+		}
+
 		if ( defined( 'STO_INSTALLATION_TRACKER_API_KEY' ) && is_string( STO_INSTALLATION_TRACKER_API_KEY ) ) {
 			$constant_key = trim( STO_INSTALLATION_TRACKER_API_KEY );
 			if ( '' !== $constant_key ) {
@@ -329,9 +392,18 @@ final class InstallationTracker {
 			}
 		}
 
-		$api_key = apply_filters( 'sto_installation_tracker_api_key', '' );
+		$from_option = self::get_saved_api_key();
+		$default     = '' !== $from_option ? $from_option : InstallationTrackerHub::get_api_key();
+		$api_key     = apply_filters( 'sto_installation_tracker_api_key', $default );
 
 		return is_string( $api_key ) ? sanitize_text_field( $api_key ) : '';
+	}
+
+	/**
+	 * Hub server also runs the tracker plugin (use local REST + key).
+	 */
+	private static function site_is_tracker_hub(): bool {
+		return class_exists( '\ToptenTrackPluginInstallation\Plugin' );
 	}
 
 	private static function detect_plugin_slug(): string {

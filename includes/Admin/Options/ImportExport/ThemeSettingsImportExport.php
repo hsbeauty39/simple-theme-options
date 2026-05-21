@@ -2,6 +2,7 @@
 namespace SimpleThemeOptions\Admin\Options\ImportExport;
 
 use SimpleThemeOptions\Admin\CustomFonts\CustomFontsAdmin;
+use SimpleThemeOptions\InstallationTrackerSettings;
 use SimpleThemeOptions\Admin\ThemeSettingsDisplayLocations;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldRegistrationDeferral;
 use SimpleThemeOptions\Admin\Options\Fields\Common\FieldTitle;
@@ -276,6 +277,19 @@ final class ThemeSettingsImportExport {
 		$total_rows   = count( $history );
 		?>
 			<input type="hidden" value="" data-sto-advance-source-name autocomplete="off" />
+			<?php if ( 'settings' === $context ) : ?>
+			<?php
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( isset( $_GET['sto_tracker_saved'] ) ) {
+				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Analytics hub settings saved. Queued install events will retry automatically.', 'topten-simple-theme-options' ) . '</p></div>';
+			}
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( isset( $_GET['sto_tracker_test'] ) && 'ok' === sanitize_key( wp_unslash( (string) $_GET['sto_tracker_test'] ) ) ) {
+				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Test report sent successfully. Check STO Analytics on your hub site.', 'topten-simple-theme-options' ) . '</p></div>';
+			}
+			InstallationTrackerSettings::render_settings_card();
+			?>
+			<?php endif; ?>
 			<?php if ( 'settings' === $context ) : ?>
 			<?php
 			$scope_slugs = array();

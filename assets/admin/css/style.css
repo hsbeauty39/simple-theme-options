@@ -1583,10 +1583,7 @@ body.wp-customizer #customize-theme-controls .sto-option-panel-wrapper--customiz
     max-width: none !important;
 }
 
-/* Fallback when flex order cannot run (main panel reserves space above the nav). Refined by sto-customizer.js. */
-body.wp-customizer #customize-theme-controls .sto-customizer-embed-root .sto-option-panel-sidebar-wrap {
-    margin-top: -488px !important;
-}
+/* Sidebar gap collapse is applied inline by sto-customizer.js (capped); avoid huge negative margins here — they break quick-search dropdown placement. */
 
 body.wp-customizer #customize-theme-controls .sto-option-panel-wrapper--customizer-embed > .sto-option-panel-main {
     order: 3 !important;

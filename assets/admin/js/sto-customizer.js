@@ -141,10 +141,15 @@
             var sidebarTop = $sidebar.offset().top;
             var extraGap = Math.round(sidebarTop - headBottom - rowGap);
 
-            if (extraGap > 20) {
+            /* Large gaps usually mean layout has not settled; uncapped negative margin misplaces quick-search dropdowns. */
+            if (extraGap > 20 && extraGap < 160) {
                 $sidebar.css('margin-top', (-extraGap) + 'px');
             } else {
                 $sidebar.css('margin-top', '');
+            }
+
+            if (typeof window.stoRepositionQuickSearchPanels === 'function') {
+                window.stoRepositionQuickSearchPanels();
             }
         }
 
